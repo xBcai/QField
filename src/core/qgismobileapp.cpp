@@ -101,6 +101,7 @@
 #include "featureutils.h"
 #include "expressionevaluator.h"
 #include "qfieldcloudconnection.h"
+#include "qfieldcloudprojectsmodel.h"
 
 // Check QGIS Version
 #if VERSION_INT >= 30600
@@ -214,6 +215,8 @@ void QgisMobileapp::initDeclarative()
   qRegisterMetaType<QgsDefaultValue>( "QgsDefaultValue" );
   qRegisterMetaType<QgsFieldConstraints>( "QgsFieldConstraints" );
   qRegisterMetaType<QgsGeometry::OperationResult>( "QgsGeometry::OperationResult" );
+  qRegisterMetaType<QFieldCloudConnection::Status>( "QFieldCloudConnection::Status" );
+  qRegisterMetaType<QFieldCloudProjectsModel::Status>( "QFieldCloudProjectsModel::Status" );
 
   qmlRegisterUncreatableType<QgsProject>( "org.qgis", 1, 0, "Project", "" );
   qmlRegisterUncreatableType<QgsCoordinateReferenceSystem>( "org.qgis", 1, 0, "CoordinateReferenceSystem", "" );
@@ -268,11 +271,13 @@ void QgisMobileapp::initDeclarative()
   qmlRegisterType<FeatureCheckListModel>( "org.qgis", 1, 0, "FeatureCheckListModel" );
   qmlRegisterType<GeometryEditorsModel>( "org.qfield", 1, 0, "GeometryEditorsModel" );
   qmlRegisterType<ExpressionEvaluator>( "org.qfield", 1, 0, "ExpressionEvaluator" );
-  qmlRegisterType<QFieldCloudConnection>( "org.qfield", 1, 0, "QFieldCloudConnection" );
   REGISTER_SINGLETON( "org.qfield", GeometryEditorsModel, "GeometryEditorsModelSingleton" );
   REGISTER_SINGLETON( "org.qfield", GeometryUtils, "GeometryUtils" );
   REGISTER_SINGLETON( "org.qfield", FeatureUtils, "FeatureUtils" );
   REGISTER_SINGLETON( "org.qfield", FileUtils, "FileUtils" );
+
+  qmlRegisterType<QFieldCloudConnection>( "org.qfield", 1, 0, "QFieldCloudConnection" );
+  qmlRegisterType<QFieldCloudProjectsModel>( "org.qfield", 1, 0, "QFieldCloudProjectsModel" );
 
   qmlRegisterUncreatableType<AppInterface>( "org.qgis", 1, 0, "QgisInterface", "QgisInterface is only provided by the environment and cannot be created ad-hoc" );
   qmlRegisterUncreatableType<Settings>( "org.qgis", 1, 0, "Settings", "" );

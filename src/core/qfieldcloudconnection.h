@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QVariantMap>
+#include <QNetworkRequest>
 
 class QNetworkReply;
 
@@ -10,15 +11,15 @@ class QFieldCloudConnection : public QObject
 {
     Q_OBJECT
 
+  public:
     enum class Status
     {
       Disconnected,
       LoggedIn
     };
 
-    Q_ENUM()
+    Q_ENUMS( Status )
 
-  public:
     QFieldCloudConnection();
 
     Q_PROPERTY( QString username READ username WRITE setUsername NOTIFY usernameChanged )
@@ -41,11 +42,20 @@ class QFieldCloudConnection : public QObject
     Status status() const;
 
     /**
-     * Sends a request with the given \a parameters to the given \a endpoint.
+     * Sends a post request with the given \a parameters to the given \a endpoint.
      *
      * If this connection is not logged in, will return nullptr.
+     * The returned reply needs to be deleted by the caller.
      */
-    QNetworkReply *post(const QString& endpoint, const QVariantMap& parameters = QVariantMap() );
+    QNetworkReply *post( const QString &endpoint, const QVariantMap &parameters = QVariantMap() );
+
+    /**
+     * Sends a get request to the given \a endpoint.
+     *
+     * If this connection is not logged in, will return nullptr.
+     * The returned reply needs to be deleted by the caller.
+     */
+    QNetworkReply *get( const QString &endpoint );
 
   signals:
     void usernameChanged();
@@ -54,14 +64,18 @@ class QFieldCloudConnection : public QObject
     void statusChanged();
     void error();
 
+    void loginFailed( const QString &reason );
+
   private:
-    void setStatus(Status status);
+    void setStatus( Status status );
+    void setAuthenticationToken( QNetworkRequest &request );
+    void checkStatus();
 
     QString mPassword;
     QString mUsername;
     QString mUrl;
     Status mStatus = Status::Disconnected;
-    QByteArray mCsrfToken;
+    QByteArray mToken;
 };
 
 #endif // QFIELDCLOUDCONNECTION_H

@@ -27,6 +27,7 @@ HEADERS += \
     multifeaturelistmodel.h \
     featurelistmodelselection.h \
     featuremodel.h \
+    qfieldcloudprojectsmodel.h \
     qgismobileapp.h \
     qgsgpkgflusher.h \
     qgssggeometry.h \
@@ -83,6 +84,7 @@ SOURCES += \
     multifeaturelistmodel.cpp \
     featurelistmodelselection.cpp \
     featuremodel.cpp \
+    qfieldcloudprojectsmodel.cpp \
     qgismobileapp.cpp \
     qgsgpkgflusher.cpp \
     qgssggeometry.cpp \
