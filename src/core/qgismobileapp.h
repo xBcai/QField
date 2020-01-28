@@ -34,6 +34,7 @@
 #include "qgsquickutils.h"
 #include "qgsgpkgflusher.h"
 #include "geometryeditorsmodel.h"
+#include "layerobserver.h"
 
 #if VERSION_INT >= 30600
 #include "qfieldappauthrequesthandler.h"
@@ -143,6 +144,7 @@ class QgisMobileapp : public QQmlApplicationEngine
 
     QgsProject *mProject = nullptr;
     std::unique_ptr<QgsGpkgFlusher> mGpkgFlusher;
+    std::unique_ptr<LayerObserver> mLayerObserver;
 #if VERSION_INT >= 30600
     QFieldAppAuthRequestHandler *mAuthRequestHandler = nullptr;
 #endif

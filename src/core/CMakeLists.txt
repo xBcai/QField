@@ -59,6 +59,8 @@ SET(QFIELD_CORE_SRCS
   qfieldcloudconnection.cpp
   qfieldcloudprojectsmodel.cpp
   qfieldcloudutils.cpp
+  featuredeltas.cpp
+  layerobserver.cpp
 )
 
 SET(QFIELD_CORE_HDRS
@@ -123,6 +125,8 @@ SET(QFIELD_CORE_HDRS
   qfieldcloudconnection.h
   qfieldcloudprojectsmodel.h
   qfieldcloudutils.h
+  featuredeltas.h
+  layerobserver.h
 )
 
 IF (ANDROID)
