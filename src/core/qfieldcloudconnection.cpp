@@ -5,10 +5,11 @@
 #include <QJsonDocument>
 #include <QNetworkCookieJar>
 #include <QNetworkCookie>
+#include <QSettings>
 
 QFieldCloudConnection::QFieldCloudConnection()
 {
-
+  mToken = QSettings().value( "/QFieldCloud/token" ).toByteArray();
 }
 
 QString QFieldCloudConnection::url() const
@@ -22,6 +23,7 @@ void QFieldCloudConnection::setUrl( const QString &url )
     return;
 
   mUrl = url;
+  checkStatus();
   emit urlChanged();
 }
 
@@ -60,36 +62,39 @@ void QFieldCloudConnection::login()
   QNetworkRequest request;
   request.setUrl( mUrl + "/api/v1/auth/login/" );
   request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
-  if ( !mCsrfToken.isNull() )
-  {
-    request.setRawHeader( "X-CSRFToken", mCsrfToken );
-  }
 
   QJsonObject json;
 
-  json.insert("username", mUsername );
-  json.insert("email", "email@domain.com" );
-  json.insert("password", mPassword );
-
+  if ( mPassword.isEmpty() )
+    setAuthenticationToken( request );
+  else
+  {
+    json.insert( "username", mUsername );
+    json.insert( "password", mPassword );
+  }
   QJsonDocument doc;
 
-  doc.setObject(json);
+  doc.setObject( json );
 
   QByteArray requestBody = doc.toJson();
 
-  QNetworkReply *reply = nam->post(request, requestBody);
-  connect( reply, &QNetworkReply::finished, this, [this, reply, nam] () {
-    QByteArray response = reply->readAll();
-    const auto cookies = nam->cookieJar()->cookiesForUrl(QUrl(mUrl) );
-    for ( const auto &cookie : cookies )
+  QNetworkReply *reply = nam->post( request, requestBody );
+  connect( reply, &QNetworkReply::finished, this, [this, reply]()
+  {
+    if ( reply->error() == QNetworkReply::NoError )
     {
-      if ( cookie.name() == "csrftoken" )
-      {
-        mCsrfToken = cookie.value();
-        break;
-      }
+      QByteArray response = reply->readAll();
+
+      const QVariant &key = QJsonDocument::fromJson( response ).object().toVariantMap().value( QStringLiteral( "key" ) );
+      mToken = key.toByteArray();
+      QSettings().setValue( "/QFieldCloud/token", key );
+
+      setStatus( Status::LoggedIn );
     }
-    setStatus( Status::LoggedIn );
+    else
+    {
+      emit loginFailed( QStringLiteral( "%1 (HTTP Status %2)" ).arg( reply->errorString(), QString::number( reply->error() ) ) );
+    }
     reply->deleteLater();
   } );
 }
@@ -98,7 +103,8 @@ void QFieldCloudConnection::logout()
 {
   QNetworkReply *reply = post( "/api/v1/auth/logout/" );
   reply->deleteLater();
-  mCsrfToken.clear();
+  mToken.clear();
+  QSettings().remove( "/QFieldCloud/token" );
   setStatus( Status::Disconnected );
 }
 
@@ -107,29 +113,27 @@ QFieldCloudConnection::Status QFieldCloudConnection::status() const
   return mStatus;
 }
 
-QNetworkReply* QFieldCloudConnection::post( const QString &endpoint, const QVariantMap& parameters )
+QNetworkReply *QFieldCloudConnection::post( const QString &endpoint, const QVariantMap &parameters )
 {
-  if ( mCsrfToken.isNull() )
+  if ( mToken.isNull() )
     return nullptr;
 
   QgsNetworkAccessManager *nam = QgsNetworkAccessManager::instance();
   QNetworkRequest request;
   request.setUrl( mUrl + endpoint );
   request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
-  if ( !mCsrfToken.isNull() )
-  {
-    request.setRawHeader( "X-CSRFToken", mCsrfToken );
-  }
+  setAuthenticationToken( request );
 
   QJsonDocument doc( QJsonObject::fromVariantMap( parameters ) );
 
   QByteArray requestBody = doc.toJson();
 
-  QNetworkReply *reply = nam->post(request, requestBody);
+  QNetworkReply *reply = nam->post( request, requestBody );
 
 #if 0
   // TODO generic error handling
-  connect( reply, &QNetworkReply::error, this, [ this ]( QNetworkReply::NetworkError err ) {
+  connect( reply, &QNetworkReply::error, this, [ this ]( QNetworkReply::NetworkError err )
+  {
     emit error( err );
   } );
 #endif
@@ -137,11 +141,51 @@ QNetworkReply* QFieldCloudConnection::post( const QString &endpoint, const QVari
   return reply;
 }
 
-void QFieldCloudConnection::setStatus(Status status)
+QNetworkReply *QFieldCloudConnection::get( const QString &endpoint )
+{
+  QgsNetworkAccessManager *nam = QgsNetworkAccessManager::instance();
+  QNetworkRequest request;
+  request.setUrl( mUrl + endpoint );
+  request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
+  setAuthenticationToken( request );
+
+  QNetworkReply *reply = nam->get( request );
+
+  return reply;
+}
+
+void QFieldCloudConnection::setStatus( Status status )
 {
   if ( mStatus == status )
     return;
 
   mStatus = status;
   emit statusChanged();
+}
+
+void QFieldCloudConnection::setAuthenticationToken( QNetworkRequest &request )
+{
+  if ( !mToken.isNull() )
+  {
+    request.setRawHeader( "Authorization", "Token " + mToken );
+  }
+}
+
+void QFieldCloudConnection::checkStatus()
+{
+  if ( mToken.isNull() )
+  {
+    setStatus( Status::Disconnected );
+    return;
+  }
+
+  QNetworkReply *reply = get( "/api/v1/projects/mkuhn/" );
+
+  connect( reply, &QNetworkReply::finished, this, [this, reply]()
+  {
+    if ( reply->error() == QNetworkReply::NoError )
+      setStatus( Status::LoggedIn );
+    else
+      emit loginFailed( QStringLiteral( "%1 (HTTP Status %2)" ).arg( reply->errorString(), QString::number( reply->error() ) ) );
+  } );
 }
