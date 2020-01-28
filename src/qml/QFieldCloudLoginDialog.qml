@@ -11,6 +11,10 @@ Page {
     property QFieldCloudConnection connection: QFieldCloudConnection
     {
         url: "http://dev.qfield.cloud"
+
+        onLoginFailed: {
+            displayToast( "Login failed: " + reason )
+        }
     }
 
   header: ToolBar {
@@ -82,7 +86,7 @@ Page {
     }
   }
 
-  ColumnLayout{
+  ColumnLayout {
     anchors.fill: parent
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -154,13 +158,24 @@ Page {
     }
 
     Label {
-        text: "XXX " + connection.status
+        text: "Login Status " + connection.status
     }
 
 
     Button {
+        text: "Logout"
+        bgcolor: "white"
+        visible: connection.status == 1
+
+        onClicked: {
+            connection.logout()
+        }
+    }
+
+    Button {
         text: "Login"
         bgcolor: "white"
+        visible: connection.status == 0
 
         onClicked: {
             connection.username = username.text
@@ -169,10 +184,77 @@ Page {
         }
     }
 
+    Button {
+        text: "Refresh Projects"
+        bgcolor: "white"
+        enabled: connection.status == 1
+
+        onClicked: {
+            projectsModel.refreshProjectsList()
+        }
+    }
+
+    QFieldCloudProjectsModel {
+        id: projectsModel
+
+        cloudConnection: connection
+
+        onWarning: displayToast( message )
+    }
+/*
     Item {
         // spacer item
         Layout.fillWidth: true
         Layout.fillHeight: true
+    }
+*/
+    ListView {
+        Layout.fillWidth:  true
+        Layout.fillHeight: true
+
+        width: 200
+        height: 500
+
+        model: projectsModel
+
+        delegate: Rectangle {
+            height: childrenRect.height
+            Row {
+                Button {
+                  Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+
+                  width: 24*dp
+                  height: 24*dp
+                  clip: true
+                  bgcolor: Theme.darkGray
+
+                  iconSource: {
+                      switch ( Status )
+                      {
+                        case 0:
+                            Theme.getThemeIcon( 'ic_check_white_48dp' )
+                            break;
+
+                        case 1:
+                            Theme.getThemeIcon( 'ic_add_white_24dp' )
+                            break;
+
+                        default:
+                            Theme.getThemeIcon( 'ic_add_circle_outline_white_24dp' )
+                            break;
+                      }
+                  }
+
+                  onClicked: {
+                      projectsModel.download( username.text, Name )
+                  }
+                }
+
+                Text {
+                    text: Name + ": " + Description + " (" + Id + ")"
+                }
+            }
+        }
     }
   }
 
