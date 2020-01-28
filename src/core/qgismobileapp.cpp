@@ -291,7 +291,6 @@ void QgisMobileapp::initDeclarative()
   qmlRegisterType<FeatureCheckListModel>( "org.qgis", 1, 0, "FeatureCheckListModel" );
   qmlRegisterType<GeometryEditorsModel>( "org.qfield", 1, 0, "GeometryEditorsModel" );
   qmlRegisterType<ExpressionEvaluator>( "org.qfield", 1, 0, "ExpressionEvaluator" );
-  qmlRegisterType<QFieldCloudConnection>( "org.qfield", 1, 0, "QFieldCloudConnection" );
   REGISTER_SINGLETON( "org.qfield", GeometryEditorsModel, "GeometryEditorsModelSingleton" );
   REGISTER_SINGLETON( "org.qfield", GeometryUtils, "GeometryUtils" );
   REGISTER_SINGLETON( "org.qfield", FeatureUtils, "FeatureUtils" );
