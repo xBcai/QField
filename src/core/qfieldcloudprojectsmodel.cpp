@@ -11,6 +11,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QDir>
+#include <QDebug>
 
 QFieldCloudProjectsModel::QFieldCloudProjectsModel()
 {
@@ -42,6 +43,9 @@ void QFieldCloudProjectsModel::refreshProjectsList()
 
 void QFieldCloudProjectsModel::download( const QString &owner, const QString &projectName )
 {
+  if ( !mCloudConnection )
+    return;
+
   QNetworkReply *filesReply = mCloudConnection->get( QStringLiteral( "/api/v1/projects/%1/%2/files/" ).arg( owner, projectName ) );
 
   connect( filesReply, &QNetworkReply::finished, this, [filesReply, this, owner, projectName]()
@@ -54,6 +58,10 @@ void QFieldCloudProjectsModel::download( const QString &owner, const QString &pr
       {
         downloadFile( owner, projectName, file.toObject().value( QStringLiteral( "name" ) ).toString() );
       }
+    }
+    else
+    {
+      emit warning( QStringLiteral( "Error fetching project: %1" ).arg( filesReply->errorString() ) );
     }
 
     filesReply->deleteLater();
@@ -89,6 +97,7 @@ void QFieldCloudProjectsModel::projectListReceived()
 
     QStandardItem *item = new QStandardItem();
     item->setData( projectDetails.value( "id" ), IdRole );
+    item->setData( mCloudConnection ? mCloudConnection->username() : QString(), OwnerRole ); //TODO: server API should return that
     item->setData( projectDetails.value( "name" ), NameRole );
     item->setData( projectDetails.value( "description" ), DescriptionRole );
     item->setData( QVariant::fromValue<Status>( Status::Available ), StatusRole );
@@ -113,17 +122,25 @@ void QFieldCloudProjectsModel::downloadFile( const QString &owner, const QString
 
   connect( reply, &QNetworkReply::finished, this, [this, reply, file, owner, projectName, fileName]()
   {
+    file->close();
     if ( reply->error() == QNetworkReply::NoError )
     {
-      QDir dir( QgsApplication::qgisSettingsDirPath() + "/" + owner + "/" + projectName + "/" );
+      QString settingsDirPath = QgsApplication::qgisSettingsDirPath();
+      if ( settingsDirPath.right( 1 ) == "/" )
+        settingsDirPath = settingsDirPath.left( settingsDirPath.length() - 1);
+      QDir dir( QStringLiteral( "%1/cloud_projects/%2/%3/" ).arg( settingsDirPath, owner, projectName ) );
 
       if ( !dir.exists() )
-        dir.mkdir( QStringLiteral( "." ) );
+        dir.mkpath( QStringLiteral( "." ) );
 
-      file->rename( dir.filePath( fileName ) );
-      file->setAutoRemove( false );
+      file->copy( dir.filePath( fileName ) );
+      file->setAutoRemove( true );
 
       emit warning( QStringLiteral( "File written to %1" ).arg( dir.filePath( fileName ) ) );
+    }
+    else
+    {
+      emit warning( QStringLiteral( "Error fetching project file: %1" ).arg( reply->errorString() ) );
     }
 
     file->deleteLater();
@@ -135,6 +152,7 @@ QHash<int, QByteArray> QFieldCloudProjectsModel::roleNames() const
 {
   QHash<int, QByteArray> roles;
   roles[IdRole] = "Id";
+  roles[OwnerRole] = "Owner";
   roles[NameRole] = "Name";
   roles[DescriptionRole] = "Description";
   roles[StatusRole] = "Status";

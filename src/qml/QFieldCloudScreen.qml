@@ -172,6 +172,7 @@ Page {
                   connection.password = password.text
                   connection.login()
 
+                  connectionInformation.visible = true
                   connectionSettings.visible = false
                   projects.visible = true
               }
@@ -189,56 +190,108 @@ Page {
       Layout.fillWidth: true
       Layout.fillHeight: true
       Layout.margins: 10 * dp
+      Layout.topMargin: 0
       spacing: 2
 
-      ListView {
-          Layout.fillWidth:  true
+      Rectangle {
+          Layout.fillWidth: true
           Layout.fillHeight: true
+          color: "white"
+          border.color: "lightgray"
+          border.width: 1
 
-          width: 200
-          height: 500
+          ListView {
+              id: table
+              anchors.fill: parent
 
-          model: projectsModel
+              model: projectsModel
 
-          delegate: Rectangle {
-              height: childrenRect.height
-              Row {
-                  Button {
-                      Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+              delegate: Rectangle {
+                  id: rectangle
+                  property string projectOwner: Owner
+                  property string projectName: Name
+                  width: parent.width
+                  height: line.height
+                  color: "transparent"
 
-                      width: 24*dp
-                      height: 24*dp
-                      clip: true
-                      bgcolor: Theme.darkGray
+                  Row {
+                      id: line
+                      Layout.fillWidth: true
+                      leftPadding: 6 * dp
+                      rightPadding: 10 * dp
+                      topPadding: 9 * dp
+                      bottomPadding: 3 * dp
+                      spacing: 0
 
-                      iconSource: {
-                          switch ( Status )
-                          {
-                          case 0:
-                              Theme.getThemeIcon( 'ic_check_white_48dp' )
-                              break;
-
-                          case 1:
-                              Theme.getThemeIcon( 'ic_add_white_24dp' )
-                              break;
-
-                          default:
-                              Theme.getThemeIcon( 'ic_add_circle_outline_white_24dp' )
-                              break;
+                      Image {
+                          id: type
+                          anchors.verticalCenter: inner.verticalCenter
+                          source: Theme.getThemeIcon('ic_map_green_48dp')
+                          sourceSize.width: 80 * dp
+                          sourceSize.height: 80 * dp
+                          width: 40 * dp
+                          height: 40 * dp
+                      }
+                      ColumnLayout {
+                          id: inner
+                          width: rectangle.width - type.width - 10 * dp
+                          Text {
+                              id: projectTitle
+                              topPadding: 5 * dp
+                              leftPadding: 3 * dp
+                              text: Name
+                              font.pointSize: Theme.tipFont.pointSize
+                              font.underline: true
+                              color: Theme.mainColor
+                              wrapMode: Text.WordWrap
+                              Layout.fillWidth: true
+                          }
+                          Text {
+                              id: projectNote
+                              leftPadding: 3 * dp
+                              text: Description + " (" + Id + ")"
+                              visible: text != ""
+                              font.pointSize: Theme.tipFont.pointSize - 2
+                              font.italic: true
+                              wrapMode: Text.WordWrap
+                              Layout.fillWidth: true
                           }
                       }
-
-                      onClicked: {
-                          projectsModel.download( username.text, Name )
-                      }
                   }
+              }
 
-                  Text {
-                      text: Name + ": " + Description + " (" + Id + ")"
+              MouseArea {
+                property Item pressedItem
+                anchors.fill: parent
+                onClicked: {
+                  var item = table.itemAt(mouse.x, mouse.y)
+                  if (item) {
+                    projectsModel.download( item.projectOwner, item.projectName )
                   }
+                }
+                onPressed: {
+                  var item = table.itemAt(mouse.x, mouse.y)
+                  if (item) {
+                    pressedItem = item.children[0].children[1].children[0];
+                    pressedItem.color = "#5a8725"
+                  }
+                }
+                onCanceled: {
+                  if (pressedItem) {
+                    pressedItem.color = Theme.mainColor
+                    pressedItem = null
+                  }
+                }
+                onReleased: {
+                  if (pressedItem) {
+                    pressedItem.color = Theme.mainColor
+                    pressedItem = null
+                  }
+                }
               }
           }
       }
+
       QfButton {
           Layout.fillWidth: true
           text: "Refresh Projects"
