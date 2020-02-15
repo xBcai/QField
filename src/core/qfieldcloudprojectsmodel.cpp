@@ -8,14 +8,15 @@
 #include <QNetworkReply>
 #include <QTemporaryFile>
 #include <QJsonDocument>
-#include <QJsonObject>
 #include <QJsonArray>
+#include <QJsonObject>
 #include <QDir>
 #include <QDebug>
 
 QFieldCloudProjectsModel::QFieldCloudProjectsModel()
 {
-
+  QJsonArray projects;
+  reload( projects );
 }
 
 QFieldCloudConnection *QFieldCloudProjectsModel::cloudConnection() const
@@ -84,25 +85,20 @@ void QFieldCloudProjectsModel::projectListReceived()
   if ( reply->error() != QNetworkReply::NoError )
     return;
 
-  clear();
-
   QByteArray response = reply->readAll();
 
   QJsonDocument doc = QJsonDocument::fromJson( response );
   QJsonArray projects = doc.array();
+  reload( projects );
+}
 
-  for ( const auto project : projects )
-  {
-    QVariantHash projectDetails = project.toObject().toVariantHash();
-
-    QStandardItem *item = new QStandardItem();
-    item->setData( projectDetails.value( "id" ), IdRole );
-    item->setData( mCloudConnection ? mCloudConnection->username() : QString(), OwnerRole ); //TODO: server API should return that
-    item->setData( projectDetails.value( "name" ), NameRole );
-    item->setData( projectDetails.value( "description" ), DescriptionRole );
-    item->setData( QVariant::fromValue<Status>( Status::Available ), StatusRole );
-    insertRow( rowCount(), item );
-  }
+const QString QFieldCloudProjectsModel::localCloudDirectory()
+{
+  QString settingsDirPath = QgsApplication::qgisSettingsDirPath();
+  if ( settingsDirPath.right( 1 ) == "/" )
+    return settingsDirPath + QStringLiteral( "cloud_projects");
+  else
+    return settingsDirPath + QStringLiteral( "/cloud_projects");
 }
 
 void QFieldCloudProjectsModel::downloadFile( const QString &owner, const QString &projectName, const QString &fileName )
@@ -125,10 +121,7 @@ void QFieldCloudProjectsModel::downloadFile( const QString &owner, const QString
     file->close();
     if ( reply->error() == QNetworkReply::NoError )
     {
-      QString settingsDirPath = QgsApplication::qgisSettingsDirPath();
-      if ( settingsDirPath.right( 1 ) == "/" )
-        settingsDirPath = settingsDirPath.left( settingsDirPath.length() - 1);
-      QDir dir( QStringLiteral( "%1/cloud_projects/%2/%3/" ).arg( settingsDirPath, owner, projectName ) );
+      QDir dir( QStringLiteral( "%1/%2/%3/" ).arg( localCloudDirectory(), owner, projectName ) );
 
       if ( !dir.exists() )
         dir.mkpath( QStringLiteral( "." ) );
@@ -157,4 +150,49 @@ QHash<int, QByteArray> QFieldCloudProjectsModel::roleNames() const
   roles[DescriptionRole] = "Description";
   roles[StatusRole] = "Status";
   return roles;
+}
+
+void QFieldCloudProjectsModel::reload( QJsonArray &remoteProjects )
+{
+  beginResetModel();
+  mCloudProjects .clear();
+
+  for ( const auto project : remoteProjects )
+  {
+    QVariantHash projectDetails = project.toObject().toVariantHash();
+    mCloudProjects << CloudProject(
+                          projectDetails.value( "id" ).toString(),
+                          mCloudConnection ? mCloudConnection->username() : QString(),
+                          projectDetails.value( "name" ).toString(),
+                          projectDetails.value( "description" ).toString(),
+                          Status::Available );
+  }
+  endResetModel();
+}
+
+int QFieldCloudProjectsModel::rowCount( const QModelIndex &parent ) const
+{
+  if ( !parent.isValid() )
+    return mCloudProjects.size();
+  else
+    return 0;
+}
+
+QVariant QFieldCloudProjectsModel::data( const QModelIndex &index, int role ) const
+{
+  if ( index.row() >= mCloudProjects.size() || index.row() < 0 )
+    return QVariant();
+
+  if ( role == IdRole )
+    return mCloudProjects.at( index.row() ).id;
+  else if ( role == OwnerRole )
+    return mCloudProjects.at( index.row() ).owner;
+  else if ( role == NameRole )
+    return mCloudProjects.at( index.row() ).name;
+  else if ( role == DescriptionRole )
+    return mCloudProjects.at( index.row() ).description;
+  else if ( role == StatusRole )
+    return static_cast<int>( mCloudProjects.at( index.row() ).status );
+
+  return QVariant();
 }
