@@ -9,6 +9,7 @@
 
 QFieldCloudConnection::QFieldCloudConnection()
 {
+  mUsername = QSettings().value( "/QFieldCloud/username" ).toByteArray();
   mToken = QSettings().value( "/QFieldCloud/token" ).toByteArray();
 }
 
@@ -23,7 +24,6 @@ void QFieldCloudConnection::setUrl( const QString &url )
     return;
 
   mUrl = url;
-  checkStatus();
   emit urlChanged();
 }
 
@@ -38,6 +38,8 @@ void QFieldCloudConnection::setUsername( const QString &username )
     return;
 
   mUsername = username;
+  mToken.clear(); // invalidate token on username change
+
   emit usernameChanged();
 }
 
@@ -72,12 +74,12 @@ void QFieldCloudConnection::login()
     json.insert( "username", mUsername );
     json.insert( "password", mPassword );
   }
+
+  setStatus( Status::Connecting );
+
   QJsonDocument doc;
-
   doc.setObject( json );
-
   QByteArray requestBody = doc.toJson();
-
   QNetworkReply *reply = nam->post( request, requestBody );
   connect( reply, &QNetworkReply::finished, this, [this, reply]()
   {
@@ -86,7 +88,9 @@ void QFieldCloudConnection::login()
       QByteArray response = reply->readAll();
 
       const QVariant &key = QJsonDocument::fromJson( response ).object().toVariantMap().value( QStringLiteral( "key" ) );
+
       mToken = key.toByteArray();
+      QSettings().setValue( "/QFieldCloud/username", mUsername );
       QSettings().setValue( "/QFieldCloud/token", key );
 
       setStatus( Status::LoggedIn );
@@ -94,6 +98,7 @@ void QFieldCloudConnection::login()
     else
     {
       emit loginFailed( QStringLiteral( "%1 (HTTP Status %2)" ).arg( reply->errorString(), QString::number( reply->error() ) ) );
+      setStatus( Status::Disconnected );
     }
     reply->deleteLater();
   } );
@@ -103,7 +108,9 @@ void QFieldCloudConnection::logout()
 {
   QNetworkReply *reply = post( "/api/v1/auth/logout/" );
   reply->deleteLater();
+  mPassword.clear();
   mToken.clear();
+  QSettings().remove( "/QFieldCloud/username" );
   QSettings().remove( "/QFieldCloud/token" );
   setStatus( Status::Disconnected );
 }
