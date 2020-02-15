@@ -80,6 +80,8 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       QString description;
       Status status;
       QString localPath;
+      int nbFiles = 0;
+      int nbDownloadedFiles = 0;
     };
 
     QList<CloudProject> mCloudProjects;

@@ -250,7 +250,7 @@ Page {
                           Text {
                               id: projectNote
                               leftPadding: 3 * dp
-                              text: Description + ( LocalPath != '' ? ' (available locally)' : '' )
+                              text: Description + ( LocalPath != '' ? ' (available locally)' : Status == 1 ? ' (downloading)' : '' )
                               visible: text != ""
                               font.pointSize: Theme.tipFont.pointSize - 2
                               font.italic: true
@@ -269,6 +269,7 @@ Page {
                   if (item) {
                     if (item.projectLocalPath != '') {
                       // project available locally, open it
+                      console.log(item.projectLocalPath)
                     } else {
                       // fetch remote project
                       projectsModel.download( item.projectOwner, item.projectName )
