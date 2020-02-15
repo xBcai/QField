@@ -13,6 +13,7 @@ class QFieldCloudProjectsModel : public QStandardItemModel
     enum ColumnRole
     {
       IdRole = Qt::UserRole + 1,
+      OwnerRole,
       NameRole,
       DescriptionRole,
       StatusRole,
