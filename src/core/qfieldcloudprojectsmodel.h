@@ -17,6 +17,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       NameRole,
       DescriptionRole,
       StatusRole,
+      LocalPathRole
     };
 
     enum class Status
@@ -78,6 +79,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       QString name;
       QString description;
       Status status;
+      QString localPath;
     };
 
     QList<CloudProject> mCloudProjects;
