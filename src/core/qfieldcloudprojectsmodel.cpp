@@ -149,6 +149,7 @@ QHash<int, QByteArray> QFieldCloudProjectsModel::roleNames() const
   roles[NameRole] = "Name";
   roles[DescriptionRole] = "Description";
   roles[StatusRole] = "Status";
+  roles[LocalPathRole] = "LocalPath";
   return roles;
 }
 
@@ -160,12 +161,17 @@ void QFieldCloudProjectsModel::reload( QJsonArray &remoteProjects )
   for ( const auto project : remoteProjects )
   {
     QVariantHash projectDetails = project.toObject().toVariantHash();
-    mCloudProjects << CloudProject(
-                          projectDetails.value( "id" ).toString(),
+    CloudProject cloudProject( projectDetails.value( "id" ).toString(),
                           mCloudConnection ? mCloudConnection->username() : QString(),
                           projectDetails.value( "name" ).toString(),
                           projectDetails.value( "description" ).toString(),
                           Status::Available );
+
+    QDir localPath( QStringLiteral( "%1/%2/%3" ).arg( localCloudDirectory(), cloudProject.owner, cloudProject.name ) );
+    if( localPath.exists()  )
+      cloudProject.localPath = localPath.path();
+
+    mCloudProjects << cloudProject;
   }
   endResetModel();
 }
@@ -193,6 +199,8 @@ QVariant QFieldCloudProjectsModel::data( const QModelIndex &index, int role ) co
     return mCloudProjects.at( index.row() ).description;
   else if ( role == StatusRole )
     return static_cast<int>( mCloudProjects.at( index.row() ).status );
+  else if ( role == LocalPathRole )
+    return mCloudProjects.at( index.row() ).localPath;
 
   return QVariant();
 }

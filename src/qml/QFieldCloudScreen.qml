@@ -210,6 +210,7 @@ Page {
                   id: rectangle
                   property string projectOwner: Owner
                   property string projectName: Name
+                  property string projectLocalPath: LocalPath
                   width: parent.width
                   height: line.height
                   color: "transparent"
@@ -249,7 +250,7 @@ Page {
                           Text {
                               id: projectNote
                               leftPadding: 3 * dp
-                              text: Description + " (" + Id + ")"
+                              text: Description + ( LocalPath != '' ? ' (available locally)' : '' )
                               visible: text != ""
                               font.pointSize: Theme.tipFont.pointSize - 2
                               font.italic: true
@@ -266,7 +267,12 @@ Page {
                 onClicked: {
                   var item = table.itemAt(mouse.x, mouse.y)
                   if (item) {
-                    projectsModel.download( item.projectOwner, item.projectName )
+                    if (item.projectLocalPath != '') {
+                      // project available locally, open it
+                    } else {
+                      // fetch remote project
+                      projectsModel.download( item.projectOwner, item.projectName )
+                    }
                   }
                 }
                 onPressed: {
