@@ -1409,22 +1409,6 @@ ApplicationWindow {
     }
 
     Popup {
-        id: cloudLoginDialog
-        parent: ApplicationWindow.overlay
-
-        x: 24 * dp
-        y: 24 * dp
-        width: parent.width - 48 * dp
-        height: parent.height - 48 * dp
-
-        QFieldCloudLoginDialog {
-            anchors.fill: parent
-        }
-
-        Component.onCompleted: open()
-    }
-
-    Popup {
       id: loginDialogPopup
       parent: ApplicationWindow.overlay
 
