@@ -1,11 +1,11 @@
 #ifndef QFIELDCLOUDPROJECTSMODEL_H
 #define QFIELDCLOUDPROJECTSMODEL_H
 
-#include <QStandardItemModel>
+#include <QAbstractListModel>
 
 class QFieldCloudConnection;
 
-class QFieldCloudProjectsModel : public QStandardItemModel
+class QFieldCloudProjectsModel : public QAbstractListModel
 {
     Q_OBJECT
 
@@ -43,6 +43,11 @@ class QFieldCloudProjectsModel : public QStandardItemModel
 
     QHash<int, QByteArray> roleNames() const;
 
+    int rowCount( const QModelIndex &parent ) const override;
+    QVariant data( const QModelIndex &index, int role ) const override;
+
+    Q_INVOKABLE void reload( QJsonArray &remoteProjects );
+
   signals:
     void cloudConnectionChanged();
     void warning( const QString &message );
@@ -50,9 +55,32 @@ class QFieldCloudProjectsModel : public QStandardItemModel
   private slots:
     void connectionStatusChanged();
     void projectListReceived();
+
+    const QString localCloudDirectory();
+
     void downloadFile( const QString &owner, const QString &projectName, const QString &fileName );
 
   private:
+    struct CloudProject
+    {
+      CloudProject( const QString &id, const QString &owner, const QString &name, const QString &description, const Status &status  )
+        : id( id )
+        , owner( owner )
+        , name( name )
+        , description( description )
+        , status( status )
+      {}
+
+      CloudProject() = default;
+
+      QString id;
+      QString owner;
+      QString name;
+      QString description;
+      Status status;
+    };
+
+    QList<CloudProject> mCloudProjects;
     QFieldCloudConnection *mCloudConnection = nullptr;
 
 };

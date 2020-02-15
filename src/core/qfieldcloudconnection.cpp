@@ -196,3 +196,4 @@ void QFieldCloudConnection::checkStatus()
       emit loginFailed( QStringLiteral( "%1 (HTTP Status %2)" ).arg( reply->errorString(), QString::number( reply->error() ) ) );
   } );
 }
+
