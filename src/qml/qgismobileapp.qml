@@ -1409,22 +1409,6 @@ ApplicationWindow {
     }
 
     Popup {
-        id: cloudLoginDialog
-        parent: ApplicationWindow.overlay
-
-        x: 24 * dp
-        y: 24 * dp
-        width: parent.width - 48 * dp
-        height: parent.height - 48 * dp
-
-        QFieldCloudLoginDialog {
-            anchors.fill: parent
-        }
-
-        Component.onCompleted: open()
-    }
-
-    Popup {
       id: loginDialogPopup
       parent: ApplicationWindow.overlay
 
@@ -1515,6 +1499,21 @@ ApplicationWindow {
     Component.onCompleted: focusstack.addFocusTaker( this )
   }
 
+  QFieldCloudScreen {
+    id: qfieldCloudScreen
+
+    anchors.fill: parent
+    visible: false
+    focus: visible
+
+    onFinished: {
+      visible = false
+      welcomeScreen.visible = true
+    }
+
+    Component.onCompleted: focusstack.addFocusTaker( this )
+  }
+
   WelcomeScreen {
     id: welcomeScreen
     model: RecentProjectListModel {
@@ -1529,6 +1528,10 @@ ApplicationWindow {
 
     onShowOpenProjectDialog: {
       __projectSource = platformUtilities.openProject()
+    }
+    onShowQFieldCloudScreen: {
+      welcomeScreen.visible = false
+      qfieldCloudScreen.visible = true
     }
 
     Keys.onReleased: {
