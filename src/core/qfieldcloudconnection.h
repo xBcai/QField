@@ -15,6 +15,7 @@ class QFieldCloudConnection : public QObject
     enum class Status
     {
       Disconnected,
+      Connecting,
       LoggedIn
     };
 
@@ -26,6 +27,7 @@ class QFieldCloudConnection : public QObject
     Q_PROPERTY( QString password READ password WRITE setPassword NOTIFY passwordChanged )
     Q_PROPERTY( QString url READ url WRITE setUrl NOTIFY urlChanged )
     Q_PROPERTY( Status status READ status NOTIFY statusChanged )
+    Q_PROPERTY( bool hasToken READ hasToken )
 
     QString url() const;
     void setUrl( const QString &url );
@@ -40,6 +42,8 @@ class QFieldCloudConnection : public QObject
     Q_INVOKABLE void logout();
 
     Status status() const;
+
+    bool hasToken() { return !mToken.isEmpty(); }
 
     /**
      * Sends a post request with the given \a parameters to the given \a endpoint.

@@ -7,6 +7,7 @@ import Theme 1.0
 Page {
   property alias model: table.model
   signal showOpenProjectDialog
+  signal showQFieldCloudScreen
 
   Rectangle {
     id: welcomeBackground
@@ -84,18 +85,20 @@ Page {
         spacing: 12
 
         QfButton {
+          id: cloudProjectButton
+          Layout.fillWidth: true
+          text: qsTr( "Open QField Cloud project" )
+          onClicked: {
+            showQFieldCloudScreen()
+          }
+        }
+        QfButton {
           id: localProjectButton
           Layout.fillWidth: true
           text: qsTr( "Open local project" )
           onClicked: {
             showOpenProjectDialog()
           }
-        }
-        QfButton {
-          id: cloudProjectButton
-          Layout.fillWidth: true
-          text: qsTr( "QField Cloud projects, coming soon" )
-          enabled: false
         }
 
         Text {

@@ -46,7 +46,6 @@
         <file>Changelog.qml</file>
         <file>LayerLoginDialog.qml</file>
         <file>CloseTool.qml</file>
-        <file>QFieldCloudLoginDialog.qml</file>
         <file>imports/Theme/Theme.qml</file>
         <file>imports/Theme/QfToolButton.qml</file>
         <file>imports/Theme/QfButton.qml</file>
@@ -58,6 +57,8 @@
         <file>EmbeddedFeatureForm.qml</file>
         <file>PositioningSettings.qml</file>
         <file>QuestionDialog.qml</file>
+        <file>QFieldCloudScreen.qml</file>
+        <file>imports/Theme/QfButton.qml</file>
     </qresource>
     <qresource prefix="/"/>
 </RCC>
