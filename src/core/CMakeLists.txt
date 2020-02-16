@@ -53,6 +53,8 @@ SET(QFIELD_CORE_SRCS
   utils/featureutils.cpp
   expressionevaluator.cpp
   qfieldcloudconnection.cpp
+  qfieldcloudprojectsmodel.cpp
+  qfieldcloudutils.cpp
 )
 
 SET(QFIELD_CORE_HDRS
@@ -110,6 +112,8 @@ SET(QFIELD_CORE_HDRS
   utils/featureutils.h
   expressionevaluator.h
   qfieldcloudconnection.h
+  qfieldcloudprojectsmodel.h
+  qfieldcloudutils.h
 )
 
 FIND_PACKAGE(Qt5 COMPONENTS Qml Core Gui Xml Positioning Widgets PrintSupport Network Quick REQUIRED)

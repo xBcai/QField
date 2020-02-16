@@ -75,7 +75,8 @@ HEADERS += \
     utils/geometryutils.h \
     utils/fileutils.h \
     expressionevaluator.h \
-    qfieldcloudconnection.h
+    qfieldcloudconnection.h \
+    qfieldcloudutils.h
 
 SOURCES += \
     appinterface.cpp \
@@ -132,7 +133,8 @@ SOURCES += \
     utils/geometryutils.cpp \
     utils/fileutils.cpp \
     expressionevaluator.cpp \
-    qfieldcloudconnection.cpp
+    qfieldcloudconnection.cpp \
+    qfieldcloudutils.cpp
 
 INCLUDEPATH += ../../3rdparty/tessellate \
                ../qgsquick \
