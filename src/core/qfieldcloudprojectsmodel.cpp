@@ -39,8 +39,16 @@ void QFieldCloudProjectsModel::setCloudConnection( QFieldCloudConnection *cloudC
 
 void QFieldCloudProjectsModel::refreshProjectsList()
 {
-  QNetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/projects/%1/" ).arg( mCloudConnection->username() ) );
-  connect( reply, &QNetworkReply::finished, this, &QFieldCloudProjectsModel::projectListReceived );
+  if ( mCloudConnection->status() == QFieldCloudConnection::Status::LoggedIn )
+  {
+    QNetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/projects/%1/" ).arg( mCloudConnection->username() ) );
+    connect( reply, &QNetworkReply::finished, this, &QFieldCloudProjectsModel::projectListReceived );
+  }
+  else if ( mCloudConnection->status() == QFieldCloudConnection::Status::Disconnected )
+  {
+    QJsonArray projects;
+    reload( projects );
+  }
 }
 
 void QFieldCloudProjectsModel::download( const QString &owner, const QString &projectName )
@@ -103,10 +111,7 @@ void QFieldCloudProjectsModel::download( const QString &owner, const QString &pr
 
 void QFieldCloudProjectsModel::connectionStatusChanged()
 {
-  if ( mCloudConnection->status() == QFieldCloudConnection::Status::LoggedIn )
-  {
-    refreshProjectsList();
-  }
+  refreshProjectsList();
 }
 
 void QFieldCloudProjectsModel::projectListReceived()

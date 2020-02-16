@@ -85,7 +85,7 @@ Page {
                 connectionSettings.visible = false
                 connectionInformation.visible = true
                 projects.visible = true
-                refreshProjectList.forceActiveFocus()
+                refreshProjectsListBtn.forceActiveFocus()
               }
           }
        }
@@ -172,6 +172,8 @@ Page {
               } else {
                   connection.username = username.text
                   connection.password = password.text
+                  console.log(username.text)
+                  console.log(password.text)
                   connection.login()
 
                   connectionInformation.visible = true
@@ -302,6 +304,7 @@ Page {
       }
 
       QfButton {
+          id: refreshProjectsListBtn
           Layout.fillWidth: true
           text: "Refresh Projects"
           enabled: connection.status == 2
