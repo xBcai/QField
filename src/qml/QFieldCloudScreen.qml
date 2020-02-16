@@ -220,6 +220,17 @@ Page {
                   height: line.height
                   color: "transparent"
 
+                  ProgressBar {
+                      anchors.left: line.left
+                      anchors.leftMargin: 4 * dp
+                      anchors.verticalCenter: line.verticalCenter
+                      width: type.width - 4 * dp
+                      height: 6 * dp
+                      value: DownloadProgress
+                      visible: Status === QFieldCloudProjectsModel.Status.Downloading
+                      z: 1
+                  }
+
                   Row {
                       id: line
                       Layout.fillWidth: true
@@ -232,11 +243,12 @@ Page {
                       Image {
                           id: type
                           anchors.verticalCenter: inner.verticalCenter
-                          source: connection.status != QFieldCloudConnection.LoggedIn ? Theme.getThemeIcon('ic_cloud_project_offline_48dp') : Status == QFieldCloudProjectsModel.Status.LocalOnly ? Theme.getThemeIcon('ic_cloud_project_localonly_48dp') : LocalPath != '' ? Theme.getThemeIcon('ic_cloud_project_48dp') : Theme.getThemeIcon('ic_cloud_project_download_48dp')
+                          source: connection.status != QFieldCloudConnection.LoggedIn ? Theme.getThemeIcon('ic_cloud_project_offline_48dp') : Status === QFieldCloudProjectsModel.Status.LocalOnly ? Theme.getThemeIcon('ic_cloud_project_localonly_48dp') : LocalPath != '' ? Theme.getThemeIcon('ic_cloud_project_48dp') : Theme.getThemeIcon('ic_cloud_project_download_48dp')
                           sourceSize.width: 80 * dp
                           sourceSize.height: 80 * dp
                           width: 40 * dp
                           height: 40 * dp
+                          opacity: Status === QFieldCloudProjectsModel.Status.Downloading ? 0.3 : 1
                       }
                       ColumnLayout {
                           id: inner
@@ -255,7 +267,7 @@ Page {
                           Text {
                               id: projectNote
                               leftPadding: 3 * dp
-                              text: connection.status != QFieldCloudConnection.LoggedIn ? qsTr( '(Available locally)' ) : Description + ' ' + ( LocalPath != '' ? Status == QFieldCloudProjectsModel.Status.LocalOnly ? qsTr( '(Available locally, missing on cloud)' ) : qsTr( '(Available locally)' ) : Status == 1 ? qsTr( '(Downloading...)' ) : '' )
+                              text: connection.status != QFieldCloudConnection.LoggedIn ? qsTr( '(Available locally)' ) : Description + ' ' + ( LocalPath != '' ? Status === QFieldCloudProjectsModel.Status.LocalOnly ? qsTr( '(Available locally, missing on cloud)' ) : qsTr( '(Available locally)' ) : Status === QFieldCloudProjectsModel.Status.Downloading ? qsTr( '(Downloading...)' ) : '' )
                               visible: text != ""
                               font.pointSize: Theme.tipFont.pointSize - 2
                               font.italic: true
@@ -309,7 +321,7 @@ Page {
           id: refreshProjectsListBtn
           Layout.fillWidth: true
           text: "Refresh Projects"
-          enabled: connection.status == 2
+          enabled: connection.status == QFieldCloudConnection.LoggedIn
 
           onClicked: projectsModel.refreshProjectsList()
       }

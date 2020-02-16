@@ -64,9 +64,10 @@ void QFieldCloudProjectsModel::downloadProject( const QString &owner, const QStr
       mCloudProjects[i].nbFiles = 0;
       mCloudProjects[i].nbFilesDownloaded = 0;
       mCloudProjects[i].nbFilesFailed = 0;
+      mCloudProjects[i].downloadProgress = 0.0;
       mCloudProjects[i].status = Status::Downloading;
       QModelIndex idx = createIndex( i, 0 );
-      emit dataChanged( idx, idx,  QVector<int>() << StatusRole );
+      emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
       break;
     }
   }
@@ -168,7 +169,13 @@ void QFieldCloudProjectsModel::downloadFile( const QString &owner, const QString
     {
       if ( mCloudProjects.at( i ).owner == owner && mCloudProjects.at( i ).name == projectName )
       {
+        QVector<int> changes;
+
         mCloudProjects[i].nbFilesDownloaded++;
+        //TODO: When the API provides file size information, switch to file size downloaded / total file size
+        mCloudProjects[i].downloadProgress = static_cast< double >( mCloudProjects[i].nbFilesDownloaded ) / mCloudProjects[i].nbFiles;
+        changes << DownloadProgressRole;
+
         if ( failure )
           mCloudProjects[i].nbFilesFailed++;
 
@@ -176,10 +183,12 @@ void QFieldCloudProjectsModel::downloadFile( const QString &owner, const QString
         {
           mCloudProjects[i].status = Status::Available;
           mCloudProjects[i].localPath = QStringLiteral( "%1/%2/%3" ).arg( QFieldCloudUtils::localCloudDirectory(), owner, projectName );
-          QModelIndex idx = createIndex( i, 0 );
-          emit dataChanged( idx, idx,  QVector<int>() << StatusRole << LocalPathRole );
+          changes << StatusRole << LocalPathRole;
           emit projectDownloaded( owner, projectName, mCloudProjects[i].nbFilesFailed > 0 );
         }
+
+        QModelIndex idx = createIndex( i, 0 );
+        emit dataChanged( idx, idx,  changes );
         break;
       }
     }
@@ -197,6 +206,7 @@ QHash<int, QByteArray> QFieldCloudProjectsModel::roleNames() const
   roles[NameRole] = "Name";
   roles[DescriptionRole] = "Description";
   roles[StatusRole] = "Status";
+  roles[DownloadProgressRole] = "DownloadProgress";
   roles[LocalPathRole] = "LocalPath";
   return roles;
 }
@@ -277,6 +287,8 @@ QVariant QFieldCloudProjectsModel::data( const QModelIndex &index, int role ) co
     return mCloudProjects.at( index.row() ).description;
   else if ( role == StatusRole )
     return static_cast<int>( mCloudProjects.at( index.row() ).status );
+  else if ( role == DownloadProgressRole )
+    return mCloudProjects.at( index.row() ).downloadProgress;
   else if ( role == LocalPathRole )
     return mCloudProjects.at( index.row() ).localPath;
 
