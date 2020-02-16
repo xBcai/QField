@@ -297,7 +297,7 @@ Page {
                 onPressed: {
                   var item = table.itemAt(mouse.x, mouse.y)
                   if (item) {
-                    pressedItem = item.children[0].children[1].children[0];
+                    pressedItem = item.children[1].children[1].children[0];
                     pressedItem.color = "#5a8725"
                   }
                 }
@@ -313,14 +313,92 @@ Page {
                     pressedItem = null
                   }
                 }
+
+                onPressAndHold: {
+                    var item = table.itemAt(mouse.x, mouse.y)
+                    if (item) {
+                      projectActions.projectOwner = item.projectOwner
+                      projectActions.projectName = item.projectName
+                      projectActions.projectLocalPath = item.projectLocalPath
+                      downloadProject.visible = item.projectLocalPath == ''
+                      openProject.visible = item.projectLocalPath !== ''
+                      removeProject.visible = item.projectLocalPath !== ''
+                      projectActions.popup()
+                    }
+                }
               }
           }
+      }
+
+      Menu {
+        id: projectActions
+
+        property string projectOwner: ''
+        property string projectName: ''
+        property string projectLocalPath: ''
+
+        title: 'Project Actions'
+        width: 400 * dp
+
+        MenuItem {
+          id: downloadProject
+
+          font: Theme.defaultFont
+          width: parent.width
+          height: visible ? 48 * dp : 0
+          leftPadding: 10 * dp
+
+          text: qsTr( "Download Project" )
+          onTriggered: {
+            projectsModel.downloadProject(projectActions.projectOwner, projectActions.projectName)
+          }
+        }
+
+        MenuItem {
+          id: openProject
+
+          font: Theme.defaultFont
+          width: parent.width
+          height: visible ? 48 * dp : 0
+          leftPadding: 10 * dp
+
+          text: qsTr( "Open Project" )
+          onTriggered: {
+            if ( projectActions.projectLocalPath != '') {
+              qfieldcloudScreen.visible = false
+              iface.loadProject(projectActions.projectLocalPath);
+            }
+          }
+        }
+
+        MenuItem {
+          id: removeProject
+
+          font: Theme.defaultFont
+          width: parent.width
+          height: visible ? 48 * dp : 0
+          leftPadding: 10 * dp
+
+          text: qsTr( "Remove Stored Project" )
+          onTriggered: {
+            projectsModel.removeLocalProject(projectActions.projectOwner, projectActions.projectName)
+          }
+        }
+      }
+
+      Text {
+          id: projectsTips
+          Layout.alignment: Qt.AlignLeft
+          Layout.fillWidth: true
+          text: qsTr( "Press and hold over a cloud project for a menu of additional actions." )
+          font: Theme.tipFont
+          wrapMode: Text.WordWrap
       }
 
       QfButton {
           id: refreshProjectsListBtn
           Layout.fillWidth: true
-          text: "Refresh Projects"
+          text: "Refresh projects list"
           enabled: connection.status == QFieldCloudConnection.LoggedIn
 
           onClicked: projectsModel.refreshProjectsList()
