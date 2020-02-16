@@ -41,7 +41,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     void setCloudConnection( QFieldCloudConnection *cloudConnection );
 
     Q_INVOKABLE void refreshProjectsList();
-    Q_INVOKABLE void download( const QString &owner, const QString &projectName );
+    Q_INVOKABLE void downloadProject( const QString &owner, const QString &projectName );
 
     QHash<int, QByteArray> roleNames() const;
 

@@ -74,7 +74,6 @@ void QFieldCloudConnection::login()
     setAuthenticationToken( request );
   else
   {
-    qWarning() << "SSSSSS";
     json.insert( "username", mUsername );
     json.insert( "password", mPassword );
   }
