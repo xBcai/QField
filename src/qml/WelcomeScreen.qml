@@ -145,7 +145,7 @@ Page {
               Image {
                 id: type
                 anchors.verticalCenter: inner.verticalCenter
-                source: ProjectType == 0 ? Theme.getThemeIcon('ic_map_green_48dp') : ''
+                source: ProjectType == 0 ? Theme.getThemeIcon('ic_map_green_48dp') : Theme.getThemeIcon('ic_cloud_project_48dp')
                 sourceSize.width: 80
                 sourceSize.height: 80
                 width: 40

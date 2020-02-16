@@ -14,6 +14,7 @@
  *                                                                         *
  ***************************************************************************/
 #include "recentprojectlistmodel.h"
+#include "qfieldcloudutils.h"
 
 #include <QSettings>
 
@@ -49,9 +50,10 @@ void RecentProjectListModel::reloadModel()
   for ( int i = 0; i < projectKeys.count(); i++ )
   {
     settings.beginGroup( QString::number( projectKeys.at( i ) ) );
-    mRecentProjects.append( RecentProject( LocalProject,
+    const QString path = settings.value( QStringLiteral( "path" ) ).toString();
+    mRecentProjects.append( RecentProject( path.startsWith( QFieldCloudUtils::localCloudDirectory() ) ? CloudProject : LocalProject,
                                            settings.value( QStringLiteral( "title" ) ).toString(),
-                                           settings.value( QStringLiteral( "path" ) ).toString() ) );
+                                           path ) );
     settings.endGroup();
   }
   settings.endGroup();

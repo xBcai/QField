@@ -59,8 +59,6 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     void connectionStatusChanged();
     void projectListReceived();
 
-    const QString localCloudDirectory();
-
     void downloadFile( const QString &owner, const QString &projectName, const QString &fileName );
 
   private:

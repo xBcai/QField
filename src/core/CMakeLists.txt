@@ -57,6 +57,8 @@ SET(QFIELD_CORE_SRCS
   utils/urlutils.cpp
   expressionevaluator.cpp
   qfieldcloudconnection.cpp
+  qfieldcloudprojectsmodel.cpp
+  qfieldcloudutils.cpp
 )
 
 SET(QFIELD_CORE_HDRS
@@ -119,6 +121,8 @@ SET(QFIELD_CORE_HDRS
   utils/urlutils.h
   expressionevaluator.h
   qfieldcloudconnection.h
+  qfieldcloudprojectsmodel.h
+  qfieldcloudutils.h
 )
 
 IF (ANDROID)
