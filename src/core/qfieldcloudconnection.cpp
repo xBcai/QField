@@ -71,6 +71,7 @@ void QFieldCloudConnection::login()
     setAuthenticationToken( request );
   else
   {
+    qWarning() << "SSSSSS";
     json.insert( "username", mUsername );
     json.insert( "password", mPassword );
   }
@@ -108,10 +109,12 @@ void QFieldCloudConnection::logout()
 {
   QNetworkReply *reply = post( "/api/v1/auth/logout/" );
   reply->deleteLater();
+
   mPassword.clear();
   mToken.clear();
   QSettings().remove( "/QFieldCloud/username" );
   QSettings().remove( "/QFieldCloud/token" );
+
   setStatus( Status::Disconnected );
 }
 
