@@ -52,6 +52,36 @@ void QFieldCloudProjectsModel::refreshProjectsList()
   }
 }
 
+void QFieldCloudProjectsModel::removeLocalProject(const QString &owner, const QString &projectName)
+{
+  QDir dir( QStringLiteral( "%1/%2/%3/" ).arg( QFieldCloudUtils::localCloudDirectory(), owner, projectName ) );
+
+  if ( dir.exists() )
+  {
+    for( int i = 0; i < mCloudProjects.count(); i++ )
+    {
+      if ( mCloudProjects.at( i ).owner == owner && mCloudProjects.at( i ).name == projectName )
+      {
+        if ( mCloudProjects.at( i ).status == Status::Available )
+        {
+          mCloudProjects[i].localPath = QString();
+          QModelIndex idx = createIndex( i, 0 );
+          emit dataChanged( idx, idx,  QVector<int>() << StatusRole << LocalPathRole );
+          break;
+        }
+        else
+        {
+          beginRemoveRows( QModelIndex(), i, i );
+          mCloudProjects.removeAt( i );
+          endRemoveRows();
+          break;
+        }
+      }
+    }
+    dir.removeRecursively();
+  }
+}
+
 void QFieldCloudProjectsModel::downloadProject( const QString &owner, const QString &projectName )
 {
   if ( !mCloudConnection )
@@ -182,7 +212,7 @@ void QFieldCloudProjectsModel::downloadFile( const QString &owner, const QString
         if ( mCloudProjects[i].nbFilesDownloaded >= mCloudProjects[i].nbFiles )
         {
           mCloudProjects[i].status = Status::Available;
-          mCloudProjects[i].localPath = QStringLiteral( "%1/%2/%3" ).arg( QFieldCloudUtils::localCloudDirectory(), owner, projectName );
+          mCloudProjects[i].localPath = QFieldCloudUtils::localProjectFilePath( owner, projectName );
           changes << StatusRole << LocalPathRole;
           emit projectDownloaded( owner, projectName, mCloudProjects[i].nbFilesFailed > 0 );
         }
@@ -227,7 +257,7 @@ void QFieldCloudProjectsModel::reload( QJsonArray &remoteProjects )
 
     QDir localPath( QStringLiteral( "%1/%2/%3" ).arg( QFieldCloudUtils::localCloudDirectory(), cloudProject.owner, cloudProject.name ) );
     if( localPath.exists()  )
-      cloudProject.localPath = localPath.path() + QStringLiteral( "/qfield.qgs" );
+      cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.owner, cloudProject.name );
 
     mCloudProjects << cloudProject;
   }
@@ -255,7 +285,7 @@ void QFieldCloudProjectsModel::reload( QJsonArray &remoteProjects )
                                    projectNameDirs.fileName(),
                                    QString(),
                                    Status::LocalOnly );
-        cloudProject.localPath = QStringLiteral( "%1/%2/%3/qfield.qgs" ).arg( QFieldCloudUtils::localCloudDirectory(), cloudProject.owner, cloudProject.name );
+        cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.owner, cloudProject.name );
         mCloudProjects << cloudProject;
       }
     }
