@@ -82,9 +82,10 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       QString description;
       Status status;
       QString localPath;
-      int nbFiles = 0;
-      int nbFilesDownloaded = 0;
-      int nbFilesFailed = 0;
+      QMap<QString, int> files;
+      int filesSize = 0;
+      int filesFailed = 0;
+      int downloadedSize = 0;
       double downloadProgress = 0.0; // range from 0.0 to 1.0
     };
 
