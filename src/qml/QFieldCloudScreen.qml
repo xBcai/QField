@@ -276,6 +276,7 @@ Page {
                       console.log(item.projectLocalPath)
                     } else {
                       // fetch remote project
+                      displayToast( qsTr( "Downloading project %1" ).arg( item.projectName ) )
                       projectsModel.download( item.projectOwner, item.projectName )
                     }
                   }
