@@ -52,6 +52,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
   signals:
     void cloudConnectionChanged();
     void warning( const QString &message );
+    void projectDownloaded( const QString owner, const QString projectName, const bool failed = false );
 
   private slots:
     void connectionStatusChanged();
@@ -81,7 +82,8 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       Status status;
       QString localPath;
       int nbFiles = 0;
-      int nbDownloadedFiles = 0;
+      int nbFilesDownloaded = 0;
+      int nbFilesFailed = 0;
     };
 
     QList<CloudProject> mCloudProjects;
