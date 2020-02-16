@@ -9,7 +9,6 @@
 
 QFieldCloudConnection::QFieldCloudConnection()
 {
-  mUsername = QSettings().value( "/QFieldCloud/username" ).toByteArray();
   mToken = QSettings().value( "/QFieldCloud/token" ).toByteArray();
 }
 
@@ -91,10 +90,10 @@ void QFieldCloudConnection::login()
       QByteArray response = reply->readAll();
 
       const QVariant &key = QJsonDocument::fromJson( response ).object().toVariantMap().value( QStringLiteral( "key" ) );
-
       setToken( key.toByteArray() );
-      QSettings().setValue( "/QFieldCloud/username", mUsername );
       QSettings().setValue( "/QFieldCloud/token", key );
+
+      mUsername  = QJsonDocument::fromJson( response ).object().toVariantMap().value( QStringLiteral( "user" ) ).toString();
 
       setStatus( Status::LoggedIn );
     }
@@ -114,7 +113,6 @@ void QFieldCloudConnection::logout()
 
   mPassword.clear();
   setToken( QByteArray() );
-  QSettings().remove( "/QFieldCloud/username" );
   QSettings().remove( "/QFieldCloud/token" );
 
   setStatus( Status::Disconnected );
