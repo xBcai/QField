@@ -73,6 +73,7 @@
         <file>themes/qfield/xhdpi/ic_map_white_48dp.png</file>
         <file>themes/qfield/xxhdpi/ic_map_white_48dp.png</file>
         <file>themes/qfield/xxxhdpi/ic_map_white_48dp.png</file>
+        <file>themes/qfield/nodpi/ic_map_green_48dp.svg</file>
         <file>themes/qfield/hdpi/ic_map_green_48dp.png</file>
         <file>themes/qfield/mdpi/ic_map_green_48dp.png</file>
         <file>themes/qfield/xhdpi/ic_map_green_48dp.png</file>
@@ -93,21 +94,25 @@
         <file>themes/qfield/xhdpi/ic_close_white_24dp.png</file>
         <file>themes/qfield/xxhdpi/ic_close_white_24dp.png</file>
         <file>themes/qfield/xxxhdpi/ic_close_white_24dp.png</file>
+        <file>themes/qfield/nodpi/ic_cloud_project_48dp.svg</file>
         <file>themes/qfield/hdpi/ic_cloud_project_48dp.png</file>
         <file>themes/qfield/mdpi/ic_cloud_project_48dp.png</file>
         <file>themes/qfield/xhdpi/ic_cloud_project_48dp.png</file>
         <file>themes/qfield/xxhdpi/ic_cloud_project_48dp.png</file>
         <file>themes/qfield/xxxhdpi/ic_cloud_project_48dp.png</file>
+        <file>themes/qfield/nodpi/ic_cloud_project_offline_48dp.svg</file>
         <file>themes/qfield/hdpi/ic_cloud_project_offline_48dp.png</file>
         <file>themes/qfield/mdpi/ic_cloud_project_offline_48dp.png</file>
         <file>themes/qfield/xhdpi/ic_cloud_project_offline_48dp.png</file>
         <file>themes/qfield/xxhdpi/ic_cloud_project_offline_48dp.png</file>
         <file>themes/qfield/xxxhdpi/ic_cloud_project_offline_48dp.png</file>
+        <file>themes/qfield/nodpi/ic_cloud_project_download_48dp.svg</file>
         <file>themes/qfield/hdpi/ic_cloud_project_download_48dp.png</file>
         <file>themes/qfield/mdpi/ic_cloud_project_download_48dp.png</file>
         <file>themes/qfield/xhdpi/ic_cloud_project_download_48dp.png</file>
         <file>themes/qfield/xxhdpi/ic_cloud_project_download_48dp.png</file>
         <file>themes/qfield/xxxhdpi/ic_cloud_project_download_48dp.png</file>
+        <file>themes/qfield/nodpi/ic_cloud_project_localonly_48dp.svg</file>
         <file>themes/qfield/hdpi/ic_cloud_project_localonly_48dp.png</file>
         <file>themes/qfield/mdpi/ic_cloud_project_localonly_48dp.png</file>
         <file>themes/qfield/xhdpi/ic_cloud_project_localonly_48dp.png</file>
