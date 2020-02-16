@@ -7,6 +7,7 @@ import Theme 1.0
 import "."
 
 Page {
+  id: qfieldcloudScreen
   signal finished
   property QFieldCloudConnection connection: QFieldCloudConnection
   {
@@ -172,8 +173,6 @@ Page {
               } else {
                   connection.username = username.text
                   connection.password = password.text
-                  console.log(username.text)
-                  console.log(password.text)
                   connection.login()
 
                   connectionInformation.visible = true
@@ -272,12 +271,12 @@ Page {
                   var item = table.itemAt(mouse.x, mouse.y)
                   if (item) {
                     if (item.projectLocalPath != '') {
-                      // project available locally, open it
-                      console.log(item.projectLocalPath)
+                      qfieldcloudScreen.visible = false
+                      iface.loadProject(item.projectLocalPath);
                     } else {
                       // fetch remote project
                       displayToast( qsTr( "Downloading project %1" ).arg( item.projectName ) )
-                      projectsModel.download( item.projectOwner, item.projectName )
+                      projectsModel.downloadProject( item.projectOwner, item.projectName )
                     }
                   }
                 }
