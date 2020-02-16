@@ -11,6 +11,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QDir>
+#include <QDirIterator>
 #include <QDebug>
 
 QFieldCloudProjectsModel::QFieldCloudProjectsModel()
@@ -223,6 +224,36 @@ void QFieldCloudProjectsModel::reload( QJsonArray &remoteProjects )
 
     mCloudProjects << cloudProject;
   }
+
+  QDirIterator ownerDirs( localCloudDirectory(), QDir::Dirs | QDir::NoDotAndDotDot );
+  while( ownerDirs.hasNext() )
+  {
+    ownerDirs.next();
+    QDirIterator projectNameDirs( ownerDirs.filePath(), QDir::Dirs | QDir::NoDotAndDotDot );
+    while( projectNameDirs.hasNext() )
+    {
+      projectNameDirs.next();
+      bool found = false;
+      for ( int i = 0; i < mCloudProjects.count(); i++ )
+      {
+        if ( mCloudProjects[i].owner == ownerDirs.fileName() && mCloudProjects[i].name == projectNameDirs.fileName() )
+        {
+          found = true;
+        }
+      }
+      if ( !found )
+      {
+        CloudProject cloudProject( QString(), // No ID provided for local-only cloud project
+                                   ownerDirs.fileName(),
+                                   projectNameDirs.fileName(),
+                                   QString(),
+                                   Status::Available );
+        cloudProject.localPath = QStringLiteral( "%1/%2/%3" ).arg( localCloudDirectory(), cloudProject.owner, cloudProject.name );
+        mCloudProjects << cloudProject;
+      }
+    }
+  }
+
   endResetModel();
 }
 
