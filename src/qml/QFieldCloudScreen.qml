@@ -229,7 +229,7 @@ Page {
                       Image {
                           id: type
                           anchors.verticalCenter: inner.verticalCenter
-                          source: Theme.getThemeIcon('ic_map_green_48dp')
+                          source: connection.status != QFieldCloudConnection.LoggedIn ? Theme.getThemeIcon('ic_cloud_project_offline_48dp') : Status == QFieldCloudProjectsModel.Status.LocalOnly ? Theme.getThemeIcon('ic_cloud_project_localonly_48dp') : LocalPath != '' ? Theme.getThemeIcon('ic_cloud_project_48dp') : Theme.getThemeIcon('ic_cloud_project_download_48dp')
                           sourceSize.width: 80 * dp
                           sourceSize.height: 80 * dp
                           width: 40 * dp
@@ -252,7 +252,7 @@ Page {
                           Text {
                               id: projectNote
                               leftPadding: 3 * dp
-                              text: Description + ( LocalPath != '' ? ' (available locally)' : Status == 1 ? ' (downloading)' : '' )
+                              text: connection.status != QFieldCloudConnection.LoggedIn ? qsTr( '(Available locally)' ) : Description + ' ' + ( LocalPath != '' ? Status == QFieldCloudProjectsModel.Status.LocalOnly ? qsTr( '(Available locally, missing on cloud)' ) : qsTr( '(Available locally)' ) : Status == 1 ? qsTr( '(Downloading...)' ) : '' )
                               visible: text != ""
                               font.pointSize: Theme.tipFont.pointSize - 2
                               font.italic: true
