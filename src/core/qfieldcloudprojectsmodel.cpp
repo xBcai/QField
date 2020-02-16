@@ -247,7 +247,7 @@ void QFieldCloudProjectsModel::reload( QJsonArray &remoteProjects )
                                    ownerDirs.fileName(),
                                    projectNameDirs.fileName(),
                                    QString(),
-                                   Status::Available );
+                                   Status::LocalOnly );
         cloudProject.localPath = QStringLiteral( "%1/%2/%3" ).arg( localCloudDirectory(), cloudProject.owner, cloudProject.name );
         mCloudProjects << cloudProject;
       }

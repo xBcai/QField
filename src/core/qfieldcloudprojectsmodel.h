@@ -28,6 +28,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       Synchronized,
       HasLocalChanges,
       HasRemoteChanges,
+      LocalOnly
     };
 
     Q_ENUMS( Status )
