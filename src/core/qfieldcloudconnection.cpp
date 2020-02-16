@@ -61,6 +61,9 @@ void QFieldCloudConnection::setPassword( const QString &password )
 void QFieldCloudConnection::login()
 {
   QgsNetworkAccessManager *nam = QgsNetworkAccessManager::instance();
+  // Make sure the request isn't passing cookies from a previously logged out session
+  nam->setCookieJar( new QNetworkCookieJar() );
+
   QNetworkRequest request;
   request.setUrl( mUrl + "/api/v1/auth/login/" );
   request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
