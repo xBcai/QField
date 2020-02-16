@@ -1,5 +1,6 @@
 #include "qfieldcloudprojectsmodel.h"
 #include "qfieldcloudconnection.h"
+#include "qfieldcloudutils.h"
 
 #include <qgis.h>
 #include <qgsnetworkaccessmanager.h>
@@ -129,15 +130,6 @@ void QFieldCloudProjectsModel::projectListReceived()
   reload( projects );
 }
 
-const QString QFieldCloudProjectsModel::localCloudDirectory()
-{
-  QString settingsDirPath = QgsApplication::qgisSettingsDirPath();
-  if ( settingsDirPath.right( 1 ) == "/" )
-    return settingsDirPath + QStringLiteral( "cloud_projects");
-  else
-    return settingsDirPath + QStringLiteral( "/cloud_projects");
-}
-
 void QFieldCloudProjectsModel::downloadFile( const QString &owner, const QString &projectName, const QString &fileName )
 {
   QNetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/projects/%1/%2/%3/" ).arg( owner, projectName, fileName ) );
@@ -158,7 +150,7 @@ void QFieldCloudProjectsModel::downloadFile( const QString &owner, const QString
     bool failure = false;
     if ( reply->error() == QNetworkReply::NoError )
     {
-      QDir dir( QStringLiteral( "%1/%2/%3/" ).arg( localCloudDirectory(), owner, projectName ) );
+      QDir dir( QStringLiteral( "%1/%2/%3/" ).arg( QFieldCloudUtils::localCloudDirectory(), owner, projectName ) );
 
       if ( !dir.exists() )
         dir.mkpath( QStringLiteral( "." ) );
@@ -183,7 +175,7 @@ void QFieldCloudProjectsModel::downloadFile( const QString &owner, const QString
         if ( mCloudProjects[i].nbFilesDownloaded >= mCloudProjects[i].nbFiles )
         {
           mCloudProjects[i].status = Status::Available;
-          mCloudProjects[i].localPath = QStringLiteral( "%1/%2/%3" ).arg( localCloudDirectory(), owner, projectName );
+          mCloudProjects[i].localPath = QStringLiteral( "%1/%2/%3" ).arg( QFieldCloudUtils::localCloudDirectory(), owner, projectName );
           QModelIndex idx = createIndex( i, 0 );
           emit dataChanged( idx, idx,  QVector<int>() << StatusRole << LocalPathRole );
           emit projectDownloaded( owner, projectName, mCloudProjects[i].nbFilesFailed > 0 );
@@ -223,14 +215,14 @@ void QFieldCloudProjectsModel::reload( QJsonArray &remoteProjects )
                           projectDetails.value( "description" ).toString(),
                           Status::Available );
 
-    QDir localPath( QStringLiteral( "%1/%2/%3" ).arg( localCloudDirectory(), cloudProject.owner, cloudProject.name ) );
+    QDir localPath( QStringLiteral( "%1/%2/%3" ).arg( QFieldCloudUtils::localCloudDirectory(), cloudProject.owner, cloudProject.name ) );
     if( localPath.exists()  )
       cloudProject.localPath = localPath.path() + QStringLiteral( "/qfield.qgs" );
 
     mCloudProjects << cloudProject;
   }
 
-  QDirIterator ownerDirs( localCloudDirectory(), QDir::Dirs | QDir::NoDotAndDotDot );
+  QDirIterator ownerDirs( QFieldCloudUtils::localCloudDirectory(), QDir::Dirs | QDir::NoDotAndDotDot );
   while( ownerDirs.hasNext() )
   {
     ownerDirs.next();
@@ -253,7 +245,7 @@ void QFieldCloudProjectsModel::reload( QJsonArray &remoteProjects )
                                    projectNameDirs.fileName(),
                                    QString(),
                                    Status::LocalOnly );
-        cloudProject.localPath = QStringLiteral( "%1/%2/%3/qfield.qgs" ).arg( localCloudDirectory(), cloudProject.owner, cloudProject.name );
+        cloudProject.localPath = QStringLiteral( "%1/%2/%3/qfield.qgs" ).arg( QFieldCloudUtils::localCloudDirectory(), cloudProject.owner, cloudProject.name );
         mCloudProjects << cloudProject;
       }
     }

@@ -107,6 +107,7 @@
 #include "urlutils.h"
 #include "qfieldcloudconnection.h"
 #include "qfieldcloudprojectsmodel.h"
+#include "qfieldcloudutils.h"
 
 // Check QGIS Version
 #if VERSION_INT >= 30600
@@ -407,7 +408,18 @@ void QgisMobileapp::onReadProject( const QDomDocument &doc )
 
   QList<QPair<QString, QString>> projects = recentProjects();
   QFileInfo fi( mProject->fileName() );
-  QPair<QString, QString> project = qMakePair( mProject->title().isEmpty() ? fi.completeBaseName() : mProject->title(), mProject->fileName() );
+  QString title;
+  if ( mProject->fileName().startsWith( QFieldCloudUtils::localCloudDirectory() ) )
+  {
+    // Overwrite the title to match what is used in QField Cloud
+    title =fi.dir().dirName();
+  }
+  else
+  {
+    title = mProject->title().isEmpty() ? fi.completeBaseName() : mProject->title();
+  }
+
+  QPair<QString, QString> project = qMakePair( title , mProject->fileName() );
   if ( projects.contains( project ) )
     projects.removeAt( projects.indexOf( project ) );
   projects.insert( 0, project );
