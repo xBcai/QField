@@ -225,7 +225,7 @@ void QFieldCloudProjectsModel::reload( QJsonArray &remoteProjects )
 
     QDir localPath( QStringLiteral( "%1/%2/%3" ).arg( localCloudDirectory(), cloudProject.owner, cloudProject.name ) );
     if( localPath.exists()  )
-      cloudProject.localPath = localPath.path() + QStringLiteral( "/project.qgs" );
+      cloudProject.localPath = localPath.path() + QStringLiteral( "/qfield.qgs" );
 
     mCloudProjects << cloudProject;
   }
@@ -253,7 +253,7 @@ void QFieldCloudProjectsModel::reload( QJsonArray &remoteProjects )
                                    projectNameDirs.fileName(),
                                    QString(),
                                    Status::LocalOnly );
-        cloudProject.localPath = QStringLiteral( "%1/%2/%3/project.qgs" ).arg( localCloudDirectory(), cloudProject.owner, cloudProject.name );
+        cloudProject.localPath = QStringLiteral( "%1/%2/%3/qfield.qgs" ).arg( localCloudDirectory(), cloudProject.owner, cloudProject.name );
         mCloudProjects << cloudProject;
       }
     }
