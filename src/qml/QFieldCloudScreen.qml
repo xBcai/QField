@@ -18,7 +18,7 @@ Page {
           connectionSettings.visible = false
         }
     }
-    onLoginFailed: displayToast( "Login failed: " + reason )
+    onLoginFailed: displayToast( qsTr( "Login failed" ) )
   }
 
   QFieldCloudProjectsModel {
