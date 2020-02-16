@@ -47,30 +47,35 @@ void QFieldCloudProjectsModel::download( const QString &owner, const QString &pr
   if ( !mCloudConnection )
     return;
 
-  int index = -1;
   for( int i = 0; i < mCloudProjects.count(); i++ )
   {
     if ( mCloudProjects.at( i ).owner == owner && mCloudProjects.at( i ).name == projectName )
     {
+      mCloudProjects[i].nbFiles = 0;
+      mCloudProjects[i].nbFilesDownloaded = 0;
+      mCloudProjects[i].nbFilesFailed = 0;
       mCloudProjects[i].status = Status::Downloading;
       QModelIndex idx = createIndex( i, 0 );
       emit dataChanged( idx, idx,  QVector<int>() << StatusRole );
-      index = i;
       break;
     }
   }
 
   QNetworkReply *filesReply = mCloudConnection->get( QStringLiteral( "/api/v1/projects/%1/%2/files/" ).arg( owner, projectName ) );
 
-  connect( filesReply, &QNetworkReply::finished, this, [filesReply, this, owner, projectName, index]()
+  connect( filesReply, &QNetworkReply::finished, this, [filesReply, this, owner, projectName]()
   {
     if ( filesReply->error() == QNetworkReply::NoError )
     {
       QJsonArray files = QJsonDocument::fromJson( filesReply->readAll() ).array();
 
-      if ( index > -1 && index < mCloudProjects.size() )
+      for( int i = 0; i < mCloudProjects.count(); i++ )
       {
-        mCloudProjects[index].nbFiles = files.count();
+        if ( mCloudProjects.at( i ).owner == owner && mCloudProjects.at( i ).name == projectName )
+        {
+          mCloudProjects[i].nbFiles = files.count();
+          break;
+        }
       }
 
       for ( const auto file : files )
@@ -80,6 +85,14 @@ void QFieldCloudProjectsModel::download( const QString &owner, const QString &pr
     }
     else
     {
+      for( int i = 0; i < mCloudProjects.count(); i++ )
+      {
+        if ( mCloudProjects.at( i ).owner == owner && mCloudProjects.at( i ).name == projectName )
+        {
+          mCloudProjects[i].status = Status::Available;
+          break;
+        }
+      }
       emit warning( QStringLiteral( "Error fetching project: %1" ).arg( filesReply->errorString() ) );
     }
 
@@ -136,7 +149,7 @@ void QFieldCloudProjectsModel::downloadFile( const QString &owner, const QString
 
   connect( reply, &QNetworkReply::finished, this, [this, reply, file, owner, projectName, fileName]()
   {
-    file->close();
+    bool failure = false;
     if ( reply->error() == QNetworkReply::NoError )
     {
       QDir dir( QStringLiteral( "%1/%2/%3/" ).arg( localCloudDirectory(), owner, projectName ) );
@@ -144,27 +157,30 @@ void QFieldCloudProjectsModel::downloadFile( const QString &owner, const QString
       if ( !dir.exists() )
         dir.mkpath( QStringLiteral( "." ) );
 
-      file->copy( dir.filePath( fileName ) );
+      if ( !file->copy( dir.filePath( fileName ) ) )
+        failure = true;
       file->setAutoRemove( true );
-
-      emit warning( QStringLiteral( "File written to %1" ).arg( dir.filePath( fileName ) ) );
     }
     else
     {
-      emit warning( QStringLiteral( "Error fetching project file: %1" ).arg( reply->errorString() ) );
+      failure = true;
     }
 
     for( int i = 0; i < mCloudProjects.count(); i++ )
     {
       if ( mCloudProjects.at( i ).owner == owner && mCloudProjects.at( i ).name == projectName )
       {
-        mCloudProjects[i].nbDownloadedFiles++;
-        if ( mCloudProjects[i].nbDownloadedFiles >= mCloudProjects[i].nbFiles )
+        mCloudProjects[i].nbFilesDownloaded++;
+        if ( failure )
+          mCloudProjects[i].nbFilesFailed++;
+
+        if ( mCloudProjects[i].nbFilesDownloaded >= mCloudProjects[i].nbFiles )
         {
           mCloudProjects[i].status = Status::Available;
           mCloudProjects[i].localPath = QStringLiteral( "%1/%2/%3" ).arg( localCloudDirectory(), owner, projectName );
           QModelIndex idx = createIndex( i, 0 );
           emit dataChanged( idx, idx,  QVector<int>() << StatusRole << LocalPathRole );
+          emit projectDownloaded( owner, projectName, mCloudProjects[i].nbFilesFailed > 0 );
         }
         break;
       }
