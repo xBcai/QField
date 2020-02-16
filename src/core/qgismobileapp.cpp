@@ -60,6 +60,7 @@
 #include "qgsquickcoordinatetransformer.h"
 #include "qgsquickmaptransform.h"
 #include "qgsnetworkaccessmanager.h"
+#include "qfieldcloudutils.h"
 
 #include "qgismobileapp.h"
 
