@@ -17,6 +17,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       NameRole,
       DescriptionRole,
       StatusRole,
+      DownloadProgressRole,
       LocalPathRole
     };
 
@@ -83,6 +84,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       int nbFiles = 0;
       int nbFilesDownloaded = 0;
       int nbFilesFailed = 0;
+      double downloadProgress = 0.0; // range from 0.0 to 1.0
     };
 
     QList<CloudProject> mCloudProjects;
