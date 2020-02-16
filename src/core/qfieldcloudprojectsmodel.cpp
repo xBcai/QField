@@ -91,9 +91,10 @@ void QFieldCloudProjectsModel::downloadProject( const QString &owner, const QStr
   {
     if ( mCloudProjects.at( i ).owner == owner && mCloudProjects.at( i ).name == projectName )
     {
-      mCloudProjects[i].nbFiles = 0;
-      mCloudProjects[i].nbFilesDownloaded = 0;
-      mCloudProjects[i].nbFilesFailed = 0;
+      mCloudProjects[i].files.clear();
+      mCloudProjects[i].filesSize = 0;
+      mCloudProjects[i].filesFailed = 0;
+      mCloudProjects[i].downloadedSize = 0;
       mCloudProjects[i].downloadProgress = 0.0;
       mCloudProjects[i].status = Status::Downloading;
       QModelIndex idx = createIndex( i, 0 );
@@ -110,18 +111,26 @@ void QFieldCloudProjectsModel::downloadProject( const QString &owner, const QStr
     {
       QJsonArray files = QJsonDocument::fromJson( filesReply->readAll() ).array();
 
+      int idx = -1;
       for( int i = 0; i < mCloudProjects.count(); i++ )
       {
         if ( mCloudProjects.at( i ).owner == owner && mCloudProjects.at( i ).name == projectName )
         {
-          mCloudProjects[i].nbFiles = files.count();
+          idx = i;
           break;
         }
       }
 
       for ( const auto file : files )
       {
-        downloadFile( owner, projectName, file.toObject().value( QStringLiteral( "name" ) ).toString() );
+        QString fileName = file.toObject().value( QStringLiteral( "name" ) ).toString();
+        int fileSize = file.toObject().value( QStringLiteral( "size" ) ).toInt();
+        if ( idx > -1 )
+        {
+          mCloudProjects[idx].files.insert( fileName, fileSize );
+          mCloudProjects[idx].filesSize += fileSize;
+        }
+        downloadFile( owner, projectName, fileName );
       }
     }
     else
@@ -201,20 +210,19 @@ void QFieldCloudProjectsModel::downloadFile( const QString &owner, const QString
       {
         QVector<int> changes;
 
-        mCloudProjects[i].nbFilesDownloaded++;
-        //TODO: When the API provides file size information, switch to file size downloaded / total file size
-        mCloudProjects[i].downloadProgress = static_cast< double >( mCloudProjects[i].nbFilesDownloaded ) / mCloudProjects[i].nbFiles;
+        mCloudProjects[i].downloadedSize += mCloudProjects[i].files[fileName];
+        mCloudProjects[i].downloadProgress = static_cast< double >( mCloudProjects[i].downloadedSize) / mCloudProjects[i].filesSize;
         changes << DownloadProgressRole;
 
         if ( failure )
-          mCloudProjects[i].nbFilesFailed++;
+          mCloudProjects[i].filesFailed++;
 
-        if ( mCloudProjects[i].nbFilesDownloaded >= mCloudProjects[i].nbFiles )
+        if ( mCloudProjects[i].downloadedSize >= mCloudProjects[i].filesSize )
         {
           mCloudProjects[i].status = Status::Available;
           mCloudProjects[i].localPath = QFieldCloudUtils::localProjectFilePath( owner, projectName );
           changes << StatusRole << LocalPathRole;
-          emit projectDownloaded( owner, projectName, mCloudProjects[i].nbFilesFailed > 0 );
+          emit projectDownloaded( owner, projectName, mCloudProjects[i].filesFailed > 0 );
         }
 
         QModelIndex idx = createIndex( i, 0 );
