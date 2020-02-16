@@ -16,6 +16,7 @@ Page {
         if ( status == QFieldCloudConnection.LoggedIn ) {
           projects.visible = true
           connectionSettings.visible = false
+          usernameField.text = connection.username
         }
     }
     onLoginFailed: displayToast( qsTr( "Login failed" ) )
@@ -87,7 +88,7 @@ Page {
               if (!connectionSettings.visible) {
                 connectionSettings.visible = true
                 projects.visible = false
-                username.forceActiveFocus()
+                usernameField.forceActiveFocus()
               } else {
                 connectionSettings.visible = false
                 projects.visible = true
@@ -124,17 +125,17 @@ Page {
       }
 
       TextField {
-          id: username
+          id: usernameField
           Layout.alignment: Qt.AlignHCenter
           Layout.preferredWidth: Math.max( parent.width / 2, usernamelabel.width )
           height: fontMetrics.height + 20 * dp
           font: Theme.defaultFont
 
           background: Rectangle {
-              y: username.height - height * 2 - username.bottomPadding / 2
+              y: usernameField.height - height * 2 - usernameField.bottomPadding / 2
               implicitWidth: parent.width
-              height: username.activeFocus ? 2 * dp : 1 * dp
-              color: username.activeFocus ? "#4CAF50" : "#C8E6C9"
+              height: usernameField.activeFocus ? 2 * dp : 1 * dp
+              color: usernameField.activeFocus ? "#4CAF50" : "#C8E6C9"
           }
       }
 
@@ -147,7 +148,7 @@ Page {
       }
 
       TextField {
-          id: password
+          id: passwordField
           echoMode: TextInput.Password
           Layout.alignment: Qt.AlignHCenter
           Layout.preferredWidth: Math.max( parent.width / 2, usernamelabel.width )
@@ -155,16 +156,16 @@ Page {
           font: Theme.defaultFont
 
           background: Rectangle {
-              y: password.height - height * 2 - password.bottomPadding / 2
+              y: passwordField.height - height * 2 - passwordField.bottomPadding / 2
               implicitWidth: parent.width
-              height: password.activeFocus ? 2 * dp : 1 * dp
-              color: password.activeFocus ? "#4CAF50" : "#C8E6C9"
+              height: passwordField.activeFocus ? 2 * dp : 1 * dp
+              color: passwordField.activeFocus ? "#4CAF50" : "#C8E6C9"
           }
       }
 
       FontMetrics {
         id: fontMetrics
-        font: username.font
+        font: usernameField.font
       }
 
       QfButton {
@@ -177,8 +178,8 @@ Page {
               if (connection.status == QFieldCloudConnection.LoggedIn) {
                   connection.logout()
               } else {
-                  connection.username = username.text
-                  connection.password = password.text
+                  connection.username = usernameField.text
+                  connection.password = passwordField.text
                   connection.login()
               }
           }
@@ -408,16 +409,14 @@ Page {
 
   function prepareCloudLogin() {
     if ( visible ) {
+      usernameField.text = connection.username
       if ( connection.status == QFieldCloudConnection.Disconnected ) {
         if ( connection.hasToken ) {
-          username.text = connection.username;
           connection.login();
 
           projects.visible = true
           connectionSettings.visible = false
         } else {
-          username.text = connection.username
-
           projects.visible = false
           connectionSettings.visible = true
         }
