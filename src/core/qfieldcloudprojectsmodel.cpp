@@ -51,7 +51,7 @@ void QFieldCloudProjectsModel::refreshProjectsList()
   }
 }
 
-void QFieldCloudProjectsModel::download( const QString &owner, const QString &projectName )
+void QFieldCloudProjectsModel::downloadProject( const QString &owner, const QString &projectName )
 {
   if ( !mCloudConnection )
     return;
@@ -225,7 +225,7 @@ void QFieldCloudProjectsModel::reload( QJsonArray &remoteProjects )
 
     QDir localPath( QStringLiteral( "%1/%2/%3" ).arg( localCloudDirectory(), cloudProject.owner, cloudProject.name ) );
     if( localPath.exists()  )
-      cloudProject.localPath = localPath.path();
+      cloudProject.localPath = localPath.path() + QStringLiteral( "/project.qgs" );
 
     mCloudProjects << cloudProject;
   }
@@ -253,7 +253,7 @@ void QFieldCloudProjectsModel::reload( QJsonArray &remoteProjects )
                                    projectNameDirs.fileName(),
                                    QString(),
                                    Status::LocalOnly );
-        cloudProject.localPath = QStringLiteral( "%1/%2/%3" ).arg( localCloudDirectory(), cloudProject.owner, cloudProject.name );
+        cloudProject.localPath = QStringLiteral( "%1/%2/%3/project.qgs" ).arg( localCloudDirectory(), cloudProject.owner, cloudProject.name );
         mCloudProjects << cloudProject;
       }
     }
