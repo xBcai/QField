@@ -12,6 +12,12 @@ Page {
   property QFieldCloudConnection connection: QFieldCloudConnection
   {
     url: "http://dev.qfield.cloud"
+    onStatusChanged: {
+        if ( status == QFieldCloudConnection.LoggedIn ) {
+          projects.visible = true
+          connectionSettings.visible = false
+        }
+    }
     onLoginFailed: displayToast( "Login failed: " + reason )
   }
 
@@ -43,11 +49,12 @@ Page {
         id: connectionInformation
         spacing: 2
         Layout.fillWidth: true
+        visible: connection.hasToken || projectsModel.rowCount() > 0
 
         Label {
             Layout.fillWidth: true
             padding: 10 * dp
-            visible: projects.visible
+            opacity: projects.visible ? 1 : 0
             text: switch(connection.status) {
                     case 0: qsTr( 'Disconnected from the cloud.' ); break;
                     case 1: qsTr( 'Connecting to the cloud.' ); break;
@@ -72,19 +79,17 @@ Page {
               fillMode: Image.Pad
               horizontalAlignment: Image.AlignHCenter
               verticalAlignment: Image.AlignVCenter
-              source: Theme.getThemeIcon( 'ic_gear_black_24dp' )
+              source: !projects.visible ? Theme.getThemeIcon( 'ic_clear_black_18dp' ) : Theme.getThemeIcon( 'ic_gear_black_24dp' )
             }
           }
 
           onClicked: {
               if (!connectionSettings.visible) {
                 connectionSettings.visible = true
-                connectionInformation.visible = false
                 projects.visible = false
                 username.forceActiveFocus()
               } else {
                 connectionSettings.visible = false
-                connectionInformation.visible = true
                 projects.visible = true
                 refreshProjectsListBtn.forceActiveFocus()
               }
@@ -96,7 +101,8 @@ Page {
       id: connectionSettings
       Layout.fillWidth: true
       Layout.fillHeight: true
-      Layout.margins: 20 * dp
+      Layout.margins: 10 * dp
+      Layout.topMargin: !connectionInformation.visible ? connectionInformation.height + parent.spacing : 0
       spacing: 2
 
       Text {
@@ -164,7 +170,7 @@ Page {
       QfButton {
           Layout.fillWidth: true
           Layout.topMargin: 5 * dp
-          text: connection.status == QFieldCloudConnection.LoggedIn ? qsTr( "Logout" ) : qsTr( "Login" )
+          text: connection.status == QFieldCloudConnection.LoggedIn ? qsTr( "Logout" ) : connection.status == QFieldCloudConnection.Connecting ? qsTr( "Logging in, please wait" ) : qsTr( "Login" )
           enabled: connection.status != QFieldCloudConnection.Connecting
 
           onClicked: {
@@ -174,10 +180,6 @@ Page {
                   connection.username = username.text
                   connection.password = password.text
                   connection.login()
-
-                  connectionInformation.visible = true
-                  connectionSettings.visible = false
-                  projects.visible = true
               }
           }
       }
@@ -321,18 +323,15 @@ Page {
           username.text = connection.username;
           connection.login();
 
-          connectionInformation.visible = true
           projects.visible = true
           connectionSettings.visible = false
         } else {
           username.text = connection.username
 
-          connectionInformation.visible = false
           projects.visible = false
           connectionSettings.visible = true
         }
       } else {
-        connectionInformation.visible = true
         projects.visible = true
         connectionSettings.visible = false
       }

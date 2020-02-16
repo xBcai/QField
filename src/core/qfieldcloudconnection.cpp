@@ -38,7 +38,7 @@ void QFieldCloudConnection::setUsername( const QString &username )
     return;
 
   mUsername = username;
-  mToken.clear(); // invalidate token on username change
+  setToken( QByteArray() ); // invalidate token on username change
 
   emit usernameChanged();
 }
@@ -92,7 +92,7 @@ void QFieldCloudConnection::login()
 
       const QVariant &key = QJsonDocument::fromJson( response ).object().toVariantMap().value( QStringLiteral( "key" ) );
 
-      mToken = key.toByteArray();
+      setToken( key.toByteArray() );
       QSettings().setValue( "/QFieldCloud/username", mUsername );
       QSettings().setValue( "/QFieldCloud/token", key );
 
@@ -113,7 +113,7 @@ void QFieldCloudConnection::logout()
   reply->deleteLater();
 
   mPassword.clear();
-  mToken.clear();
+  setToken( QByteArray() );
   QSettings().remove( "/QFieldCloud/username" );
   QSettings().remove( "/QFieldCloud/token" );
 
@@ -164,6 +164,15 @@ QNetworkReply *QFieldCloudConnection::get( const QString &endpoint )
   QNetworkReply *reply = nam->get( request );
 
   return reply;
+}
+
+void QFieldCloudConnection::setToken( const QByteArray &token )
+{
+  if ( mToken == token )
+    return;
+
+  mToken = token;
+  emit tokenChanged();
 }
 
 void QFieldCloudConnection::setStatus( Status status )

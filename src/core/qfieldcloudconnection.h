@@ -27,7 +27,7 @@ class QFieldCloudConnection : public QObject
     Q_PROPERTY( QString password READ password WRITE setPassword NOTIFY passwordChanged )
     Q_PROPERTY( QString url READ url WRITE setUrl NOTIFY urlChanged )
     Q_PROPERTY( Status status READ status NOTIFY statusChanged )
-    Q_PROPERTY( bool hasToken READ hasToken )
+    Q_PROPERTY( bool hasToken READ hasToken  NOTIFY tokenChanged )
 
     QString url() const;
     void setUrl( const QString &url );
@@ -66,12 +66,14 @@ class QFieldCloudConnection : public QObject
     void passwordChanged();
     void urlChanged();
     void statusChanged();
+    void tokenChanged();
     void error();
 
     void loginFailed( const QString &reason );
 
   private:
     void setStatus( Status status );
+    void setToken( const QByteArray &token );
     void setAuthenticationToken( QNetworkRequest &request );
     void checkStatus();
 
