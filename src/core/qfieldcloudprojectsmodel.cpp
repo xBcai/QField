@@ -258,7 +258,7 @@ void QFieldCloudProjectsModel::reload( QJsonArray &remoteProjects )
   {
     QVariantHash projectDetails = project.toObject().toVariantHash();
     CloudProject cloudProject( projectDetails.value( "id" ).toString(),
-                          mCloudConnection ? mCloudConnection->username() : QString(),
+                          projectDetails.value( "owner" ).toString(),
                           projectDetails.value( "name" ).toString(),
                           projectDetails.value( "description" ).toString(),
                           Status::Available );
