@@ -128,6 +128,7 @@ Page {
           id: usernameField
           Layout.alignment: Qt.AlignHCenter
           Layout.preferredWidth: Math.max( parent.width / 2, usernamelabel.width )
+          enabled: connection.status === QFieldCloudConnection.Disconnected
           height: fontMetrics.height + 20 * dp
           font: Theme.defaultFont
 
@@ -152,6 +153,7 @@ Page {
           echoMode: TextInput.Password
           Layout.alignment: Qt.AlignHCenter
           Layout.preferredWidth: Math.max( parent.width / 2, usernamelabel.width )
+          enabled: connection.status === QFieldCloudConnection.Disconnected
           height: fontMetrics.height + 20 * dp
           font: Theme.defaultFont
 
