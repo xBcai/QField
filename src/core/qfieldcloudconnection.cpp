@@ -61,40 +61,43 @@ void QFieldCloudConnection::login()
 {
   QgsNetworkAccessManager *nam = QgsNetworkAccessManager::instance();
   QNetworkRequest request;
-  QJsonObject json;
+  request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
+
+  QNetworkReply *reply;
   if ( mPassword.isEmpty() )
   {
-    request.setUrl( mUrl + "/api/v1/auth/login/" );
+    request.setUrl( mUrl + "/api/v1/users/user/" );
     setAuthenticationToken( request );
+    reply = nam->get( request );
   }
   else
   {
+    QJsonObject json;
     request.setUrl( mUrl + "/api/v1/auth/token/" );
     json.insert( "username", mUsername );
     json.insert( "password", mPassword );
+    QJsonDocument doc;
+    doc.setObject( json );
+    QByteArray requestBody = doc.toJson();
+    reply = nam->post( request, requestBody );
   }
-  request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
 
   setStatus( Status::Connecting );
 
-  QJsonDocument doc;
-  doc.setObject( json );
-  QByteArray requestBody = doc.toJson();
-  QNetworkReply *reply = nam->post( request, requestBody );
   connect( reply, &QNetworkReply::finished, this, [this, reply]()
   {
     if ( reply->error() == QNetworkReply::NoError )
     {
       QByteArray response = reply->readAll();
 
-      QByteArray token = QJsonDocument::fromJson( response ).object().toVariantMap().value( QStringLiteral( "key" ) ).toByteArray();
-      if ( token.isEmpty() )
-        token = QJsonDocument::fromJson( response ).object().toVariantMap().value( QStringLiteral( "token" ) ).toByteArray();
-      setToken( token );
-      QSettings().setValue( "/QFieldCloud/token", token );
+      QByteArray token = QJsonDocument::fromJson( response ).object().toVariantMap().value( QStringLiteral( "token" ) ).toByteArray();
+      if ( !token.isEmpty() )
+      {
+        setToken( token );
+        QSettings().setValue( "/QFieldCloud/token", token );
+      }
 
-      mUsername  = QJsonDocument::fromJson( response ).object().toVariantMap().value( QStringLiteral( "user" ) ).toString();
-
+      mUsername  = QJsonDocument::fromJson( response ).object().toVariantMap().value( QStringLiteral( "username" ) ).toString();
       setStatus( Status::LoggedIn );
     }
     else
