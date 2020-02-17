@@ -60,22 +60,20 @@ void QFieldCloudConnection::setPassword( const QString &password )
 void QFieldCloudConnection::login()
 {
   QgsNetworkAccessManager *nam = QgsNetworkAccessManager::instance();
-  // Make sure the request isn't passing cookies from a previously logged out session
-  nam->setCookieJar( new QNetworkCookieJar() );
-
   QNetworkRequest request;
-  request.setUrl( mUrl + "/api/v1/auth/login/" );
-  request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
-
   QJsonObject json;
-
   if ( mPassword.isEmpty() )
+  {
+    request.setUrl( mUrl + "/api/v1/auth/login/" );
     setAuthenticationToken( request );
+  }
   else
   {
+    request.setUrl( mUrl + "/api/v1/auth/token/" );
     json.insert( "username", mUsername );
     json.insert( "password", mPassword );
   }
+  request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
 
   setStatus( Status::Connecting );
 
@@ -89,9 +87,11 @@ void QFieldCloudConnection::login()
     {
       QByteArray response = reply->readAll();
 
-      const QVariant &key = QJsonDocument::fromJson( response ).object().toVariantMap().value( QStringLiteral( "key" ) );
-      setToken( key.toByteArray() );
-      QSettings().setValue( "/QFieldCloud/token", key );
+      QByteArray token = QJsonDocument::fromJson( response ).object().toVariantMap().value( QStringLiteral( "key" ) ).toByteArray();
+      if ( token.isEmpty() )
+        token = QJsonDocument::fromJson( response ).object().toVariantMap().value( QStringLiteral( "token" ) ).toByteArray();
+      setToken( token );
+      QSettings().setValue( "/QFieldCloud/token", token );
 
       mUsername  = QJsonDocument::fromJson( response ).object().toVariantMap().value( QStringLiteral( "user" ) ).toString();
 
@@ -109,7 +109,10 @@ void QFieldCloudConnection::login()
 void QFieldCloudConnection::logout()
 {
   QNetworkReply *reply = post( "/api/v1/auth/logout/" );
-  reply->deleteLater();
+  connect( reply, &QNetworkReply::finished, this, [reply]()
+  {
+    reply->deleteLater();
+  } );
 
   mPassword.clear();
   setToken( QByteArray() );
