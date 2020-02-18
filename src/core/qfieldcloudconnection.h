@@ -19,7 +19,7 @@ class QFieldCloudConnection : public QObject
       LoggedIn
     };
 
-    Q_ENUMS( Status )
+    Q_ENUM( Status )
 
     QFieldCloudConnection();
 
