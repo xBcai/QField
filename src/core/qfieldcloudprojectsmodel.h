@@ -32,7 +32,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       LocalOnly
     };
 
-    Q_ENUMS( Status )
+    Q_ENUM( Status )
 
     QFieldCloudProjectsModel();
 
