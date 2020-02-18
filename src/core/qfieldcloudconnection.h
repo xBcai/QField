@@ -75,7 +75,6 @@ class QFieldCloudConnection : public QObject
     void setStatus( Status status );
     void setToken( const QByteArray &token );
     void setAuthenticationToken( QNetworkRequest &request );
-    void checkStatus();
 
     QString mPassword;
     QString mUsername;
