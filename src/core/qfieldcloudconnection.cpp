@@ -196,22 +196,3 @@ void QFieldCloudConnection::setAuthenticationToken( QNetworkRequest &request )
   }
 }
 
-void QFieldCloudConnection::checkStatus()
-{
-  if ( mToken.isNull() )
-  {
-    setStatus( Status::Disconnected );
-    return;
-  }
-
-  QNetworkReply *reply = get( "/api/v1/projects/mkuhn/" );
-
-  connect( reply, &QNetworkReply::finished, this, [this, reply]()
-  {
-    if ( reply->error() == QNetworkReply::NoError )
-      setStatus( Status::LoggedIn );
-    else
-      emit loginFailed( QStringLiteral( "%1 (HTTP Status %2)" ).arg( reply->errorString(), QString::number( reply->error() ) ) );
-  } );
-}
-
