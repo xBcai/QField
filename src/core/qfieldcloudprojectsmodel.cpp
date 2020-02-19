@@ -40,16 +40,38 @@ void QFieldCloudProjectsModel::setCloudConnection( QFieldCloudConnection *cloudC
 
 void QFieldCloudProjectsModel::refreshProjectsList()
 {
-  if ( mCloudConnection->status() == QFieldCloudConnection::Status::LoggedIn )
+  switch ( mCloudConnection->status() )
   {
-    QNetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/projects/%1/" ).arg( mCloudConnection->username() ) );
-    connect( reply, &QNetworkReply::finished, this, &QFieldCloudProjectsModel::projectListReceived );
+    case QFieldCloudConnection::ConnectionStatus::LoggedIn:
+    {
+      QNetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/projects/%1/" ).arg( mCloudConnection->username() ) );
+      connect( reply, &QNetworkReply::finished, this, &QFieldCloudProjectsModel::projectListReceived );
+      break;
+    }
+    case QFieldCloudConnection::ConnectionStatus::Disconnected:
+    {
+      QJsonArray projects;
+      reload( projects );
+      break;
+    }
+    case QFieldCloudConnection::ConnectionStatus::Connecting:
+      // Nothing done for this intermediary status.
+      break;
   }
-  else if ( mCloudConnection->status() == QFieldCloudConnection::Status::Disconnected )
+}
+
+int QFieldCloudProjectsModel::findProject(const QString &owner, const QString &projectName)
+{
+  int index = -1;
+  for( int i = 0; i < mCloudProjects.count(); i++ )
   {
-    QJsonArray projects;
-    reload( projects );
+    if ( mCloudProjects.at( i ).owner == owner && mCloudProjects.at( i ).name == projectName )
+    {
+      index = i;
+      break;
+    }
   }
+  return index;
 }
 
 void QFieldCloudProjectsModel::removeLocalProject(const QString &owner, const QString &projectName)
@@ -58,26 +80,23 @@ void QFieldCloudProjectsModel::removeLocalProject(const QString &owner, const QS
 
   if ( dir.exists() )
   {
-    for( int i = 0; i < mCloudProjects.count(); i++ )
+    int index = findProject( owner, projectName );
+    if ( index > -1 )
     {
-      if ( mCloudProjects.at( i ).owner == owner && mCloudProjects.at( i ).name == projectName )
+      if ( mCloudProjects.at( index ).status == ProjectStatus::Available )
       {
-        if ( mCloudProjects.at( i ).status == Status::Available )
-        {
-          mCloudProjects[i].localPath = QString();
-          QModelIndex idx = createIndex( i, 0 );
-          emit dataChanged( idx, idx,  QVector<int>() << StatusRole << LocalPathRole );
-          break;
-        }
-        else
-        {
-          beginRemoveRows( QModelIndex(), i, i );
-          mCloudProjects.removeAt( i );
-          endRemoveRows();
-          break;
-        }
+        mCloudProjects[index].localPath = QString();
+        QModelIndex idx = createIndex( index, 0 );
+        emit dataChanged( idx, idx,  QVector<int>() << StatusRole << LocalPathRole );
+      }
+      else
+      {
+        beginRemoveRows( QModelIndex(), index, index );
+        mCloudProjects.removeAt( index );
+        endRemoveRows();
       }
     }
+
     dir.removeRecursively();
   }
 }
@@ -87,62 +106,43 @@ void QFieldCloudProjectsModel::downloadProject( const QString &owner, const QStr
   if ( !mCloudConnection )
     return;
 
-  for( int i = 0; i < mCloudProjects.count(); i++ )
+  int index = findProject( owner, projectName );
+  if ( index > -1 )
   {
-    if ( mCloudProjects.at( i ).owner == owner && mCloudProjects.at( i ).name == projectName )
-    {
-      mCloudProjects[i].files.clear();
-      mCloudProjects[i].filesSize = 0;
-      mCloudProjects[i].filesFailed = 0;
-      mCloudProjects[i].downloadedSize = 0;
-      mCloudProjects[i].downloadProgress = 0.0;
-      mCloudProjects[i].status = Status::Downloading;
-      QModelIndex idx = createIndex( i, 0 );
-      emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
-      break;
-    }
+    mCloudProjects[index].files.clear();
+    mCloudProjects[index].filesSize = 0;
+    mCloudProjects[index].filesFailed = 0;
+    mCloudProjects[index].downloadedSize = 0;
+    mCloudProjects[index].downloadProgress = 0.0;
+    mCloudProjects[index].status = ProjectStatus::Downloading;
+    QModelIndex idx = createIndex( index, 0 );
+    emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
   }
 
   QNetworkReply *filesReply = mCloudConnection->get( QStringLiteral( "/api/v1/projects/%1/%2/files/" ).arg( owner, projectName ) );
 
   connect( filesReply, &QNetworkReply::finished, this, [filesReply, this, owner, projectName]()
   {
+    int index = findProject( owner, projectName );
     if ( filesReply->error() == QNetworkReply::NoError )
     {
       QJsonArray files = QJsonDocument::fromJson( filesReply->readAll() ).array();
-
-      int idx = -1;
-      for( int i = 0; i < mCloudProjects.count(); i++ )
-      {
-        if ( mCloudProjects.at( i ).owner == owner && mCloudProjects.at( i ).name == projectName )
-        {
-          idx = i;
-          break;
-        }
-      }
-
       for ( const auto file : files )
       {
         QString fileName = file.toObject().value( QStringLiteral( "name" ) ).toString();
         int fileSize = file.toObject().value( QStringLiteral( "size" ) ).toInt();
-        if ( idx > -1 )
+        if ( index > -1 )
         {
-          mCloudProjects[idx].files.insert( fileName, fileSize );
-          mCloudProjects[idx].filesSize += fileSize;
+          mCloudProjects[index].files.insert( fileName, fileSize );
+          mCloudProjects[index].filesSize += fileSize;
         }
         downloadFile( owner, projectName, fileName );
       }
     }
     else
     {
-      for( int i = 0; i < mCloudProjects.count(); i++ )
-      {
-        if ( mCloudProjects.at( i ).owner == owner && mCloudProjects.at( i ).name == projectName )
-        {
-          mCloudProjects[i].status = Status::Available;
-          break;
-        }
-      }
+      if ( index > -1 )
+        mCloudProjects[index].status = ProjectStatus::Available;
       emit warning( QStringLiteral( "Error fetching project: %1" ).arg( filesReply->errorString() ) );
     }
 
@@ -185,7 +185,7 @@ void QFieldCloudProjectsModel::downloadFile( const QString &owner, const QString
     }
   } );
 
-  connect( reply, &QNetworkReply::finished, this, [this, reply, file, owner, projectName, fileName]()
+  connect( reply, &QNetworkReply::finished, this, [=]()
   {
     bool failure = false;
     if ( reply->error() == QNetworkReply::NoError )
@@ -204,31 +204,28 @@ void QFieldCloudProjectsModel::downloadFile( const QString &owner, const QString
       failure = true;
     }
 
-    for( int i = 0; i < mCloudProjects.count(); i++ )
+    int index = findProject( owner, projectName );
+    if ( index > -1 )
     {
-      if ( mCloudProjects.at( i ).owner == owner && mCloudProjects.at( i ).name == projectName )
+      QVector<int> changes;
+
+      mCloudProjects[index].downloadedSize += mCloudProjects[index].files[fileName];
+      mCloudProjects[index].downloadProgress = static_cast< double >( mCloudProjects[index].downloadedSize) / mCloudProjects[index].filesSize;
+      changes << DownloadProgressRole;
+
+      if ( failure )
+        mCloudProjects[index].filesFailed++;
+
+      if ( mCloudProjects[index].downloadedSize >= mCloudProjects[index].filesSize )
       {
-        QVector<int> changes;
-
-        mCloudProjects[i].downloadedSize += mCloudProjects[i].files[fileName];
-        mCloudProjects[i].downloadProgress = static_cast< double >( mCloudProjects[i].downloadedSize) / mCloudProjects[i].filesSize;
-        changes << DownloadProgressRole;
-
-        if ( failure )
-          mCloudProjects[i].filesFailed++;
-
-        if ( mCloudProjects[i].downloadedSize >= mCloudProjects[i].filesSize )
-        {
-          mCloudProjects[i].status = Status::Available;
-          mCloudProjects[i].localPath = QFieldCloudUtils::localProjectFilePath( owner, projectName );
-          changes << StatusRole << LocalPathRole;
-          emit projectDownloaded( owner, projectName, mCloudProjects[i].filesFailed > 0 );
-        }
-
-        QModelIndex idx = createIndex( i, 0 );
-        emit dataChanged( idx, idx,  changes );
-        break;
+        mCloudProjects[index].status = ProjectStatus::Available;
+        mCloudProjects[index].localPath = QFieldCloudUtils::localProjectFilePath( owner, projectName );
+        changes << StatusRole << LocalPathRole;
+        emit projectDownloaded( owner, projectName, mCloudProjects[index].filesFailed > 0 );
       }
+
+      QModelIndex idx = createIndex( index, 0 );
+      emit dataChanged( idx, idx,  changes );
     }
 
     file->deleteLater();
@@ -249,7 +246,7 @@ QHash<int, QByteArray> QFieldCloudProjectsModel::roleNames() const
   return roles;
 }
 
-void QFieldCloudProjectsModel::reload( QJsonArray &remoteProjects )
+void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
 {
   beginResetModel();
   mCloudProjects .clear();
@@ -261,7 +258,7 @@ void QFieldCloudProjectsModel::reload( QJsonArray &remoteProjects )
                           projectDetails.value( "owner" ).toString(),
                           projectDetails.value( "name" ).toString(),
                           projectDetails.value( "description" ).toString(),
-                          Status::Available );
+                          ProjectStatus::Available );
 
     QDir localPath( QStringLiteral( "%1/%2/%3" ).arg( QFieldCloudUtils::localCloudDirectory(), cloudProject.owner, cloudProject.name ) );
     if( localPath.exists()  )
@@ -278,21 +275,14 @@ void QFieldCloudProjectsModel::reload( QJsonArray &remoteProjects )
     while( projectNameDirs.hasNext() )
     {
       projectNameDirs.next();
-      bool found = false;
-      for ( int i = 0; i < mCloudProjects.count(); i++ )
-      {
-        if ( mCloudProjects[i].owner == ownerDirs.fileName() && mCloudProjects[i].name == projectNameDirs.fileName() )
-        {
-          found = true;
-        }
-      }
-      if ( !found )
+      int index = findProject( ownerDirs.fileName(), projectNameDirs.fileName() );
+      if ( index == -1 )
       {
         CloudProject cloudProject( QString(), // No ID provided for local-only cloud project
                                    ownerDirs.fileName(),
                                    projectNameDirs.fileName(),
                                    QString(),
-                                   Status::LocalOnly );
+                                   ProjectStatus::LocalOnly );
         cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.owner, cloudProject.name );
         mCloudProjects << cloudProject;
       }
@@ -315,20 +305,23 @@ QVariant QFieldCloudProjectsModel::data( const QModelIndex &index, int role ) co
   if ( index.row() >= mCloudProjects.size() || index.row() < 0 )
     return QVariant();
 
-  if ( role == IdRole )
-    return mCloudProjects.at( index.row() ).id;
-  else if ( role == OwnerRole )
-    return mCloudProjects.at( index.row() ).owner;
-  else if ( role == NameRole )
-    return mCloudProjects.at( index.row() ).name;
-  else if ( role == DescriptionRole )
-    return mCloudProjects.at( index.row() ).description;
-  else if ( role == StatusRole )
-    return static_cast<int>( mCloudProjects.at( index.row() ).status );
-  else if ( role == DownloadProgressRole )
-    return mCloudProjects.at( index.row() ).downloadProgress;
-  else if ( role == LocalPathRole )
-    return mCloudProjects.at( index.row() ).localPath;
+  switch ( role )
+  {
+    case IdRole:
+      return mCloudProjects.at( index.row() ).id;
+    case OwnerRole:
+      return mCloudProjects.at( index.row() ).owner;
+    case NameRole:
+      return mCloudProjects.at( index.row() ).name;
+    case DescriptionRole:
+      return mCloudProjects.at( index.row() ).description;
+    case StatusRole:
+      return static_cast<int>( mCloudProjects.at( index.row() ).status );
+    case DownloadProgressRole:
+      return mCloudProjects.at( index.row() ).downloadProgress;
+    case LocalPathRole:
+      return mCloudProjects.at( index.row() ).localPath;
+  }
 
   return QVariant();
 }
