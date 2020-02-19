@@ -21,7 +21,9 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       LocalPathRole
     };
 
-    enum class Status
+    Q_ENUM( ColumnRole )
+
+    enum class ProjectStatus
     {
       Available,
       Downloading,
@@ -32,7 +34,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       LocalOnly
     };
 
-    Q_ENUM( Status )
+    Q_ENUM( ProjectStatus )
 
     QFieldCloudProjectsModel();
 
@@ -50,7 +52,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     int rowCount( const QModelIndex &parent ) const override;
     QVariant data( const QModelIndex &index, int role ) const override;
 
-    Q_INVOKABLE void reload( QJsonArray &remoteProjects );
+    Q_INVOKABLE void reload( const QJsonArray &remoteProjects );
 
   signals:
     void cloudConnectionChanged();
@@ -63,10 +65,12 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     void downloadFile( const QString &owner, const QString &projectName, const QString &fileName );
 
+    int findProject( const QString &owner, const QString &projectName );
+
   private:
     struct CloudProject
     {
-      CloudProject( const QString &id, const QString &owner, const QString &name, const QString &description, const Status &status  )
+      CloudProject( const QString &id, const QString &owner, const QString &name, const QString &description, const ProjectStatus &status  )
         : id( id )
         , owner( owner )
         , name( name )
@@ -80,7 +84,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       QString owner;
       QString name;
       QString description;
-      Status status;
+      ProjectStatus status;
       QString localPath;
       QMap<QString, int> files;
       int filesSize = 0;
@@ -94,6 +98,6 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
 };
 
-Q_DECLARE_METATYPE( QFieldCloudProjectsModel::Status )
+Q_DECLARE_METATYPE( QFieldCloudProjectsModel::ProjectStatus )
 
 #endif // QFIELDCLOUDPROJECTSMODEL_H
