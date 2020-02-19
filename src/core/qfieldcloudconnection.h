@@ -12,21 +12,21 @@ class QFieldCloudConnection : public QObject
     Q_OBJECT
 
   public:
-    enum class Status
+    enum class ConnectionStatus
     {
       Disconnected,
       Connecting,
       LoggedIn
     };
 
-    Q_ENUM( Status )
+    Q_ENUM( ConnectionStatus )
 
     QFieldCloudConnection();
 
     Q_PROPERTY( QString username READ username WRITE setUsername NOTIFY usernameChanged )
     Q_PROPERTY( QString password READ password WRITE setPassword NOTIFY passwordChanged )
     Q_PROPERTY( QString url READ url WRITE setUrl NOTIFY urlChanged )
-    Q_PROPERTY( Status status READ status NOTIFY statusChanged )
+    Q_PROPERTY( ConnectionStatus status READ status NOTIFY statusChanged )
     Q_PROPERTY( bool hasToken READ hasToken  NOTIFY tokenChanged )
 
     QString url() const;
@@ -41,7 +41,7 @@ class QFieldCloudConnection : public QObject
     Q_INVOKABLE void login();
     Q_INVOKABLE void logout();
 
-    Status status() const;
+    ConnectionStatus status() const;
 
     bool hasToken() { return !mToken.isEmpty(); }
 
@@ -72,14 +72,15 @@ class QFieldCloudConnection : public QObject
     void loginFailed( const QString &reason );
 
   private:
-    void setStatus( Status status );
+    void setStatus( ConnectionStatus status );
     void setToken( const QByteArray &token );
+    void invalidateToken();
     void setAuthenticationToken( QNetworkRequest &request );
 
     QString mPassword;
     QString mUsername;
     QString mUrl;
-    Status mStatus = Status::Disconnected;
+    ConnectionStatus mStatus = ConnectionStatus::Disconnected;
     QByteArray mToken;
 };
 
