@@ -62,10 +62,11 @@ void QFieldCloudProjectsModel::refreshProjectsList()
 
 int QFieldCloudProjectsModel::findProject(const QString &owner, const QString &projectName)
 {
+  const QList<CloudProject> cloudProjects = mCloudProjects;
   int index = -1;
-  for( int i = 0; i < mCloudProjects.count(); i++ )
+  for( int i = 0; i < cloudProjects.count(); i++ )
   {
-    if ( mCloudProjects.at( i ).owner == owner && mCloudProjects.at( i ).name == projectName )
+    if ( cloudProjects.at( i ).owner == owner && cloudProjects.at( i ).name == projectName )
     {
       index = i;
       break;
