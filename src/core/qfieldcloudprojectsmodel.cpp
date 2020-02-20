@@ -305,7 +305,7 @@ QVariant QFieldCloudProjectsModel::data( const QModelIndex &index, int role ) co
   if ( index.row() >= mCloudProjects.size() || index.row() < 0 )
     return QVariant();
 
-  switch ( role )
+  switch ( static_cast<ColumnRole>( role ) )
   {
     case IdRole:
       return mCloudProjects.at( index.row() ).id;
