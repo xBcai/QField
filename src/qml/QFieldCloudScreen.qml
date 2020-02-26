@@ -328,7 +328,7 @@ Page {
                       downloadProject.visible = item.projectLocalPath == ''
                       openProject.visible = item.projectLocalPath !== ''
                       removeProject.visible = item.projectLocalPath !== ''
-                      projectActions.popup()
+                      projectActions.popup(mouse.x, mouse.y)
                     }
                 }
               }
@@ -343,7 +343,7 @@ Page {
         property string projectLocalPath: ''
 
         title: 'Project Actions'
-        width: 400 * dp
+        width: Math.max(320*dp, mainWindow.width/2)
 
         MenuItem {
           id: downloadProject
