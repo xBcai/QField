@@ -393,6 +393,8 @@ Page {
           id: projectsTips
           Layout.alignment: Qt.AlignLeft
           Layout.fillWidth: true
+          Layout.topMargin: 5 * dp
+          Layout.bottomMargin: 5 * dp
           text: qsTr( "Press and hold over a cloud project for a menu of additional actions." )
           font: Theme.tipFont
           wrapMode: Text.WordWrap
