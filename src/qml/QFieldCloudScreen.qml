@@ -74,6 +74,8 @@ Page {
 
           contentItem: Rectangle {
             anchors.fill: parent
+            height: 56 * dp
+            width: 56 * dp
             color: "transparent"
             Image {
               anchors.fill: parent
