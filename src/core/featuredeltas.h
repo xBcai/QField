@@ -37,9 +37,9 @@ class FeatureDeltas
     QString toString();
     bool toFile();
 
-    void addCreate( const QgsVectorLayer *layer, const QgsFeature &oldFeature );
-    void addDelete( const QgsVectorLayer *layer, const QgsFeature &newFeature );
-    void addPatch( const QgsVectorLayer *layer, const QgsFeature &oldFeature, const QgsFeature &newFeature );
+    void addCreate( const QString &layerId, const QgsFeature &oldFeature );
+    void addDelete( const QString &layerId, const QgsFeature &newFeature );
+    void addPatch( const QString &layerId, const QgsFeature &oldFeature, const QgsFeature &newFeature );
 
   private:
     QString mDeltaFileVersion = "1.0";

@@ -1,6 +1,20 @@
-// QgsVectorLayerEditBuffer.deletedFeatureIds()
-// QgsVectorLayerEditBuffer.createdFeatureIds()
-// QgsVectorLayerEditBuffer.updatedFeatureIds()
+/***************************************************************************
+                          featuredeltas.h
+                             -------------------
+  begin                : Apr 2020
+  copyright            : (C) 2020 by Ivan Ivanov
+  email                : ivan@opengis.ch
+***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
 #include "featuredeltas.h"
 
 #include <QFileInfo>
@@ -120,11 +134,11 @@ bool FeatureDeltas::toFile()
 }
 
 
-void FeatureDeltas::addPatch( const QgsVectorLayer *layer, const QgsFeature &oldFeature, const QgsFeature &newFeature )
+void FeatureDeltas::addPatch( const QString &layerId, const QgsFeature &oldFeature, const QgsFeature &newFeature )
 {
   QJsonObject delta( {
     {"fid", oldFeature.id()},
-    {"layerId", layer->id()}
+    {"layerId", layerId}
   } );
   QgsGeometry oldGeom = oldFeature.geometry();
   QgsGeometry newGeom = newFeature.geometry();
@@ -139,20 +153,20 @@ void FeatureDeltas::addPatch( const QgsVectorLayer *layer, const QgsFeature &old
     newData.insert( QStringLiteral( "geometry" ), newGeom.isNull() ? QJsonValue::Null : QJsonValue( newGeom.asWkt() ) );
   }
 
-  QgsFields layerFields = layer->fields();
+  Q_ASSERT( oldFeature.fields() == newFeature.fields() );
+
+  QgsFields fields = newFeature.fields();
   QJsonObject tmpOldAttrs;
   QJsonObject tmpNewAttrs;
 
-  Q_ASSERT( layerFields == oldFeature.fields() && layerFields == newFeature.fields() );
-
-  for ( int idx = 0; idx < layerFields.count(); ++idx )
+  for ( int idx = 0; idx < fields.count(); ++idx )
   {
     QVariant oldVal = oldAttrs.at( idx );
     QVariant newVal = newAttrs.at( idx );
 
     if ( newVal != oldVal )
     {
-      QString name = layerFields.at( idx ).name();
+      QString name = fields.at( idx ).name();
       tmpOldAttrs.insert( name, QJsonValue::fromVariant( oldVal ) );
       tmpNewAttrs.insert( name, QJsonValue::fromVariant( newVal ) );
     }
@@ -171,10 +185,10 @@ void FeatureDeltas::addPatch( const QgsVectorLayer *layer, const QgsFeature &old
 }
 
 
-void FeatureDeltas::addDelete( const QgsVectorLayer *layer, const QgsFeature &oldFeature )
+void FeatureDeltas::addDelete( const QString &layerId, const QgsFeature &oldFeature )
 {
   QJsonObject delta( {{"fid", oldFeature.id()},
-                      {"layerId", layer->id()}} );
+                      {"layerId", layerId}} );
   QgsGeometry oldGeom = oldFeature.geometry();
   QgsAttributes oldAttrs = oldFeature.attributes();
   QJsonObject oldData( {{"geometry", oldGeom.isNull() ? QJsonValue::Null : QJsonValue( oldGeom.asWkt() )}});
@@ -183,7 +197,7 @@ void FeatureDeltas::addDelete( const QgsVectorLayer *layer, const QgsFeature &ol
   for ( int idx = 0; idx < oldAttrs.count(); ++idx )
   {
     QVariant oldVal = oldAttrs.at( idx );
-    QString name = layer->fields().at( idx ).name();
+    QString name = oldFeature.fields().at( idx ).name();
     tmpOldAttrs.insert( name, QJsonValue::fromVariant( oldVal ) );
   }
 
@@ -194,10 +208,10 @@ void FeatureDeltas::addDelete( const QgsVectorLayer *layer, const QgsFeature &ol
 }
 
 
-void FeatureDeltas::addCreate( const QgsVectorLayer *layer, const QgsFeature &newFeature )
+void FeatureDeltas::addCreate( const QString &layerId, const QgsFeature &newFeature )
 {
   QJsonObject delta( {{"fid", newFeature.id()},
-                      {"layerId", layer->id()}} );
+                      {"layerId", layerId}} );
   QgsGeometry newGeom = newFeature.geometry();
   QgsAttributes newAttrs = newFeature.attributes();
 
@@ -207,7 +221,7 @@ void FeatureDeltas::addCreate( const QgsVectorLayer *layer, const QgsFeature &ne
   for ( int idx = 0; idx < newAttrs.count(); ++idx )
   {
     QVariant newVal = newAttrs.at( idx );
-    QString name = layer->fields().at( idx ).name();
+    QString name = newFeature.fields().at( idx ).name();
     tmpNewAttrs.insert( name, QJsonValue::fromVariant( newVal ) );
   }
 
