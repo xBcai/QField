@@ -1,5 +1,21 @@
-#include "layerobserver.h"
+/***************************************************************************
+                          featuredeltas.h
+                             -------------------
+  begin                : Apr 2020
+  copyright            : (C) 2020 by Ivan Ivanov
+  email                : ivan@opengis.ch
+***************************************************************************/
 
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
+#include "layerobserver.h"
 
 #include <qgsfeature.h>
 #include <qgsfeatureiterator.h>
@@ -73,37 +89,34 @@ void LayerObserver::onBeforeCommitChanges()
 
 void LayerObserver::onCommittedFeaturesAdded( const QString &layerId, const QgsFeatureList &addedFeatures )
 {
-    QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( sender() );
-
     for ( const QgsFeature &newFeature : addedFeatures )
     {
-        mFeatureDeltas->addCreate( vl, newFeature );
+        mFeatureDeltas->addCreate( layerId, newFeature );
     }
 }
 
 
 void LayerObserver::onCommittedFeaturesRemoved( const QString &layerId, const QgsFeatureIds &deletedFeatureIds )
 {
-    QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( sender() );
-    QgsChangedFeatures changedFeatures = mChangedFeatures.value( vl->id() );
+    QgsChangedFeatures changedFeatures = mChangedFeatures.value( layerId );
     
     for ( const QgsFeatureId &fid : deletedFeatureIds )
     {
         Q_ASSERT( changedFeatures.contains( fid ) );
 
         QgsFeature oldFeature = changedFeatures.take( fid );
-        mFeatureDeltas->addDelete( vl, oldFeature );
+        mFeatureDeltas->addDelete( layerId, oldFeature );
     }
 
-    mChangedFeatures.insert( vl->id(), changedFeatures );
+    mChangedFeatures.insert( layerId, changedFeatures );
 }
 
 
 void LayerObserver::onCommittedAttributeValuesChanges( const QString &layerId, const QgsChangedAttributesMap &changedAttributesValues )
 {
     QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( sender() );
-    QgsFeatureIds patchedFids = mPatchedFids.value( vl->id() );
-    QgsChangedFeatures changedFeatures = mChangedFeatures.value( vl->id() );
+    QgsFeatureIds patchedFids = mPatchedFids.value( layerId );
+    QgsChangedFeatures changedFeatures = mChangedFeatures.value( layerId );
     
     for ( const QgsFeatureId &fid : changedAttributesValues.keys() )
     {
@@ -116,19 +129,19 @@ void LayerObserver::onCommittedAttributeValuesChanges( const QString &layerId, c
 
         QgsFeature oldFeature = changedFeatures.take( fid );
         QgsFeature newFeature = vl->getFeature( fid );
-        mFeatureDeltas->addPatch( vl, oldFeature, newFeature );
+        mFeatureDeltas->addPatch( layerId, oldFeature, newFeature );
     }
 
-    mPatchedFids.insert( vl->id(), patchedFids );
-    mChangedFeatures.insert( vl->id(), changedFeatures );
+    mPatchedFids.insert( layerId, patchedFids );
+    mChangedFeatures.insert( layerId, changedFeatures );
 }
 
 
 void LayerObserver::onCommittedGeometriesChanges( const QString &layerId, const QgsGeometryMap &changedGeometries )
 {
     QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( sender() );
-    QgsFeatureIds patchedFids = mPatchedFids.value( vl->id() );
-    QgsChangedFeatures changedFeatures = mChangedFeatures.value( vl->id() );
+    QgsFeatureIds patchedFids = mPatchedFids.value( layerId );
+    QgsChangedFeatures changedFeatures = mChangedFeatures.value( layerId );
 
     for ( const QgsFeatureId &fid : changedGeometries.keys() )
     {
@@ -142,11 +155,11 @@ void LayerObserver::onCommittedGeometriesChanges( const QString &layerId, const 
         QgsFeature oldFeature = changedFeatures.take( fid );
         QgsFeature newFeature = vl->getFeature( fid );
 
-        mFeatureDeltas->addPatch( vl, oldFeature, newFeature );
+        mFeatureDeltas->addPatch( layerId, oldFeature, newFeature );
     }
 
-    mPatchedFids.insert( vl->id(), patchedFids );
-    mChangedFeatures.insert( vl->id(), changedFeatures );
+    mPatchedFids.insert( layerId, patchedFids );
+    mChangedFeatures.insert( layerId, changedFeatures );
 }
 
 
