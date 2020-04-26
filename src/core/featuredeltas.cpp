@@ -24,74 +24,114 @@
 #include <qgsproject.h>
 
 
+QString FeatureDeltas::FormatVersion = QStringLiteral( "1.0" );
+
+
 FeatureDeltas::FeatureDeltas( const QString &fileName )
 {
   mFileName = fileName;
+  QFile deltasFile( mFileName );
+  QString errorReason;
+
+  // TODO fix this
+  mProjectId = QStringLiteral( "<MISSING>" );
 
   if ( QFileInfo::exists( mFileName ) )
   {
-    QFile deltasFile( mFileName );
+    QJsonParseError jsonError;
+
     QgsLogger::debug( QStringLiteral( "Loading deltas from file %1" ).arg( mFileName ) );
 
     if ( ! deltasFile.open( QIODevice::ReadWrite ) )
+      errorReason = QStringLiteral( "Cannot open file for read and write" );
+
+    if ( errorReason.isEmpty() )
+      mJsonRoot = QJsonDocument::fromJson( deltasFile.readAll(), &jsonError ).object();
+
+    if ( errorReason.isEmpty() && ( jsonError.error != QJsonParseError::NoError ) )
+      errorReason = jsonError.errorString();
+
+    if ( errorReason.isEmpty() && ( ! mJsonRoot.value( "id" ).isString() || mJsonRoot.value( "id" ).toString().isEmpty() ) )
+      errorReason = QStringLiteral( "Delta file is missing a valid id" );
+
+    if ( errorReason.isEmpty() && ( ! mJsonRoot.value( "projectId" ).isString() || mJsonRoot.value( "projectId" ).toString().isEmpty() ) )
+      errorReason = QStringLiteral( "Delta file is missing a valid project id" );
+
+    if ( errorReason.isEmpty() && ! mJsonRoot.value( "deltas" ).isArray() )
+      errorReason = QStringLiteral( "Delta file is missing a valid array of deltas" );
+
+    if ( errorReason.isEmpty() && ( ! mJsonRoot.value( "version" ).isString() || mJsonRoot.value( "version" ).toString().isEmpty() ) )
+      errorReason = QStringLiteral( "Delta file is missing a valid version" );
+
+    if ( errorReason.isEmpty() && mJsonRoot.value( "version" ) != FeatureDeltas::FormatVersion )
+      errorReason = QStringLiteral( "File has incompatible version" );
+
+    if ( errorReason.isEmpty() )
     {
-      QgsLogger::warning( QStringLiteral( "Cannot open file for read and write" ) );
-      mHasError = true;
-      return;
-    }
+      for ( const QJsonValue &v : mJsonRoot.value( "deltas" ).toArray() )
+      {
+        // ? how far should I go in checking the validity?
+        if ( ! v.isObject() )
+          QgsLogger::warning( QStringLiteral( "Encountered delta element that is not an object" ) );
 
-    mJsonRoot = QJsonDocument::fromJson( deltasFile.readAll() ).object();
-    
-    deltasFile.close();
-
-    if ( ! mJsonRoot.value( "version" ).isString()
-      || ! mJsonRoot.value( "id" ).isString()
-      || ! mJsonRoot.value( "projectId" ).isString()
-      || ! mJsonRoot.value( "timestamp" ).isString()
-      || ! mJsonRoot.value( "deltas" ).isArray() )
-    {
-      QgsLogger::warning( QStringLiteral( "File contains invalid JSON" ) );
-      mHasError = true;
-      return;
-    }
-
-    if ( mJsonRoot.value( "version" ) != mDeltaFileVersion )
-    {
-      QgsLogger::warning( QStringLiteral( "File has incompatible version" ) );
-      mHasError = true;
-      return;
-    }
-
-    for ( const QJsonValue &v : mJsonRoot.value( "deltas" ).toArray() )
-    {
-      // ? how far should I go in checking the validity?
-      if ( ! v.isObject() )
-        QgsLogger::warning( QStringLiteral( "Encountered delta element that is not an object" ) );
-
-      mDeltas.append( v );
+        mDeltas.append( v );
+      }
     }
   }
   else
   {
-    QString projectId = QgsProject::instance()->baseName();
-    QString timestamp = QDateTime::currentDateTime().toUTC().toString( Qt::ISODateWithMs );
-
-    mJsonRoot = QJsonObject( {{"version", mDeltaFileVersion},
+    mJsonRoot = QJsonObject( {{"version", FeatureDeltas::FormatVersion},
                               {"id", QUuid::createUuid().toString( QUuid::WithoutBraces )},
                               // Mario thinks this is not needed for now
                               // {"clientId",clientId},
-                              {"projectId", projectId},
-                              {"timestamp", timestamp},
+                              {"projectId", mProjectId},
                               // It seems this should go to individual deltas
                               // {"layerId",layer.id()},
                               {"deltas", mDeltas}} );
+
+    if ( ! deltasFile.open( QIODevice::ReadWrite ) )
+      errorReason = QStringLiteral( "Cannot open deltas file for read and write" );
+
+    if ( ! toFile() )
+      errorReason = QStringLiteral( "Cannot write deltas file" );
   }
+
+  if ( ! errorReason.isEmpty() )
+  {
+    mErrorReason = errorReason;
+    mHasError = true;
+    return;
+  }
+}
+
+
+QString FeatureDeltas::fileName()
+{
+  return mFileName;
+}
+
+
+QString FeatureDeltas::projectId()
+{
+  return mProjectId;
+}
+
+
+void FeatureDeltas::clear()
+{
+  mDeltas = QJsonArray();
 }
 
 
 bool FeatureDeltas::hasError()
 {
   return mHasError;
+}
+
+
+QString FeatureDeltas::errorString()
+{
+  return mErrorReason;
 }
 
 
@@ -113,18 +153,20 @@ bool FeatureDeltas::toFile()
 {
   QFile deltasFile( mFileName );
 
-  QgsLogger::warning( "Start writing deltas JSON: " + toString() );
+  QgsLogger::debug( "Start writing deltas JSON" );
 
   if ( ! deltasFile.open( QIODevice::WriteOnly | QIODevice::Unbuffered ) )
   {
-    QgsLogger::warning( QStringLiteral( "File %1 cannot be open for writing. Reason %2" ).arg( mFileName ).arg( deltasFile.errorString() ) );
+    mErrorReason = deltasFile.errorString();
+    QgsLogger::warning( QStringLiteral( "File %1 cannot be open for writing. Reason %2" ).arg( mFileName ).arg( mErrorReason ) );
 
     return false;
   }
 
   if ( deltasFile.write( toJson() )  == -1)
   {
-    QgsLogger::warning( QStringLiteral( "Contents of the file %1 has not been written. Reason %2" ).arg( mFileName ).arg( deltasFile.errorString() ) );
+    mErrorReason = deltasFile.errorString();
+    QgsLogger::warning( QStringLiteral( "Contents of the file %1 has not been written. Reason %2" ).arg( mFileName ).arg( mErrorReason ) );
     return false;
   }
 
@@ -138,7 +180,8 @@ void FeatureDeltas::addPatch( const QString &layerId, const QgsFeature &oldFeatu
 {
   QJsonObject delta( {
     {"fid", oldFeature.id()},
-    {"layerId", layerId}
+    {"layerId", layerId},
+    {"method", "patch"}
   } );
   QgsGeometry oldGeom = oldFeature.geometry();
   QgsGeometry newGeom = newFeature.geometry();
@@ -146,11 +189,13 @@ void FeatureDeltas::addPatch( const QString &layerId, const QgsFeature &oldFeatu
   QgsAttributes newAttrs = newFeature.attributes();
   QJsonObject oldData;
   QJsonObject newData;
+  bool areFeaturesEqual = false;
 
-  if ( !oldGeom.equals( newGeom ) )
+  if ( ! oldGeom.equals( newGeom ) )
   {
-    oldData.insert( QStringLiteral( "geometry" ), oldGeom.isNull() ? QJsonValue::Null : QJsonValue( oldGeom.asWkt() ) );
-    newData.insert( QStringLiteral( "geometry" ), newGeom.isNull() ? QJsonValue::Null : QJsonValue( newGeom.asWkt() ) );
+    oldData.insert( QStringLiteral( "geometry" ), geometryToJsonValue( oldGeom ) );
+    newData.insert( QStringLiteral( "geometry" ), geometryToJsonValue( newGeom ) );
+    areFeaturesEqual = true;
   }
 
   Q_ASSERT( oldFeature.fields() == newFeature.fields() );
@@ -169,8 +214,13 @@ void FeatureDeltas::addPatch( const QString &layerId, const QgsFeature &oldFeatu
       QString name = fields.at( idx ).name();
       tmpOldAttrs.insert( name, QJsonValue::fromVariant( oldVal ) );
       tmpNewAttrs.insert( name, QJsonValue::fromVariant( newVal ) );
+      areFeaturesEqual = true;
     }
   }
+
+  // if features are completely equal, there is no need to change the JSON
+  if ( ! areFeaturesEqual )
+    return;
 
   if ( tmpNewAttrs.length() > 0 || tmpOldAttrs.length() > 0 )
   {
@@ -188,10 +238,10 @@ void FeatureDeltas::addPatch( const QString &layerId, const QgsFeature &oldFeatu
 void FeatureDeltas::addDelete( const QString &layerId, const QgsFeature &oldFeature )
 {
   QJsonObject delta( {{"fid", oldFeature.id()},
-                      {"layerId", layerId}} );
-  QgsGeometry oldGeom = oldFeature.geometry();
+                      {"layerId", layerId},
+                      {"method", "delete"}} );
   QgsAttributes oldAttrs = oldFeature.attributes();
-  QJsonObject oldData( {{"geometry", oldGeom.isNull() ? QJsonValue::Null : QJsonValue( oldGeom.asWkt() )}});
+  QJsonObject oldData( {{"geometry", geometryToJsonValue( oldFeature.geometry() )}});
   QJsonObject tmpOldAttrs;
 
   for ( int idx = 0; idx < oldAttrs.count(); ++idx )
@@ -201,7 +251,9 @@ void FeatureDeltas::addDelete( const QString &layerId, const QgsFeature &oldFeat
     tmpOldAttrs.insert( name, QJsonValue::fromVariant( oldVal ) );
   }
 
-  oldData.insert( QStringLiteral( "attributes" ), tmpOldAttrs );
+  if ( tmpOldAttrs.length() > 0 )
+    oldData.insert( QStringLiteral( "attributes" ), tmpOldAttrs );
+
   delta.insert( QStringLiteral( "old" ), oldData );
 
   mDeltas.append( delta );
@@ -211,11 +263,11 @@ void FeatureDeltas::addDelete( const QString &layerId, const QgsFeature &oldFeat
 void FeatureDeltas::addCreate( const QString &layerId, const QgsFeature &newFeature )
 {
   QJsonObject delta( {{"fid", newFeature.id()},
-                      {"layerId", layerId}} );
-  QgsGeometry newGeom = newFeature.geometry();
+                      {"layerId", layerId},
+                      {"method", "create"}} );
   QgsAttributes newAttrs = newFeature.attributes();
 
-  QJsonObject newData( {{"geometry", newGeom.isNull() ? QJsonValue::Null : QJsonValue( newGeom.asWkt() )}} );
+  QJsonObject newData( {{"geometry", geometryToJsonValue( newFeature.geometry() )}});
   QJsonObject tmpNewAttrs;
 
   for ( int idx = 0; idx < newAttrs.count(); ++idx )
@@ -225,9 +277,19 @@ void FeatureDeltas::addCreate( const QString &layerId, const QgsFeature &newFeat
     tmpNewAttrs.insert( name, QJsonValue::fromVariant( newVal ) );
   }
 
+  if ( tmpNewAttrs.length() > 0 )
+    newData.insert( QStringLiteral( "attributes" ), tmpNewAttrs );
 
-  newData.insert( QStringLiteral( "attributes" ), tmpNewAttrs );
   delta.insert( QStringLiteral( "new" ), newData );
 
   mDeltas.append( delta );
+}
+
+
+QJsonValue FeatureDeltas::geometryToJsonValue( const QgsGeometry &geom )
+{
+  if ( geom.isNull() )
+    return QJsonValue::Null;
+
+  return QJsonValue( geom.asWkt() );
 }
