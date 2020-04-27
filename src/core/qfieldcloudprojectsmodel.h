@@ -93,6 +93,13 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     Q_INVOKABLE void downloadProject( const QString &projectId );
     Q_INVOKABLE void removeLocalProject( const QString &projectId );
 
+    /**
+     * Starts delta upload
+     * 
+     * @param projectId cloud project ID 
+     */
+    bool uploadDeltas( const QString &projectId );
+
     QHash<int, QByteArray> roleNames() const;
 
     int rowCount( const QModelIndex &parent ) const override;
@@ -140,6 +147,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       int filesFailed = 0;
       int downloadedSize = 0;
       double downloadProgress = 0.0; // range from 0.0 to 1.0
+      double uploadProgress = 0.0; // range from 0.0 to 1.0
     };
 
     QList<CloudProject> mCloudProjects;
