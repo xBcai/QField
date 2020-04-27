@@ -26,13 +26,24 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-
+/**
+ * A class that wraps the operations with a delta file. All read and write operations to a delta file should go through this class.
+ * 
+ */
 class FeatureDeltas
 {
   public:
-    static QString FormatVersion;
+    /**
+     * Stores the current version of the format.
+     */
+    const static QString FormatVersion;
 
   
+    /**
+     * Construct a new Feature Deltas object
+     * 
+     * @param fileName full file name with path where the object should be stored
+     */
     FeatureDeltas( const QString &fileName );
 
 
@@ -47,7 +58,7 @@ class FeatureDeltas
      * 
      * @return QString file name
      */
-    QString fileName();
+    QString fileName() const;
 
 
     /**
@@ -55,7 +66,7 @@ class FeatureDeltas
      * 
      * @return QString project id
      */
-    QString projectId();
+    QString projectId() const;
 
 
     /**
@@ -63,7 +74,7 @@ class FeatureDeltas
      *
      * @return bool whether an error has been encountered
      */
-    bool hasError();
+    bool hasError() const;
 
 
     /**
@@ -71,7 +82,7 @@ class FeatureDeltas
      * 
      * @return QString human readable error reason
      */
-    QString errorString();
+    QString errorString() const;
 
 
     /**
@@ -80,7 +91,7 @@ class FeatureDeltas
      * @param jsonFormat formatting of the output JSON. Default: QJsonDocument::Indented
      * @return QByteArray JSON representation
      */
-    QByteArray toJson( QJsonDocument::JsonFormat jsonFormat = QJsonDocument::Indented );
+    QByteArray toJson( QJsonDocument::JsonFormat jsonFormat = QJsonDocument::Indented ) const;
 
 
     /**
@@ -88,7 +99,7 @@ class FeatureDeltas
      *
      * @return QString JSON representation
      */
-    QString toString();
+    QString toString() const;
 
 
     /**
@@ -133,13 +144,7 @@ class FeatureDeltas
      * Returns null if the geometry is null, or WKT string of the geometry
      * 
      */
-    QJsonValue geometryToJsonValue( const QgsGeometry &geom );
-
-    /**
-     * Delta file format version.
-     */
-    QString mDeltaFileFormatVersion = "1.0";
-
+    QJsonValue geometryToJsonValue( const QgsGeometry &geom ) const;
 
     /**
      * The list of JSON deltas.
