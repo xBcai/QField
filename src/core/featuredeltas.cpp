@@ -24,7 +24,7 @@
 #include <qgsproject.h>
 
 
-QString FeatureDeltas::FormatVersion = QStringLiteral( "1.0" );
+const QString FeatureDeltas::FormatVersion = QStringLiteral( "1.0" );
 
 
 FeatureDeltas::FeatureDeltas( const QString &fileName )
@@ -105,13 +105,13 @@ FeatureDeltas::FeatureDeltas( const QString &fileName )
 }
 
 
-QString FeatureDeltas::fileName()
+QString FeatureDeltas::fileName() const
 {
   return mFileName;
 }
 
 
-QString FeatureDeltas::projectId()
+QString FeatureDeltas::projectId() const
 {
   return mProjectId;
 }
@@ -123,27 +123,28 @@ void FeatureDeltas::clear()
 }
 
 
-bool FeatureDeltas::hasError()
+bool FeatureDeltas::hasError() const
 {
   return mHasError;
 }
 
 
-QString FeatureDeltas::errorString()
+QString FeatureDeltas::errorString() const
 {
   return mErrorReason;
 }
 
 
-QByteArray FeatureDeltas::toJson( QJsonDocument::JsonFormat jsonFormat )
+QByteArray FeatureDeltas::toJson( QJsonDocument::JsonFormat jsonFormat ) const
 {
-  mJsonRoot.insert( QStringLiteral( "deltas" ), mDeltas );
+  QJsonObject jsonRoot (mJsonRoot);
+  jsonRoot.insert( QStringLiteral( "deltas" ), mDeltas );
 
-  return QJsonDocument( mJsonRoot ).toJson( jsonFormat );
+  return QJsonDocument( jsonRoot ).toJson( jsonFormat );
 }
 
 
-QString FeatureDeltas::toString()
+QString FeatureDeltas::toString() const
 {
   return QString::fromStdString( toJson().toStdString() );
 }
@@ -286,7 +287,7 @@ void FeatureDeltas::addCreate( const QString &layerId, const QgsFeature &newFeat
 }
 
 
-QJsonValue FeatureDeltas::geometryToJsonValue( const QgsGeometry &geom )
+QJsonValue FeatureDeltas::geometryToJsonValue( const QgsGeometry &geom ) const
 {
   if ( geom.isNull() )
     return QJsonValue::Null;

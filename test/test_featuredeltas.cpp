@@ -232,7 +232,7 @@ class TestFeatureDeltas: public QObject
 
     void testProjectId()
     {
-        // TODO
+      QSKIP("decide how we get the current project id");
     }
 
 
