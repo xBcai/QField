@@ -379,3 +379,37 @@ QVariant QFieldCloudProjectsModel::data( const QModelIndex &index, int role ) co
 
   return QVariant();
 }
+
+
+bool QFieldCloudProjectsModel::uploadDeltas( const QString &projectId )
+{
+  auto projectIt = std::find_if( mCloudProjects.cbegin(), mCloudProjects.cend(), [&projectId] (const CloudProject& project) {
+    return project.id == projectId;
+  } );
+
+  if ( projectIt == mCloudProjects.end() )
+    return false;
+
+  CloudProject project = mCloudProjects.at( projectIt - mCloudProjects.begin() );
+  
+  qDebug() << projectId << project.id;
+
+  QDirIterator deltaFilesDirIt( QFieldCloudUtils::localCloudDirectory(), QStringList({"datafile_*.json"}), QDir::Files | QDir::NoDotAndDotDot | QDir::Readable );
+
+  QStringList deltaFileNames;
+
+  while ( deltaFilesDirIt.hasNext() ) 
+  {
+    deltaFileNames << deltaFilesDirIt.filePath();
+    deltaFilesDirIt.next();
+  }
+
+  if ( deltaFileNames.size() == 0 )
+    return false;
+
+
+  // TODO start the actual upload of the files
+
+
+  return true;
+}
