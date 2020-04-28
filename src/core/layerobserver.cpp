@@ -43,6 +43,20 @@ QString LayerObserver::generateFileName()
 }
 
 
+QString LayerObserver::lastProjectDeltaFile()
+{
+  QDirIterator deltaFilesDirIt( QgsProject::instance()->homePath(), QStringList({"datafile_*.json"}), QDir::Files | QDir::NoDotAndDotDot | QDir::Readable );
+  QStringList deltaFileNames;
+
+  while ( deltaFilesDirIt.hasNext() ) 
+    deltaFileNames << deltaFilesDirIt.next();
+
+  return deltaFileNames.isEmpty()
+    ? QString()
+    : deltaFileNames.last();
+}
+
+
 QString LayerObserver::fileName() const
 {
   return mFeatureDeltas->fileName();
@@ -78,25 +92,10 @@ void LayerObserver::clear() const
 
 void LayerObserver::onHomePathChanged()
 {
-  QDirIterator deltaFilesDirIt( QFieldCloudUtils::localCloudDirectory(), QStringList({"datafile_*.json"}), QDir::Files | QDir::NoDotAndDotDot | QDir::Readable );
-  QStringList deltaFileNames;
-
-  while ( deltaFilesDirIt.hasNext() ) 
-    deltaFileNames << deltaFilesDirIt.next();
-
-  QString deltaFileName = deltaFileNames.isEmpty()
-    ? generateFileName()
-    : deltaFileNames.last();
-
+  QString deltaFileName = lastProjectDeltaFile();
+  deltaFileName = deltaFileName.isNull() ? generateFileName() : deltaFileName;
   
-  if ( commit() )
-  {
-
-  }
-  else
-  {
-    // failed commit
-  }
+  Q_ASSERT( ! mFeatureDeltas->isDirty() );
 
   mFeatureDeltas.reset( new FeatureDeltas( deltaFileName ) );
 }
