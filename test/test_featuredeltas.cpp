@@ -236,6 +236,43 @@ class TestFeatureDeltas: public QObject
     }
 
 
+    void testIsDirty()
+    {
+        QString fileName = std::tmpnam( nullptr );
+        FeatureDeltas fd( fileName );
+
+        QCOMPARE( fd.isDirty(), false );
+
+        fd.addCreate( "dummyLayerId", QgsFeature() );
+
+        QCOMPARE( fd.isDirty(), true );
+        QVERIFY( fd.toFile() );
+        QCOMPARE( fd.isDirty(), false );
+
+        fd.clear();
+
+        QCOMPARE( fd.isDirty(), true );
+    }
+
+
+    void testCount()
+    {
+        QString fileName = std::tmpnam( nullptr );
+        FeatureDeltas fd( fileName );
+        fd.addCreate( "dummyLayerId", QgsFeature() );
+
+        QCOMPARE( fd.count(), 1 );
+
+        fd.addCreate( "dummyLayerId", QgsFeature() );
+
+        QCOMPARE( fd.count(), 2 );
+
+        fd.clear();
+
+        QCOMPARE( fd.count(), 0 );
+    }
+
+
     void testToFile()
     {
         QString fileName = std::tmpnam( nullptr );

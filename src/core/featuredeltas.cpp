@@ -119,7 +119,7 @@ QString FeatureDeltas::projectId() const
 
 void FeatureDeltas::clear()
 {
-  mIsDirty = true;
+  mIsDirty = mDeltas.size() != 0;
   mDeltas = QJsonArray();
 }
 
@@ -133,6 +133,12 @@ bool FeatureDeltas::hasError() const
 bool FeatureDeltas::isDirty() const
 {
   return mIsDirty;
+}
+
+
+int FeatureDeltas::count() const
+{
+  return mDeltas.size();
 }
 
 
@@ -180,6 +186,7 @@ bool FeatureDeltas::toFile()
 
   deltasFile.close();
   mIsDirty = false;
+  QgsLogger::debug( "Finished writing deltas JSON" );
 
   return true;
 }

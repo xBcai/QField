@@ -86,6 +86,14 @@ class FeatureDeltas
 
 
     /**
+     * Returns the number of deltas
+     *
+     * @return int number of deltas
+     */
+    int count() const;
+
+
+    /**
      * Human readable error description why the class has an error.
      * 
      * @return QString human readable error reason
