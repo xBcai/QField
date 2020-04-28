@@ -150,6 +150,14 @@ class LayerObserver : public QObject
 
 
     /**
+     * Return the last delta file name. If there are no delta files, returns a null string.
+     * 
+     * @return QString file name
+     */
+    static QString lastProjectDeltaFile();
+
+
+    /**
      * A counter of the files saved so far. Only used to generate unique filename.
      */
     static int sFilesSaved;
