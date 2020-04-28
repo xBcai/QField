@@ -40,7 +40,7 @@ class FeatureDeltas
 
   
     /**
-     * Construct a new Feature Deltas object
+     * Construct a new Feature Deltas object.
      * 
      * @param fileName full file name with path where the object should be stored
      */
@@ -54,7 +54,7 @@ class FeatureDeltas
 
 
     /**
-     * Returns deltas file name
+     * Returns deltas file name.
      * 
      * @return QString file name
      */
@@ -70,11 +70,19 @@ class FeatureDeltas
 
 
     /**
-     * Checks whether the class has encountered I/O error regarding the delta file. If true is returned, the behaviour of the class instance is no more defined.
+     * Returns whether the class has encountered I/O error regarding the delta file. If true is returned, the behaviour of the class instance is no more defined.
      *
      * @return bool whether an error has been encountered
      */
     bool hasError() const;
+
+
+    /**
+     * Returns whether the instance contents differs from the data saved on the disk.
+     *
+     * @return bool whether there is a difference with the data saved on the disk
+     */
+    bool isDirty() const;
 
 
     /**
@@ -174,6 +182,12 @@ class FeatureDeltas
      * Holds whether the constructor experienced I/O error.
      */
     bool mHasError = false;
+
+
+    /**
+     * Holds whether the deltas in the memory differ from the deltas in the file
+     */
+    bool mIsDirty = false;
 
 
     /**

@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "layerobserver.h"
+#include "qfieldcloudutils.h"
 
 #include <qgsfeature.h>
 #include <qgsfeatureiterator.h>
@@ -27,15 +28,16 @@ int LayerObserver::sFilesSaved = 0;
 
 LayerObserver::LayerObserver( const QgsProject *project )
 {
-  mFeatureDeltas.reset( new FeatureDeltas( generateFileName( project ) ) );
+  mFeatureDeltas.reset( new FeatureDeltas( generateFileName() ) );
 
+  connect( project, &QgsProject::homePathChanged, this, &LayerObserver::onHomePathChanged );
   connect( project, &QgsProject::layersAdded, this, &LayerObserver::onLayersAdded );
 }
 
 
-QString LayerObserver::generateFileName( const QgsProject *project )
+QString LayerObserver::generateFileName()
 {
-  return project->homePath() + QStringLiteral( "/deltafile_%1_%2.json" )
+  return QgsProject::instance()->homePath() + QStringLiteral( "/deltafile_%1_%2.json" )
     .arg( QDateTime::currentDateTime().toMSecsSinceEpoch() )
     .arg( ++sFilesSaved );
 }
@@ -55,10 +57,14 @@ bool LayerObserver::hasError() const
 
 bool LayerObserver::commit()
 {
+
+  if ( ! mFeatureDeltas->isDirty() )
+    return true;
+
   if ( ! mFeatureDeltas->toFile() )
     return false;
 
-  mFeatureDeltas.reset( new FeatureDeltas( generateFileName( QgsProject::instance() ) ) );
+  mFeatureDeltas.reset( new FeatureDeltas( generateFileName() ) );
 
   return true;
 }
@@ -67,6 +73,32 @@ bool LayerObserver::commit()
 void LayerObserver::clear() const
 {
   return mFeatureDeltas->clear();
+}
+
+
+void LayerObserver::onHomePathChanged()
+{
+  QDirIterator deltaFilesDirIt( QFieldCloudUtils::localCloudDirectory(), QStringList({"datafile_*.json"}), QDir::Files | QDir::NoDotAndDotDot | QDir::Readable );
+  QStringList deltaFileNames;
+
+  while ( deltaFilesDirIt.hasNext() ) 
+    deltaFileNames << deltaFilesDirIt.next();
+
+  QString deltaFileName = deltaFileNames.isEmpty()
+    ? generateFileName()
+    : deltaFileNames.last();
+
+  
+  if ( commit() )
+  {
+
+  }
+  else
+  {
+    // failed commit
+  }
+
+  mFeatureDeltas.reset( new FeatureDeltas( deltaFileName ) );
 }
 
 
