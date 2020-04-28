@@ -119,6 +119,7 @@ QString FeatureDeltas::projectId() const
 
 void FeatureDeltas::clear()
 {
+  mIsDirty = true;
   mDeltas = QJsonArray();
 }
 
@@ -126,6 +127,12 @@ void FeatureDeltas::clear()
 bool FeatureDeltas::hasError() const
 {
   return mHasError;
+}
+
+
+bool FeatureDeltas::isDirty() const
+{
+  return mIsDirty;
 }
 
 
@@ -172,6 +179,7 @@ bool FeatureDeltas::toFile()
   }
 
   deltasFile.close();
+  mIsDirty = false;
 
   return true;
 }
@@ -199,7 +207,8 @@ void FeatureDeltas::addPatch( const QString &layerId, const QgsFeature &oldFeatu
     areFeaturesEqual = true;
   }
 
-  Q_ASSERT( oldFeature.fields() == newFeature.fields() );
+  // TODO types should be checked too, however QgsFields::operator== is checking instances
+  Q_ASSERT( oldFeature.fields().names() == newFeature.fields().names() );
 
   QgsFields fields = newFeature.fields();
   QJsonObject tmpOldAttrs;
@@ -233,6 +242,7 @@ void FeatureDeltas::addPatch( const QString &layerId, const QgsFeature &oldFeatu
   delta.insert( QStringLiteral( "new" ), newData );
 
   mDeltas.append( delta );
+  mIsDirty = true;
 }
 
 
@@ -258,6 +268,7 @@ void FeatureDeltas::addDelete( const QString &layerId, const QgsFeature &oldFeat
   delta.insert( QStringLiteral( "old" ), oldData );
 
   mDeltas.append( delta );
+  mIsDirty = true;
 }
 
 
@@ -284,6 +295,7 @@ void FeatureDeltas::addCreate( const QString &layerId, const QgsFeature &newFeat
   delta.insert( QStringLiteral( "new" ), newData );
 
   mDeltas.append( delta );
+  mIsDirty = true;
 }
 
 
