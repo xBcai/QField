@@ -20,6 +20,7 @@
 #include <qgis.h>
 #include <qgsnetworkaccessmanager.h>
 #include <qgsapplication.h>
+#include <layerobserver.h>
 
 #include <QNetworkReply>
 #include <QTemporaryFile>
@@ -394,17 +395,10 @@ bool QFieldCloudProjectsModel::uploadDeltas( const QString &projectId )
   
   qDebug() << projectId << project.id;
 
-  QDirIterator deltaFilesDirIt( QFieldCloudUtils::localCloudDirectory(), QStringList({"datafile_*.json"}), QDir::Files | QDir::NoDotAndDotDot | QDir::Readable );
+  // the last file is always a new one and does not need to be synced
+  QFileInfoList deltaFilesInfo = LayerObserver::projectDeltaFiles();
 
-  QStringList deltaFileNames;
-
-  while ( deltaFilesDirIt.hasNext() ) 
-  {
-    deltaFileNames << deltaFilesDirIt.filePath();
-    deltaFilesDirIt.next();
-  }
-
-  if ( deltaFileNames.size() == 0 )
+  if ( deltaFilesInfo.size() == 0 )
     return false;
 
 

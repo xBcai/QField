@@ -48,22 +48,64 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->addFeature( f3 ) );
       QVERIFY( mLayer->commitChanges() );
 
-      QgsProject::instance()->setPresetHomePath( QDir::tempPath() );
+      QTemporaryDir projectDir;
+      projectDir.setAutoRemove( false );
+
+      QVERIFY2( projectDir.isValid(), "Failed to create temp dir" );
+      
+      QgsProject::instance()->setPresetHomePath( projectDir.path() );
       mLayerObserver.reset( new LayerObserver( QgsProject::instance() ) );
       
       QVERIFY( QgsProject::instance()->addMapLayer( mLayer.get(), false, false ) );
       QVERIFY( ! mLayerObserver->hasError() );
     }
 
+
     void init()
     {
       mLayerObserver->clear();
     }
 
+
     void cleanup()
     {
       mLayerObserver->clear();
     }
+
+
+    void testProjectDeltaFiles()
+    {
+      QTemporaryDir dir;
+      
+      QVERIFY( dir.isValid() );
+
+      QStringList fileNames;
+
+      int limit = 5;
+      int counter = 0;
+
+      while ( counter++ < limit )
+      {
+        QString fileName = QStringLiteral( "%1/deltafile_%2_%3.json" ).arg( dir.path() ).arg( QDateTime::currentSecsSinceEpoch() ).arg( counter );
+        fileNames.append( fileName );
+        
+        QVERIFY( QFile( fileName ).open( QIODevice::ReadWrite ) );
+      }
+
+      // make sure the Layer Observer is no longer dirty
+      QVERIFY( mLayerObserver->commit() );
+
+      QgsProject::instance()->setPresetHomePath( dir.path() );
+      QFileInfoList deltaFilesInfo = LayerObserver::projectDeltaFiles();
+      QStringList deltaFileNames;
+
+      for ( const QFileInfo &fi : deltaFilesInfo )
+        deltaFileNames.append( fi.absoluteFilePath() );
+
+
+      QCOMPARE( deltaFileNames, fileNames );
+    }
+
 
     void testHasError()
     {
@@ -76,6 +118,7 @@ class TestLayerObserver: public QObject
 
     void testFileName()
     {
+      qDebug() << mLayerObserver->fileName();
       QVERIFY( mLayerObserver->fileName().size() > 0 );
       QVERIFY( QFile::exists( mLayerObserver->fileName() ) );
     }
@@ -89,7 +132,12 @@ class TestLayerObserver: public QObject
       QVERIFY( QFile::exists( mLayerObserver->fileName() ) );
       QVERIFY( mLayerObserver->commit() );
   
-      QString fileNameNew = mLayerObserver->fileName();
+      QFileInfoList deltaFilesInfo = LayerObserver::projectDeltaFiles();
+      
+      // other tests might have created other delta files, therefore > (greater than)
+      QVERIFY( deltaFilesInfo.size() >= 1 );
+
+      QString fileNameNew = deltaFilesInfo.last().absoluteFilePath();
   
       QVERIFY( QFile::exists( fileNameNew ) );
       QVERIFY( fileNameOld != fileNameNew );

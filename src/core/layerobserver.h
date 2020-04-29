@@ -43,8 +43,16 @@ class LayerObserver : public QObject
      * @param project 
      */
     LayerObserver( const QgsProject *project );
-    
-    
+
+
+    /**
+     * Return the delta files info of the current project. May return empty list, if there are no delta files.
+     * 
+     * @return QFileInfoList delta files info
+     */
+    static QFileInfoList projectDeltaFiles();
+
+
     /**
      * Returns the current delta file name
      * 
@@ -144,17 +152,10 @@ class LayerObserver : public QObject
     /**
      * Generates a new deltas file full name
      * 
+     * @param isCurrentDeltaFile if true, no timestamp is appended
      * @return QString 
      */
-    static QString generateFileName();
-
-
-    /**
-     * Return the last delta file name. If there are no delta files, returns a null string.
-     * 
-     * @return QString file name
-     */
-    static QString lastProjectDeltaFile();
+    static QString generateFileName( bool isCurrentDeltaFile = false );
 
 
     /**

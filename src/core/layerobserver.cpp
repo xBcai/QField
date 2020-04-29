@@ -23,37 +23,36 @@
 #include <qgsfeaturerequest.h>
 #include <qgsvectorlayereditbuffer.h>
 
+#include <QDir>
+
 int LayerObserver::sFilesSaved = 0;
 
 
 LayerObserver::LayerObserver( const QgsProject *project )
 {
-  mFeatureDeltas.reset( new FeatureDeltas( generateFileName() ) );
+  mFeatureDeltas.reset( new FeatureDeltas( generateFileName( true ) ) );
 
   connect( project, &QgsProject::homePathChanged, this, &LayerObserver::onHomePathChanged );
   connect( project, &QgsProject::layersAdded, this, &LayerObserver::onLayersAdded );
 }
 
 
-QString LayerObserver::generateFileName()
+QString LayerObserver::generateFileName( bool isCurrentDeltaFile )
 {
-  return QgsProject::instance()->homePath() + QStringLiteral( "/deltafile_%1_%2.json" )
-    .arg( QDateTime::currentDateTime().toMSecsSinceEpoch() )
-    .arg( ++sFilesSaved );
+  return ( isCurrentDeltaFile )
+    ? QStringLiteral( "%1/deltafile.json" )
+        .arg( QgsProject::instance()->homePath() )
+    : QStringLiteral( "%1/deltafile_%2_%3.json" )
+        .arg( QgsProject::instance()->homePath() )
+        .arg( QDateTime::currentDateTime().toSecsSinceEpoch() )
+        .arg( ++sFilesSaved );
 }
 
 
-QString LayerObserver::lastProjectDeltaFile()
+QFileInfoList LayerObserver::projectDeltaFiles()
 {
-  QDirIterator deltaFilesDirIt( QgsProject::instance()->homePath(), QStringList({"datafile_*.json"}), QDir::Files | QDir::NoDotAndDotDot | QDir::Readable );
-  QStringList deltaFileNames;
-
-  while ( deltaFilesDirIt.hasNext() ) 
-    deltaFileNames << deltaFilesDirIt.next();
-
-  return deltaFileNames.isEmpty()
-    ? QString()
-    : deltaFileNames.last();
+  return QDir( QgsProject::instance()->homePath() )
+    .entryInfoList(QStringList({"deltafile_*.json"}), QDir::Files | QDir::NoDotAndDotDot | QDir::Readable, QDir::Name);
 }
 
 
@@ -71,14 +70,16 @@ bool LayerObserver::hasError() const
 
 bool LayerObserver::commit()
 {
-
-  if ( ! mFeatureDeltas->isDirty() )
-    return true;
-
   if ( ! mFeatureDeltas->toFile() )
     return false;
 
-  mFeatureDeltas.reset( new FeatureDeltas( generateFileName() ) );
+  if ( mFeatureDeltas->count() == 0 )
+    return true;
+
+  if ( ! QDir().rename( mFeatureDeltas->fileName(), generateFileName() ) )
+    return false;
+
+  mFeatureDeltas.reset( new FeatureDeltas( generateFileName( true ) ) );
 
   return true;
 }
@@ -92,8 +93,8 @@ void LayerObserver::clear() const
 
 void LayerObserver::onHomePathChanged()
 {
-  QString deltaFileName = lastProjectDeltaFile();
-  deltaFileName = deltaFileName.isNull() ? generateFileName() : deltaFileName;
+  QFileInfoList deltaFilesInfo = projectDeltaFiles();
+  QString deltaFileName = deltaFilesInfo.isEmpty() ? generateFileName( true ) : deltaFilesInfo.last().absolutePath();
   
   Q_ASSERT( ! mFeatureDeltas->isDirty() );
 
@@ -188,10 +189,10 @@ void LayerObserver::onCommittedAttributeValuesChanges( const QString &layerId, c
   
   for ( const QgsFeatureId &fid : changedAttributesValues.keys() )
   {
-    Q_ASSERT( changedFeatures.contains( fid ) );
-
     if ( patchedFids.contains( fid ) )
       continue;
+
+    Q_ASSERT( changedFeatures.contains( fid ) );
 
     patchedFids.insert( fid );
 
@@ -213,10 +214,10 @@ void LayerObserver::onCommittedGeometriesChanges( const QString &layerId, const 
 
   for ( const QgsFeatureId &fid : changedGeometries.keys() )
   {
-    Q_ASSERT( changedFeatures.contains( fid ) );
-
     if ( patchedFids.contains( fid ) )
       continue;
+
+    Q_ASSERT( changedFeatures.contains( fid ) );
     
     patchedFids.insert(fid);
 
