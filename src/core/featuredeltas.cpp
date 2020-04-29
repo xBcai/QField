@@ -192,6 +192,131 @@ bool FeatureDeltas::toFile()
 }
 
 
+QStringList FeatureDeltas::attachmentFieldNames( const QString &layerId ) const
+{
+  if ( mCacheAttachmentFieldNames.contains( layerId ) )
+    return mCacheAttachmentFieldNames.value( layerId );
+
+  const QgsVectorLayer *vl = static_cast<QgsVectorLayer *>( QgsProject::instance()->mapLayer( layerId ) );
+  QStringList attachmentFieldNames;
+
+  if ( ! vl )
+    return attachmentFieldNames;
+
+  const QgsFields fields = vl->fields();
+
+  for ( const QgsField &field : fields)
+  {
+    const QString type = vl->editFormConfig().widgetConfig( field.name() ).value( QStringLiteral( "type" ) ).toString();
+
+    if ( type == QStringLiteral() )
+      attachmentFieldNames.append( field.name() );
+  }
+
+  // TODO why this does not work?
+  // mCacheAttachmentFieldNames.insert( layerId, attachmentFieldNames );
+
+  return attachmentFieldNames;
+}
+
+
+QSet<QString> FeatureDeltas::attachmentFileNames() const
+{
+  // NOTE represents { layerId: { featureId: { attributeName: fileName } } }
+  // We store all the changes in such mapping that we can return only the last attachment file name that is associated with a feature.
+  // E.g. for given feature we start with attachment A.jpg, then we update to B.jpg. Later we change our mind and we apply C.jpg. In this case we only care about C.jpg.
+  QMap<QString, QMap<QString, QMap<QString, QString>>> fileNamesMap;
+
+  for ( const QJsonValue &deltaJson: qgis::as_const( mDeltas ) )
+  {
+    Q_ASSERT( deltaJson.isObject() );
+
+    QVariantMap delta = deltaJson.toObject().toVariantMap();
+    const QString layerId = delta.value( QStringLiteral( "layerId" ) ).toString();
+    
+    Q_ASSERT( ! layerId.isEmpty() );
+
+    const QString method = delta.value( QStringLiteral( "method" ) ).toString();
+    const QString fid = delta.value( QStringLiteral( "fid" ) ).toString();
+    const QStringList attachmentFieldsList = attachmentFieldNames( layerId );
+
+    QMap<QString, QMap<QString, QString>> featureAttributeFileNames = fileNamesMap.value( layerId );
+    QMap<QString, QString> attributeFileNames = featureAttributeFileNames.value( fid );
+
+    if ( method == QStringLiteral( "delete" ) || method == QStringLiteral( "patch" ) )
+    {
+      const QVariantMap oldData = delta.value( QStringLiteral( "old" ) ).toMap();
+
+      Q_ASSERT( ! oldData.isEmpty() );
+    }
+    else if ( method == QStringLiteral( "create" ) || method == QStringLiteral( "patch" ) )
+    {
+      const QVariantMap newData = delta.value( QStringLiteral( "new" ) ).toMap();
+
+      Q_ASSERT( ! newData.isEmpty() );
+
+      if ( newData.contains( QStringLiteral( "files_sha256" ) ) )
+      {
+        const QVariantMap filesChecksum = newData.value( QStringLiteral( "files_sha256" ) ).toMap();
+
+        Q_ASSERT( ! filesChecksum.isEmpty() );
+
+        const QVariantMap attributes = newData.value( QStringLiteral( "attributes" ) ).toMap();
+
+        for ( const QString &fieldName : attributes.keys() )
+        {
+          if ( ! attachmentFieldsList.contains( fieldName ) )
+            continue;
+
+          attributeFileNames.insert( fieldName, attributes.value( fieldName ).toString() );
+        }
+      }
+    }
+    else
+    {
+      QgsLogger::debug( QStringLiteral( "File `%1` contains unknown method `%2`" ).arg( mFileName, method ) );
+      Q_ASSERT(0);
+    }
+
+    featureAttributeFileNames.insert( fid, attributeFileNames );
+    fileNamesMap.insert( layerId, featureAttributeFileNames );
+  }
+
+  QSet<QString> fileNames;
+
+  for ( const QString &layerId : fileNamesMap.keys() )
+  {
+    const QMap<QString, QMap<QString, QString>> featureAttributeFileNames = fileNamesMap.value( layerId );
+    for ( const QString &fid : featureAttributeFileNames.keys() )
+    {
+      const QMap<QString, QString> attributeFileNames = featureAttributeFileNames.value( fid );
+      for ( const QString &fieldName : attributeFileNames.keys() )
+      {
+        fileNames.insert( attributeFileNames.value( fieldName ) );
+      }
+    }
+  }
+
+  return fileNames;
+}
+
+
+QByteArray FeatureDeltas::fileChecksum( const QString &fileName, const QCryptographicHash::Algorithm hashAlgorithm ) const
+{
+    QFile f(fileName);
+
+    if ( ! f.open(QFile::ReadOnly) )
+      return QByteArray();
+
+    QCryptographicHash hash(hashAlgorithm);
+
+    if ( hash.addData( &f ) )
+      return hash.result();
+
+    return QByteArray();
+}
+
+
 void FeatureDeltas::addPatch( const QString &layerId, const QgsFeature &oldFeature, const QgsFeature &newFeature )
 {
   QJsonObject delta( {
@@ -199,10 +324,11 @@ void FeatureDeltas::addPatch( const QString &layerId, const QgsFeature &oldFeatu
     {"layerId", layerId},
     {"method", "patch"}
   } );
-  QgsGeometry oldGeom = oldFeature.geometry();
-  QgsGeometry newGeom = newFeature.geometry();
-  QgsAttributes oldAttrs = oldFeature.attributes();
-  QgsAttributes newAttrs = newFeature.attributes();
+  const QStringList attachmentFieldsList = attachmentFieldNames( layerId );
+  const QgsGeometry oldGeom = oldFeature.geometry();
+  const QgsGeometry newGeom = newFeature.geometry();
+  const QgsAttributes oldAttrs = oldFeature.attributes();
+  const QgsAttributes newAttrs = newFeature.attributes();
   QJsonObject oldData;
   QJsonObject newData;
   bool areFeaturesEqual = false;
@@ -214,24 +340,39 @@ void FeatureDeltas::addPatch( const QString &layerId, const QgsFeature &oldFeatu
     areFeaturesEqual = true;
   }
 
-  // TODO types should be checked too, however QgsFields::operator== is checking instances
+  // TODO types should be checked too, however QgsFields::operator== is checking instances, not values
   Q_ASSERT( oldFeature.fields().names() == newFeature.fields().names() );
 
   QgsFields fields = newFeature.fields();
   QJsonObject tmpOldAttrs;
   QJsonObject tmpNewAttrs;
+  QJsonObject tmpOldFileChecksums;
+  QJsonObject tmpNewFileChecksums;
 
   for ( int idx = 0; idx < fields.count(); ++idx )
   {
-    QVariant oldVal = oldAttrs.at( idx );
-    QVariant newVal = newAttrs.at( idx );
+    const QVariant oldVal = oldAttrs.at( idx );
+    const QVariant newVal = newAttrs.at( idx );
 
     if ( newVal != oldVal )
     {
-      QString name = fields.at( idx ).name();
+      const QString name = fields.at( idx ).name();
       tmpOldAttrs.insert( name, QJsonValue::fromVariant( oldVal ) );
       tmpNewAttrs.insert( name, QJsonValue::fromVariant( newVal ) );
       areFeaturesEqual = true;
+
+      if ( attachmentFieldsList.contains( name ) )
+      {
+        const QString oldFileName = oldVal.toString();
+        const QByteArray oldFileChecksum = fileChecksum( oldFileName, QCryptographicHash::Sha256 );
+        const QJsonValue oldFileChecksumJson = oldFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( oldFileChecksum ) );
+        const QString newFileName = newVal.toString();
+        const QByteArray newFileChecksum = fileChecksum( newFileName, QCryptographicHash::Sha256 );
+        const QJsonValue newFileChecksumJson = newFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( newFileChecksum ) );
+
+        tmpOldFileChecksums.insert( oldVal.toString(), oldFileChecksumJson );
+        tmpNewFileChecksums.insert( newVal.toString(), newFileChecksumJson );
+      }
     }
   }
 
@@ -239,10 +380,21 @@ void FeatureDeltas::addPatch( const QString &layerId, const QgsFeature &oldFeatu
   if ( ! areFeaturesEqual )
     return;
 
-  if ( tmpNewAttrs.length() > 0 || tmpOldAttrs.length() > 0 )
+  if ( tmpOldAttrs.length() > 0 || tmpNewAttrs.length() > 0 )
   {
     oldData.insert( QStringLiteral( "attributes" ), tmpOldAttrs );
     newData.insert( QStringLiteral( "attributes" ), tmpNewAttrs );
+
+    if ( tmpOldFileChecksums.length() > 0 || tmpNewFileChecksums.length() > 0 )
+    {
+      oldData.insert( QStringLiteral( "files_sha256" ), tmpOldFileChecksums );
+      newData.insert( QStringLiteral( "files_sha256" ), tmpNewFileChecksums );
+    }
+  }
+  else
+  {
+    Q_ASSERT( tmpOldFileChecksums.isEmpty() );
+    Q_ASSERT( tmpNewFileChecksums.isEmpty() );
   }
 
   delta.insert( QStringLiteral( "old" ), oldData );
@@ -258,20 +410,42 @@ void FeatureDeltas::addDelete( const QString &layerId, const QgsFeature &oldFeat
   QJsonObject delta( {{"fid", oldFeature.id()},
                       {"layerId", layerId},
                       {"method", "delete"}} );
-  QgsAttributes oldAttrs = oldFeature.attributes();
+  const QStringList attachmentFieldsList = attachmentFieldNames( layerId );
+  const QgsAttributes oldAttrs = oldFeature.attributes();
   QJsonObject oldData( {{"geometry", geometryToJsonValue( oldFeature.geometry() )}});
   QJsonObject tmpOldAttrs;
+  QJsonObject tmpOldFileChecksums;
 
   for ( int idx = 0; idx < oldAttrs.count(); ++idx )
   {
-    QVariant oldVal = oldAttrs.at( idx );
-    QString name = oldFeature.fields().at( idx ).name();
+    const QVariant oldVal = oldAttrs.at( idx );
+    const QString name = oldFeature.fields().at( idx ).name();
     tmpOldAttrs.insert( name, QJsonValue::fromVariant( oldVal ) );
+
+    if ( attachmentFieldsList.contains( name ) )
+    {
+      const QString oldFileName = oldVal.toString();
+      const QByteArray oldFileChecksum = fileChecksum( oldFileName, QCryptographicHash::Sha256 );
+      const QJsonValue oldFileChecksumJson = oldFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( oldFileChecksum ) );
+
+      tmpOldFileChecksums.insert( oldVal.toString(), oldFileChecksumJson );
+    }
   }
 
   if ( tmpOldAttrs.length() > 0 )
+  {
     oldData.insert( QStringLiteral( "attributes" ), tmpOldAttrs );
 
+    if ( tmpOldFileChecksums.length() > 0 )
+    {
+      oldData.insert( QStringLiteral( "files_sha256" ), tmpOldFileChecksums );
+    }
+  }
+  else
+  {
+    Q_ASSERT( tmpOldFileChecksums.isEmpty() );
+  }
+  
   delta.insert( QStringLiteral( "old" ), oldData );
 
   mDeltas.append( delta );
@@ -284,21 +458,42 @@ void FeatureDeltas::addCreate( const QString &layerId, const QgsFeature &newFeat
   QJsonObject delta( {{"fid", newFeature.id()},
                       {"layerId", layerId},
                       {"method", "create"}} );
-  QgsAttributes newAttrs = newFeature.attributes();
-
+  const QStringList attachmentFieldsList = attachmentFieldNames( layerId );
+  const QgsAttributes newAttrs = newFeature.attributes();
   QJsonObject newData( {{"geometry", geometryToJsonValue( newFeature.geometry() )}});
   QJsonObject tmpNewAttrs;
+  QJsonObject tmpNewFileChecksums;
 
   for ( int idx = 0; idx < newAttrs.count(); ++idx )
   {
-    QVariant newVal = newAttrs.at( idx );
-    QString name = newFeature.fields().at( idx ).name();
+    const QVariant newVal = newAttrs.at( idx );
+    const QString name = newFeature.fields().at( idx ).name();
     tmpNewAttrs.insert( name, QJsonValue::fromVariant( newVal ) );
+
+    if ( attachmentFieldsList.contains( name ) )
+    {
+      const QString newFileName = newVal.toString();
+      const QByteArray newFileChecksum = fileChecksum( newFileName, QCryptographicHash::Sha256 );
+      const QJsonValue newFileChecksumJson = newFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( newFileChecksum ) );
+
+      tmpNewFileChecksums.insert( newVal.toString(), newFileChecksumJson );
+    }
   }
 
-  if ( tmpNewAttrs.length() > 0 )
+ if ( tmpNewAttrs.length() > 0 )
+  {
     newData.insert( QStringLiteral( "attributes" ), tmpNewAttrs );
 
+    if ( tmpNewFileChecksums.length() > 0 )
+    {
+      newData.insert( QStringLiteral( "files_sha256" ), tmpNewFileChecksums );
+    }
+  }
+  else
+  {
+    Q_ASSERT( tmpNewFileChecksums.isEmpty() );
+  }
+  
   delta.insert( QStringLiteral( "new" ), newData );
 
   mDeltas.append( delta );

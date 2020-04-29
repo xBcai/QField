@@ -127,6 +127,33 @@ class FeatureDeltas
 
 
     /**
+     * Returns a list of field names that have edit form as attachments
+     * 
+     * @param layerId
+     * @return QStringList list of field names
+     */
+    QStringList attachmentFieldNames( const QString &layerId ) const;
+
+
+    /**
+     * Returns a set of file names to be uploaded
+     * 
+     * @return QSet<QString> unique file names
+     */
+    QSet<QString> attachmentFileNames() const;
+
+
+    /**
+     * Creates checksum of a file. Returns null QByteArray if cannot be calculated.
+     * 
+     * @param fileName file name to get checksum of
+     * @param hashAlgorithm hash algorithm (md5, sha1, sha256 etc)
+     * @return QByteArray checksum
+     */
+    QByteArray fileChecksum( const QString &fileName, const QCryptographicHash::Algorithm hashAlgorithm ) const;
+
+
+    /**
      * Adds create delta.
      *
      * @param layerId layer ID where the old feature belongs to
@@ -203,6 +230,11 @@ class FeatureDeltas
      */
     QString mErrorReason;
 
+
+    /**
+     * Attachment fields cache.
+     */
+    QMap<QString, QStringList> mCacheAttachmentFieldNames;
 };
 
 #endif // FEATUREDELTAS_H
