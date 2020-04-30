@@ -46,19 +46,12 @@ class LayerObserver : public QObject
 
 
     /**
-     * Return the delta files info of the current project. May return empty list, if there are no delta files.
+     * Generates a new deltas file full name
      * 
-     * @return QFileInfoList delta files info
+     * @param isCurrentDeltaFile if true, no timestamp is appended
+     * @return QString 
      */
-    static QFileInfoList projectDeltaFiles();
-
-
-    /**
-     * Returns the current delta file name
-     * 
-     * @return QString delta file name
-     */
-    QString fileName() const;
+    static QString generateDeltaFileName( bool isCurrentDeltaFile = false );
 
 
     /**
@@ -81,7 +74,7 @@ class LayerObserver : public QObject
      * Clears the current delta file changes
      * 
      */
-    void clear() const;
+    void reset( bool isHardReset = false ) const;
 
 
   private slots:
@@ -150,24 +143,15 @@ class LayerObserver : public QObject
 
   private:
     /**
-     * Generates a new deltas file full name
-     * 
-     * @param isCurrentDeltaFile if true, no timestamp is appended
-     * @return QString 
+     * The current Deltas File Wrapper object
      */
-    static QString generateFileName( bool isCurrentDeltaFile = false );
+    std::unique_ptr<DeltaFileWrapper> mCurrentDeltaFileWrapper;
 
 
     /**
-     * A counter of the files saved so far. Only used to generate unique filename.
+     * The commited Deltas File Wrapper object
      */
-    static int sFilesSaved;
-
-
-    /**
-     * The current Deltas File Wrapper object that wraps the delta file
-     */
-    std::unique_ptr<DeltaFileWrapper> mDeltaFileWrapper;
+    std::unique_ptr<DeltaFileWrapper> mCommittedDeltaFileWrapper;
 
 
     /**
@@ -176,6 +160,7 @@ class LayerObserver : public QObject
      * value  - changed features for that layer
      */
     QMap<QString, QgsChangedFeatures> mChangedFeatures;
+
 
     /**
      * Store the old version of patched features per layer.

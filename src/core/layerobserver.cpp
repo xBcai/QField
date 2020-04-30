@@ -25,80 +25,75 @@
 
 #include <QDir>
 
-int LayerObserver::sFilesSaved = 0;
-
 
 LayerObserver::LayerObserver( const QgsProject *project )
 {
-  mDeltaFileWrapper.reset( new DeltaFileWrapper( generateFileName( true ) ) );
+  mCurrentDeltaFileWrapper.reset( new DeltaFileWrapper( generateDeltaFileName( true ) ) );
+  mCommittedDeltaFileWrapper.reset( new DeltaFileWrapper( generateDeltaFileName( false ) ) );
 
   connect( project, &QgsProject::homePathChanged, this, &LayerObserver::onHomePathChanged );
   connect( project, &QgsProject::layersAdded, this, &LayerObserver::onLayersAdded );
 }
 
 
-QString LayerObserver::generateFileName( bool isCurrentDeltaFile )
+QString LayerObserver::generateDeltaFileName( bool isCurrentDeltaFile )
 {
   return ( isCurrentDeltaFile )
     ? QStringLiteral( "%1/deltafile.json" )
         .arg( QgsProject::instance()->homePath() )
-    : QStringLiteral( "%1/deltafile_%2_%3.json" )
-        .arg( QgsProject::instance()->homePath() )
-        .arg( QDateTime::currentDateTime().toSecsSinceEpoch() )
-        .arg( ++sFilesSaved );
-}
-
-
-QFileInfoList LayerObserver::projectDeltaFiles()
-{
-  return QDir( QgsProject::instance()->homePath() )
-    .entryInfoList(QStringList({"deltafile_*.json"}), QDir::Files | QDir::NoDotAndDotDot | QDir::Readable, QDir::Name);
-}
-
-
-QString LayerObserver::fileName() const
-{
-  return mDeltaFileWrapper->fileName();
+    : QStringLiteral( "%1/deltafile_commited.json" )
+        .arg( QgsProject::instance()->homePath() );
 }
 
 
 bool LayerObserver::hasError() const
 {
-  return mDeltaFileWrapper->hasError();
+  return mCurrentDeltaFileWrapper->hasError() && mCommittedDeltaFileWrapper->hasError();
 }
 
 
 bool LayerObserver::commit()
 {
-  if ( ! mDeltaFileWrapper->toFile() )
+  if ( ! mCurrentDeltaFileWrapper->toFile() )
+  {
+    QgsLogger::warning( QStringLiteral( "Cannot write the current delta file: %1" ).arg( mCurrentDeltaFileWrapper->errorString() ) );
     return false;
+  }
 
-  if ( mDeltaFileWrapper->count() == 0 )
+  if ( mCurrentDeltaFileWrapper->count() == 0 )
     return true;
 
-  if ( ! QDir().rename( mDeltaFileWrapper->fileName(), generateFileName() ) )
+  if ( ! mCommittedDeltaFileWrapper->append( mCurrentDeltaFileWrapper.get() ) )
+  {
+    QgsLogger::warning( QStringLiteral( "Unable to append delta file wrapper contents!" ) );
     return false;
+  }
 
-  mDeltaFileWrapper.reset( new DeltaFileWrapper( generateFileName( true ) ) );
+  if ( ! mCommittedDeltaFileWrapper->toFile() )
+  {
+    QgsLogger::warning( QStringLiteral( "Cannot write the committed delta file: %1" ).arg( mCommittedDeltaFileWrapper->errorString() ) );
+    return false;
+  }
+ 
+  mCurrentDeltaFileWrapper->reset( true );
 
   return true;
 }
 
 
-void LayerObserver::clear() const
+void LayerObserver::reset( bool isHardReset ) const
 {
-  return mDeltaFileWrapper->clear();
+  return mCurrentDeltaFileWrapper->reset( isHardReset );
 }
 
 
 void LayerObserver::onHomePathChanged()
 {
-  QFileInfoList deltaFilesInfo = projectDeltaFiles();
-  QString deltaFileName = deltaFilesInfo.isEmpty() ? generateFileName( true ) : deltaFilesInfo.last().absolutePath();
-  
-  Q_ASSERT( ! mDeltaFileWrapper->isDirty() );
+  Q_ASSERT( ! mCurrentDeltaFileWrapper->isDirty() );
+  Q_ASSERT( ! mCommittedDeltaFileWrapper->isDirty() );
 
-  mDeltaFileWrapper.reset( new DeltaFileWrapper( deltaFileName ) );
+  mCurrentDeltaFileWrapper.reset( new DeltaFileWrapper( generateDeltaFileName( true ) ) );
+  mCommittedDeltaFileWrapper.reset( new DeltaFileWrapper( generateDeltaFileName( false ) ) );
 }
 
 
@@ -160,7 +155,7 @@ void LayerObserver::onCommittedFeaturesAdded( const QString &layerId, const QgsF
 {
   for ( const QgsFeature &newFeature : addedFeatures )
   {
-    mDeltaFileWrapper->addCreate( layerId, newFeature );
+    mCurrentDeltaFileWrapper->addCreate( layerId, newFeature );
   }
 }
 
@@ -174,7 +169,7 @@ void LayerObserver::onCommittedFeaturesRemoved( const QString &layerId, const Qg
     Q_ASSERT( changedFeatures.contains( fid ) );
 
     QgsFeature oldFeature = changedFeatures.take( fid );
-    mDeltaFileWrapper->addDelete( layerId, oldFeature );
+    mCurrentDeltaFileWrapper->addDelete( layerId, oldFeature );
   }
 
   mChangedFeatures.insert( layerId, changedFeatures );
@@ -198,7 +193,7 @@ void LayerObserver::onCommittedAttributeValuesChanges( const QString &layerId, c
 
     QgsFeature oldFeature = changedFeatures.take( fid );
     QgsFeature newFeature = vl->getFeature( fid );
-    mDeltaFileWrapper->addPatch( layerId, oldFeature, newFeature );
+    mCurrentDeltaFileWrapper->addPatch( layerId, oldFeature, newFeature );
   }
 
   mPatchedFids.insert( layerId, patchedFids );
@@ -224,7 +219,7 @@ void LayerObserver::onCommittedGeometriesChanges( const QString &layerId, const 
     QgsFeature oldFeature = changedFeatures.take( fid );
     QgsFeature newFeature = vl->getFeature( fid );
 
-    mDeltaFileWrapper->addPatch( layerId, oldFeature, newFeature );
+    mCurrentDeltaFileWrapper->addPatch( layerId, oldFeature, newFeature );
   }
 
   mPatchedFids.insert( layerId, patchedFids );
@@ -239,7 +234,7 @@ void LayerObserver::onEditingStopped( )
   mPatchedFids.take( vl->id() );
   mChangedFeatures.take( vl->id() );
 
-  if ( ! mDeltaFileWrapper->toFile() )
+  if ( ! mCurrentDeltaFileWrapper->toFile() )
   {
     // TODO somehow indicate the user that writing failed
     QgsLogger::warning( "Failed writing JSON file" );

@@ -395,14 +395,14 @@ bool QFieldCloudProjectsModel::uploadDeltas( const QString &projectId )
   
   qDebug() << projectId << project.id;
 
-  // the last file is always a new one and does not need to be synced
-  QFileInfoList deltaFilesInfo = LayerObserver::projectDeltaFiles();
+  QString committedDeltaFileName = LayerObserver::generateDeltaFileName();
 
-  if ( deltaFilesInfo.size() == 0 )
+  if ( ! QFile::exists( committedDeltaFileName ) )
     return false;
 
+  DeltaFileWrapper committedDeltaFile( committedDeltaFileName );
 
-  // TODO start the actual upload of the files
+  // committedDeltaFile.toString();
 
 
   return true;

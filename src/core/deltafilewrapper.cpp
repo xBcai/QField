@@ -31,7 +31,7 @@ QMap<QString, QStringList> DeltaFileWrapper::sCacheAttachmentFieldNames;
 DeltaFileWrapper::DeltaFileWrapper( const QString &fileName )
 {
   mFileName = fileName;
-  QFile deltasFile( mFileName );
+  QFile deltaFile( mFileName );
   QString errorReason;
 
   // TODO fix this
@@ -43,11 +43,11 @@ DeltaFileWrapper::DeltaFileWrapper( const QString &fileName )
 
     QgsLogger::debug( QStringLiteral( "Loading deltas from file %1" ).arg( mFileName ) );
 
-    if ( ! deltasFile.open( QIODevice::ReadWrite ) )
+    if ( ! deltaFile.open( QIODevice::ReadWrite ) )
       errorReason = QStringLiteral( "Cannot open file for read and write" );
 
     if ( errorReason.isEmpty() )
-      mJsonRoot = QJsonDocument::fromJson( deltasFile.readAll(), &jsonError ).object();
+      mJsonRoot = QJsonDocument::fromJson( deltaFile.readAll(), &jsonError ).object();
 
     if ( errorReason.isEmpty() && ( jsonError.error != QJsonParseError::NoError ) )
       errorReason = jsonError.errorString();
@@ -90,7 +90,7 @@ DeltaFileWrapper::DeltaFileWrapper( const QString &fileName )
                               // {"layerId",layer.id()},
                               {"deltas", mDeltas}} );
 
-    if ( ! deltasFile.open( QIODevice::ReadWrite ) )
+    if ( ! deltaFile.open( QIODevice::ReadWrite ) )
       errorReason = QStringLiteral( "Cannot open deltas file for read and write" );
 
     if ( ! toFile() )
@@ -106,6 +106,12 @@ DeltaFileWrapper::DeltaFileWrapper( const QString &fileName )
 }
 
 
+QString DeltaFileWrapper::id() const
+{
+  return mJsonRoot.value( QStringLiteral( "id" ) ).toString();
+}
+
+
 QString DeltaFileWrapper::fileName() const
 {
   return mFileName;
@@ -118,10 +124,18 @@ QString DeltaFileWrapper::projectId() const
 }
 
 
-void DeltaFileWrapper::clear()
+void DeltaFileWrapper::reset( bool isHardReset )
 {
-  mIsDirty = mDeltas.size() != 0;
+  if ( ! mIsDirty && mDeltas.size() == 0)
+    return;
+
+  mIsDirty = true;
   mDeltas = QJsonArray();
+
+  if ( ! isHardReset )
+    return;
+  
+  mJsonRoot.insert( QStringLiteral( "id" ), QUuid::createUuid().toString( QUuid::WithoutBraces ) );
 }
 
 
@@ -140,6 +154,12 @@ bool DeltaFileWrapper::isDirty() const
 int DeltaFileWrapper::count() const
 {
   return mDeltas.size();
+}
+
+
+QJsonArray DeltaFileWrapper::deltas() const
+{
+  return mDeltas;
 }
 
 
@@ -166,28 +186,42 @@ QString DeltaFileWrapper::toString() const
 
 bool DeltaFileWrapper::toFile()
 {
-  QFile deltasFile( mFileName );
+  QFile deltaFile( mFileName );
 
   QgsLogger::debug( "Start writing deltas JSON" );
 
-  if ( ! deltasFile.open( QIODevice::WriteOnly | QIODevice::Unbuffered ) )
+  if ( ! deltaFile.open( QIODevice::WriteOnly | QIODevice::Unbuffered ) )
   {
-    mErrorReason = deltasFile.errorString();
+    mErrorReason = deltaFile.errorString();
     QgsLogger::warning( QStringLiteral( "File %1 cannot be open for writing. Reason %2" ).arg( mFileName ).arg( mErrorReason ) );
 
     return false;
   }
 
-  if ( deltasFile.write( toJson() )  == -1)
+  if ( deltaFile.write( toJson() )  == -1)
   {
-    mErrorReason = deltasFile.errorString();
+    mErrorReason = deltaFile.errorString();
     QgsLogger::warning( QStringLiteral( "Contents of the file %1 has not been written. Reason %2" ).arg( mFileName ).arg( mErrorReason ) );
     return false;
   }
 
-  deltasFile.close();
+  deltaFile.close();
   mIsDirty = false;
   QgsLogger::debug( "Finished writing deltas JSON" );
+
+  return true;
+}
+
+
+bool DeltaFileWrapper::append( const DeltaFileWrapper *deltaFileWrapper )
+{
+  if ( ! deltaFileWrapper )
+    return false;
+    
+  if ( deltaFileWrapper->hasError() )
+    return false;
+
+  mDeltas.append( deltaFileWrapper->deltas() );
 
   return true;
 }
@@ -301,7 +335,7 @@ QSet<QString> DeltaFileWrapper::attachmentFileNames() const
 }
 
 
-QByteArray DeltaFileWrapper::fileChecksum( const QString &fileName, const QCryptographicHash::Algorithm hashAlgorithm ) const
+QByteArray DeltaFileWrapper::fileChecksum( const QString &fileName, const QCryptographicHash::Algorithm hashAlgorithm )
 {
     QFile f(fileName);
 

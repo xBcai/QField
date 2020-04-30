@@ -57,9 +57,28 @@ class DeltaFileWrapper
 
 
     /**
-     * Clears the deltas from memory as there are no deltas at all. Does not affect the permanent storage until `toFile()` is called.
+     * Creates checksum of a file. Returns null QByteArray if cannot be calculated.
+     * 
+     * @param fileName file name to get checksum of
+     * @param hashAlgorithm hash algorithm (md5, sha1, sha256 etc)
+     * @return QByteArray checksum
      */
-    void clear();
+    static QByteArray fileChecksum( const QString &fileName, const QCryptographicHash::Algorithm hashAlgorithm );
+
+
+    /**
+     * Clears the deltas from memory as there are no deltas at all. Does not affect the permanent storage until `toFile()` is called.
+     * @param isHardReset if true, then the delta is recreated from scratch
+     */
+    void reset( bool isHardReset = false );
+
+
+    /**
+     * Returns deltas file id.
+     * 
+     * @return QString id
+     */
+    QString id() const;
 
 
     /**
@@ -71,7 +90,7 @@ class DeltaFileWrapper
 
 
     /**
-     * Returns deltas file project id
+     * Returns deltas file project id.
      * 
      * @return QString project id
      */
@@ -100,6 +119,14 @@ class DeltaFileWrapper
      * @return int number of deltas
      */
     int count() const;
+
+
+    /**
+     * Returns the current deltas JSON array 
+     * 
+     * @return QJsonArray deltas JSON array
+     */
+    QJsonArray deltas() const;
 
 
     /**
@@ -136,21 +163,17 @@ class DeltaFileWrapper
 
 
     /**
+     * Appends the provided deltas JSON array at the end of the current file
+     */
+    bool append( const DeltaFileWrapper *deltaFileWrapper );
+
+
+    /**
      * Returns a set of file names to be uploaded
      * 
      * @return QSet<QString> unique file names
      */
     QSet<QString> attachmentFileNames() const;
-
-
-    /**
-     * Creates checksum of a file. Returns null QByteArray if cannot be calculated.
-     * 
-     * @param fileName file name to get checksum of
-     * @param hashAlgorithm hash algorithm (md5, sha1, sha256 etc)
-     * @return QByteArray checksum
-     */
-    QByteArray fileChecksum( const QString &fileName, const QCryptographicHash::Algorithm hashAlgorithm ) const;
 
 
     /**
