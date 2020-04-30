@@ -1,5 +1,5 @@
 /***************************************************************************
-                          featuredeltas.h
+                          deltafilewrapper.h
                              -------------------
   begin                : Apr 2020
   copyright            : (C) 2020 by Ivan Ivanov
@@ -30,7 +30,7 @@
  * A class that wraps the operations with a delta file. All read and write operations to a delta file should go through this class.
  * 
  */
-class FeatureDeltas
+class DeltaFileWrapper
 {
   public:
     /**
@@ -44,7 +44,7 @@ class FeatureDeltas
      * 
      * @param fileName full file name with path where the object should be stored
      */
-    FeatureDeltas( const QString &fileName );
+    DeltaFileWrapper( const QString &fileName );
 
 
     /**

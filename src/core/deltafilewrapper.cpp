@@ -1,5 +1,5 @@
 /***************************************************************************
-                          featuredeltas.h
+                          deltafilewrapper.h
                              -------------------
   begin                : Apr 2020
   copyright            : (C) 2020 by Ivan Ivanov
@@ -15,7 +15,7 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "featuredeltas.h"
+#include "deltafilewrapper.h"
 
 #include <QFileInfo>
 #include <QFile>
@@ -24,11 +24,11 @@
 #include <qgsproject.h>
 
 
-const QString FeatureDeltas::FormatVersion = QStringLiteral( "1.0" );
-QMap<QString, QStringList> FeatureDeltas::sCacheAttachmentFieldNames;
+const QString DeltaFileWrapper::FormatVersion = QStringLiteral( "1.0" );
+QMap<QString, QStringList> DeltaFileWrapper::sCacheAttachmentFieldNames;
 
 
-FeatureDeltas::FeatureDeltas( const QString &fileName )
+DeltaFileWrapper::DeltaFileWrapper( const QString &fileName )
 {
   mFileName = fileName;
   QFile deltasFile( mFileName );
@@ -64,7 +64,7 @@ FeatureDeltas::FeatureDeltas( const QString &fileName )
     if ( errorReason.isEmpty() && ( ! mJsonRoot.value( "version" ).isString() || mJsonRoot.value( "version" ).toString().isEmpty() ) )
       errorReason = QStringLiteral( "Delta file is missing a valid version" );
 
-    if ( errorReason.isEmpty() && mJsonRoot.value( "version" ) != FeatureDeltas::FormatVersion )
+    if ( errorReason.isEmpty() && mJsonRoot.value( "version" ) != DeltaFileWrapper::FormatVersion )
       errorReason = QStringLiteral( "File has incompatible version" );
 
     if ( errorReason.isEmpty() )
@@ -81,7 +81,7 @@ FeatureDeltas::FeatureDeltas( const QString &fileName )
   }
   else
   {
-    mJsonRoot = QJsonObject( {{"version", FeatureDeltas::FormatVersion},
+    mJsonRoot = QJsonObject( {{"version", DeltaFileWrapper::FormatVersion},
                               {"id", QUuid::createUuid().toString( QUuid::WithoutBraces )},
                               // Mario thinks this is not needed for now
                               // {"clientId",clientId},
@@ -106,50 +106,50 @@ FeatureDeltas::FeatureDeltas( const QString &fileName )
 }
 
 
-QString FeatureDeltas::fileName() const
+QString DeltaFileWrapper::fileName() const
 {
   return mFileName;
 }
 
 
-QString FeatureDeltas::projectId() const
+QString DeltaFileWrapper::projectId() const
 {
   return mProjectId;
 }
 
 
-void FeatureDeltas::clear()
+void DeltaFileWrapper::clear()
 {
   mIsDirty = mDeltas.size() != 0;
   mDeltas = QJsonArray();
 }
 
 
-bool FeatureDeltas::hasError() const
+bool DeltaFileWrapper::hasError() const
 {
   return mHasError;
 }
 
 
-bool FeatureDeltas::isDirty() const
+bool DeltaFileWrapper::isDirty() const
 {
   return mIsDirty;
 }
 
 
-int FeatureDeltas::count() const
+int DeltaFileWrapper::count() const
 {
   return mDeltas.size();
 }
 
 
-QString FeatureDeltas::errorString() const
+QString DeltaFileWrapper::errorString() const
 {
   return mErrorReason;
 }
 
 
-QByteArray FeatureDeltas::toJson( QJsonDocument::JsonFormat jsonFormat ) const
+QByteArray DeltaFileWrapper::toJson( QJsonDocument::JsonFormat jsonFormat ) const
 {
   QJsonObject jsonRoot (mJsonRoot);
   jsonRoot.insert( QStringLiteral( "deltas" ), mDeltas );
@@ -158,13 +158,13 @@ QByteArray FeatureDeltas::toJson( QJsonDocument::JsonFormat jsonFormat ) const
 }
 
 
-QString FeatureDeltas::toString() const
+QString DeltaFileWrapper::toString() const
 {
   return QString::fromStdString( toJson().toStdString() );
 }
 
 
-bool FeatureDeltas::toFile()
+bool DeltaFileWrapper::toFile()
 {
   QFile deltasFile( mFileName );
 
@@ -193,7 +193,7 @@ bool FeatureDeltas::toFile()
 }
 
 
-QStringList FeatureDeltas::attachmentFieldNames( const QString &layerId )
+QStringList DeltaFileWrapper::attachmentFieldNames( const QString &layerId )
 {
   if ( sCacheAttachmentFieldNames.contains( layerId ) )
     return sCacheAttachmentFieldNames.value( layerId );
@@ -220,7 +220,7 @@ QStringList FeatureDeltas::attachmentFieldNames( const QString &layerId )
 }
 
 
-QSet<QString> FeatureDeltas::attachmentFileNames() const
+QSet<QString> DeltaFileWrapper::attachmentFileNames() const
 {
   // NOTE represents { layerId: { featureId: { attributeName: fileName } } }
   // We store all the changes in such mapping that we can return only the last attachment file name that is associated with a feature.
@@ -301,7 +301,7 @@ QSet<QString> FeatureDeltas::attachmentFileNames() const
 }
 
 
-QByteArray FeatureDeltas::fileChecksum( const QString &fileName, const QCryptographicHash::Algorithm hashAlgorithm ) const
+QByteArray DeltaFileWrapper::fileChecksum( const QString &fileName, const QCryptographicHash::Algorithm hashAlgorithm ) const
 {
     QFile f(fileName);
 
@@ -317,7 +317,7 @@ QByteArray FeatureDeltas::fileChecksum( const QString &fileName, const QCryptogr
 }
 
 
-void FeatureDeltas::addPatch( const QString &layerId, const QgsFeature &oldFeature, const QgsFeature &newFeature )
+void DeltaFileWrapper::addPatch( const QString &layerId, const QgsFeature &oldFeature, const QgsFeature &newFeature )
 {
   QJsonObject delta( {
     {"fid", oldFeature.id()},
@@ -405,7 +405,7 @@ void FeatureDeltas::addPatch( const QString &layerId, const QgsFeature &oldFeatu
 }
 
 
-void FeatureDeltas::addDelete( const QString &layerId, const QgsFeature &oldFeature )
+void DeltaFileWrapper::addDelete( const QString &layerId, const QgsFeature &oldFeature )
 {
   QJsonObject delta( {{"fid", oldFeature.id()},
                       {"layerId", layerId},
@@ -453,7 +453,7 @@ void FeatureDeltas::addDelete( const QString &layerId, const QgsFeature &oldFeat
 }
 
 
-void FeatureDeltas::addCreate( const QString &layerId, const QgsFeature &newFeature )
+void DeltaFileWrapper::addCreate( const QString &layerId, const QgsFeature &newFeature )
 {
   QJsonObject delta( {{"fid", newFeature.id()},
                       {"layerId", layerId},
@@ -501,7 +501,7 @@ void FeatureDeltas::addCreate( const QString &layerId, const QgsFeature &newFeat
 }
 
 
-QJsonValue FeatureDeltas::geometryToJsonValue( const QgsGeometry &geom ) const
+QJsonValue DeltaFileWrapper::geometryToJsonValue( const QgsGeometry &geom ) const
 {
   if ( geom.isNull() )
     return QJsonValue::Null;
