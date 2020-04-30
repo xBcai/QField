@@ -48,6 +48,15 @@ class FeatureDeltas
 
 
     /**
+     * Returns a list of field names that have edit form as attachments
+     * 
+     * @param layerId
+     * @return QStringList list of field names
+     */
+    static QStringList attachmentFieldNames( const QString &layerId );
+
+
+    /**
      * Clears the deltas from memory as there are no deltas at all. Does not affect the permanent storage until `toFile()` is called.
      */
     void clear();
@@ -127,15 +136,6 @@ class FeatureDeltas
 
 
     /**
-     * Returns a list of field names that have edit form as attachments
-     * 
-     * @param layerId
-     * @return QStringList list of field names
-     */
-    QStringList attachmentFieldNames( const QString &layerId ) const;
-
-
-    /**
      * Returns a set of file names to be uploaded
      * 
      * @return QSet<QString> unique file names
@@ -189,6 +189,13 @@ class FeatureDeltas
      */
     QJsonValue geometryToJsonValue( const QgsGeometry &geom ) const;
 
+
+    /**
+     * Attachment fields cache.
+     */
+    static QMap<QString, QStringList> sCacheAttachmentFieldNames;
+
+
     /**
      * The list of JSON deltas.
      */
@@ -229,12 +236,6 @@ class FeatureDeltas
      * Error string describing the reason for the error. Should be checked if hasError() returns true.
      */
     QString mErrorReason;
-
-
-    /**
-     * Attachment fields cache.
-     */
-    QMap<QString, QStringList> mCacheAttachmentFieldNames;
 };
 
 #endif // FEATUREDELTAS_H

@@ -25,6 +25,7 @@
 
 
 const QString FeatureDeltas::FormatVersion = QStringLiteral( "1.0" );
+QMap<QString, QStringList> FeatureDeltas::sCacheAttachmentFieldNames;
 
 
 FeatureDeltas::FeatureDeltas( const QString &fileName )
@@ -192,10 +193,10 @@ bool FeatureDeltas::toFile()
 }
 
 
-QStringList FeatureDeltas::attachmentFieldNames( const QString &layerId ) const
+QStringList FeatureDeltas::attachmentFieldNames( const QString &layerId )
 {
-  if ( mCacheAttachmentFieldNames.contains( layerId ) )
-    return mCacheAttachmentFieldNames.value( layerId );
+  if ( sCacheAttachmentFieldNames.contains( layerId ) )
+    return sCacheAttachmentFieldNames.value( layerId );
 
   const QgsVectorLayer *vl = static_cast<QgsVectorLayer *>( QgsProject::instance()->mapLayer( layerId ) );
   QStringList attachmentFieldNames;
@@ -213,8 +214,7 @@ QStringList FeatureDeltas::attachmentFieldNames( const QString &layerId ) const
       attachmentFieldNames.append( field.name() );
   }
 
-  // TODO why this does not work?
-  // mCacheAttachmentFieldNames.insert( layerId, attachmentFieldNames );
+  sCacheAttachmentFieldNames.insert( layerId, attachmentFieldNames );
 
   return attachmentFieldNames;
 }
