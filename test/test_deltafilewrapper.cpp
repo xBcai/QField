@@ -145,16 +145,34 @@ class TestDeltaFileWrapper: public QObject
     }
 
 
-    void testClear()
+    void testId()
+    {
+        DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
+
+        QVERIFY( ! QUuid::fromString( dfw.id() ).isNull() );
+    }
+
+
+    void testReset()
     {
         DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
         dfw.addCreate( "dummyLayerId", QgsFeature() );
 
         QCOMPARE( getDeltasArray( dfw.toString() ).size(), 1 );
 
-        dfw.clear();
+        dfw.reset();
 
         QCOMPARE( getDeltasArray( dfw.toString() ).size(), 0 );
+
+        dfw.addCreate( "dummyLayerId", QgsFeature() );
+
+        QCOMPARE( getDeltasArray( dfw.toString() ).size(), 1 );
+
+        const QString dfwId = dfw.id();
+        dfw.reset( true );
+
+        QCOMPARE( getDeltasArray( dfw.toString() ).size(), 0 );
+        QVERIFY( dfwId != dfw.id() );
     }
 
 
@@ -249,7 +267,7 @@ class TestDeltaFileWrapper: public QObject
         QVERIFY( dfw.toFile() );
         QCOMPARE( dfw.isDirty(), false );
 
-        dfw.clear();
+        dfw.reset();
 
         QCOMPARE( dfw.isDirty(), true );
     }
@@ -257,8 +275,10 @@ class TestDeltaFileWrapper: public QObject
 
     void testCount()
     {
-        QString fileName = std::tmpnam( nullptr );
-        DeltaFileWrapper dfw( fileName );
+        DeltaFileWrapper dfw( std::tmpnam( nullptr ) );
+        
+        QCOMPARE( dfw.count(), 0 );
+
         dfw.addCreate( "dummyLayerId", QgsFeature() );
 
         QCOMPARE( dfw.count(), 1 );
@@ -266,10 +286,52 @@ class TestDeltaFileWrapper: public QObject
         dfw.addCreate( "dummyLayerId", QgsFeature() );
 
         QCOMPARE( dfw.count(), 2 );
+    }
 
-        dfw.clear();
 
-        QCOMPARE( dfw.count(), 0 );
+    void testDeltas()
+    {
+        DeltaFileWrapper dfw( std::tmpnam( nullptr ) );
+
+        QCOMPARE( QJsonDocument( dfw.deltas() ), QJsonDocument::fromJson( "[]" ) );
+
+        dfw.addCreate( "dummyLayerId", QgsFeature( QgsFields(), 100 ) );
+
+        QCOMPARE( QJsonDocument( dfw.deltas() ), QJsonDocument::fromJson( R""""(
+            [
+                {
+                    "fid": 100,
+                    "layerId": "dummyLayerId",
+                    "method": "create",
+                    "new": {
+                        "geometry": null
+                    }
+                }
+            ]
+        )"""" ) );
+
+        dfw.addCreate( "dummyLayerId", QgsFeature( QgsFields(), 101 ) );
+
+        QCOMPARE( QJsonDocument( dfw.deltas() ), QJsonDocument::fromJson( R""""(
+            [
+                {
+                    "fid": 100,
+                    "layerId": "dummyLayerId",
+                    "method": "create",
+                    "new": {
+                        "geometry": null
+                    }
+                },
+                {
+                    "fid": 101,
+                    "layerId": "dummyLayerId",
+                    "method": "create",
+                    "new": {
+                        "geometry": null
+                    }
+                }
+            ]
+        )"""" ) );
     }
 
 
@@ -290,6 +352,17 @@ class TestDeltaFileWrapper: public QObject
         // TODO make sure that dfw1 and dfw2 are in sync
         // QCOMPARE( getDeltasArray( dfw1.toString() ).size(), getDeltasArray( dfw2.toString() ).size() );
         QCOMPARE( getDeltasArray( dfw1.toString() ).size(), getDeltasArray( dfw3.toString() ).size() );
+    }
+
+
+    void testAppend()
+    {
+        DeltaFileWrapper dfw1( QString( std::tmpnam( nullptr ) ) );
+        DeltaFileWrapper dfw2( QString( std::tmpnam( nullptr ) ) );
+        dfw1.addCreate( "dummyLayerId", QgsFeature (QgsFields(), 100) );
+        dfw2.append( &dfw1 );
+        
+        QCOMPARE( dfw2.count(), 1 );
     }
 
 
@@ -330,7 +403,7 @@ class TestDeltaFileWrapper: public QObject
 
         // Check if creates delta of a feature with a NULL geometry. 
         // NOTE this is the same as calling f clearGeometry()
-        dfw.clear();
+        dfw.reset();
         f.setGeometry( QgsGeometry() );
         dfw.addCreate( "dummyLayerId", f );
 
@@ -354,7 +427,7 @@ class TestDeltaFileWrapper: public QObject
 
 
         // Check if creates delta of a feature without attributes
-        dfw.clear();
+        dfw.reset();
         f.setFields( QgsFields(), true );
         f.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
         dfw.addCreate( "dummyLayerId", f );
@@ -425,7 +498,7 @@ class TestDeltaFileWrapper: public QObject
 
 
         // Patch attributes only
-        dfw.clear();
+        dfw.reset();
         newFeature.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
         oldFeature.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
 
@@ -457,7 +530,7 @@ class TestDeltaFileWrapper: public QObject
 
 
         // Patch feature without geometry on attributes only
-        dfw.clear();
+        dfw.reset();
         newFeature.setGeometry( QgsGeometry() );
         oldFeature.setGeometry( QgsGeometry() );
 
@@ -491,7 +564,7 @@ class TestDeltaFileWrapper: public QObject
 
 
         // Patch geometry only
-        dfw.clear();
+        dfw.reset();
         newFeature.setAttribute( QStringLiteral( "dbl" ), 3.14 );
         newFeature.setAttribute( QStringLiteral( "int" ), 42 );
         newFeature.setAttribute( QStringLiteral( "str" ), QStringLiteral( "stringy" ) );
@@ -518,7 +591,7 @@ class TestDeltaFileWrapper: public QObject
 
 
         // Do not patch equal features
-        dfw.clear();
+        dfw.reset();
         oldFeature.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
         newFeature.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
 
@@ -567,7 +640,7 @@ class TestDeltaFileWrapper: public QObject
 
         // Check if creates delta of a feature with a NULL geometry. 
         // NOTE this is the same as calling f clearGeometry()
-        dfw.clear();
+        dfw.reset();
         f.setGeometry( QgsGeometry() );
         dfw.addDelete( "dummyLayerId", f );
 
@@ -591,7 +664,7 @@ class TestDeltaFileWrapper: public QObject
 
 
         // Check if creates delta of a feature without attributes
-        dfw.clear();
+        dfw.reset();
         f.setFields( QgsFields(), true );
         f.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
         dfw.addDelete( "dummyLayerId", f );

@@ -63,47 +63,19 @@ class TestLayerObserver: public QObject
 
     void init()
     {
-      mLayerObserver->clear();
+      mLayerObserver->reset();
     }
 
 
     void cleanup()
     {
-      mLayerObserver->clear();
+      mLayerObserver->reset();
     }
 
 
-    void testProjectDeltaFiles()
+    void testGenerateDeltaFileName()
     {
-      QTemporaryDir dir;
-      
-      QVERIFY( dir.isValid() );
-
-      QStringList fileNames;
-
-      int limit = 5;
-      int counter = 0;
-
-      while ( counter++ < limit )
-      {
-        QString fileName = QStringLiteral( "%1/deltafile_%2_%3.json" ).arg( dir.path() ).arg( QDateTime::currentSecsSinceEpoch() ).arg( counter );
-        fileNames.append( fileName );
-        
-        QVERIFY( QFile( fileName ).open( QIODevice::ReadWrite ) );
-      }
-
-      // make sure the Layer Observer is no longer dirty
-      QVERIFY( mLayerObserver->commit() );
-
-      QgsProject::instance()->setPresetHomePath( dir.path() );
-      QFileInfoList deltaFilesInfo = LayerObserver::projectDeltaFiles();
-      QStringList deltaFileNames;
-
-      for ( const QFileInfo &fi : deltaFilesInfo )
-        deltaFileNames.append( fi.absoluteFilePath() );
-
-
-      QCOMPARE( deltaFileNames, fileNames );
+      QVERIFY( LayerObserver::generateDeltaFileName( true ) != LayerObserver::generateDeltaFileName( false ) );
     }
 
 
@@ -112,35 +84,50 @@ class TestLayerObserver: public QObject
       // ? how I can test such thing?
       QSKIP("decide how we test errors");
       QCOMPARE( mLayerObserver->hasError(), false );
-      QVERIFY( QFile::exists( mLayerObserver->fileName() ) );
-    }
-
-
-    void testFileName()
-    {
-      qDebug() << mLayerObserver->fileName();
-      QVERIFY( mLayerObserver->fileName().size() > 0 );
-      QVERIFY( QFile::exists( mLayerObserver->fileName() ) );
+      QVERIFY( QFile::exists( LayerObserver::generateDeltaFileName( true ) ) );
     }
 
 
     void testCommit()
     {
-      QString fileNameOld = mLayerObserver->fileName();
+      QString currentDeltaFileName = LayerObserver::generateDeltaFileName( true );
+      QString committedDeltaFileName = LayerObserver::generateDeltaFileName( false );
 
-      QVERIFY( mLayerObserver->fileName().size() > 0 );
-      QVERIFY( QFile::exists( mLayerObserver->fileName() ) );
+      QVERIFY( QFile::exists( currentDeltaFileName ) );
+      QVERIFY( QFile::exists( committedDeltaFileName ) );
+
+      DeltaFileWrapper currentDeltaFile( currentDeltaFileName );
+      DeltaFileWrapper committedDeltaFile( committedDeltaFileName );
+      QString oldIdCurrentDeltaFile = currentDeltaFile.id();
+      QString oldIdCommittedDeltaFile = committedDeltaFile.id();
+
+      QgsFeature f1( mLayer->fields() );
+      f1.setAttribute( QStringLiteral( "int" ), 1000 );
+      f1.setAttribute( QStringLiteral( "str" ), "new_string1" );
+      f1.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
+
+
+      QVERIFY( ! currentDeltaFile.hasError() );
+      QVERIFY( ! committedDeltaFile.hasError() );
+      QVERIFY( mLayer->startEditing() );
+      QVERIFY( mLayer->addFeature( f1 ) );
+      QVERIFY( mLayer->commitChanges() );
+      QCOMPARE( currentDeltaFile.count(), 1 );
+      QCOMPARE( committedDeltaFile.count(), 0 );
       QVERIFY( mLayerObserver->commit() );
-  
-      QFileInfoList deltaFilesInfo = LayerObserver::projectDeltaFiles();
-      
-      // other tests might have created other delta files, therefore > (greater than)
-      QVERIFY( deltaFilesInfo.size() >= 1 );
+      QCOMPARE( currentDeltaFile.count(), 0 );
+      QCOMPARE( committedDeltaFile.count(), 1 );
 
-      QString fileNameNew = deltaFilesInfo.last().absoluteFilePath();
-  
-      QVERIFY( QFile::exists( fileNameNew ) );
-      QVERIFY( fileNameOld != fileNameNew );
+      // Sometimes in test cases I need to have more than instance of DeltaFileWrapper of the same file. What is the best approach in this situation?
+      // 1) Keep some kind of singleton based on the filename, so using the same instance everywhere.
+      // 2) Add file system observer to keep the instances updated.
+      DeltaFileWrapper currentDeltaFile2( currentDeltaFileName );
+      DeltaFileWrapper committedDeltaFile2( committedDeltaFileName );
+
+      QVERIFY( ! currentDeltaFile2.hasError() );
+      QVERIFY( ! committedDeltaFile2.hasError() );
+      QVERIFY( oldIdCurrentDeltaFile != currentDeltaFile2.id() );
+      QVERIFY( oldIdCommittedDeltaFile == committedDeltaFile2.id() );
     }
 
 
@@ -154,7 +141,7 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->startEditing() );
       QVERIFY( mLayer->addFeature( f1 ) );
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( mLayerObserver->fileName() ).size(), 1 );
+      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ).size(), 1 );
 
       QgsFeature f2( mLayer->fields() );
       f2.setAttribute( QStringLiteral( "int" ), 1001 );
@@ -164,13 +151,13 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->startEditing() );
       QVERIFY( mLayer->addFeature( f1 ) );
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( mLayerObserver->fileName() ).size(), 2 );
+      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ).size(), 2 );
 
-      mLayerObserver->clear();
+      mLayerObserver->reset();
       QVERIFY( mLayer->startEditing() );
       QVERIFY( mLayer->commitChanges() );
 
-      QCOMPARE( getDeltaOperations( mLayerObserver->fileName() ).size(), 0 );
+      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ).size(), 0 );
     }
 
 
@@ -184,10 +171,10 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->startEditing() );
       QVERIFY( mLayer->addFeature( f1 ) );
       // the changes are not written on the disk yet
-      QCOMPARE( getDeltaOperations( mLayerObserver->fileName() ), QStringList() );
+      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ), QStringList() );
       // when we stop editing, all changes are written
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( mLayerObserver->fileName() ), QStringList({"create"}) );
+      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ), QStringList({"create"}) );
     }
 
 
@@ -201,7 +188,7 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->startEditing() );
       QVERIFY( mLayer->addFeature( f1 ) );
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( mLayerObserver->fileName() ), QStringList({"create"}) );
+      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ), QStringList({"create"}) );
     }
 
 
@@ -210,7 +197,7 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->startEditing() );
       QVERIFY( mLayer->deleteFeature( 1 ) );
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( mLayerObserver->fileName() ), QStringList({"delete"}) );
+      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ), QStringList({"delete"}) );
     }
 
 
@@ -226,7 +213,7 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->updateFeature( f1 ) );
       QVERIFY( mLayer->updateFeature( f2 ) );
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( mLayerObserver->fileName() ), QStringList({"patch", "patch"}) );
+      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ), QStringList({"patch", "patch"}) );
     }
 
 
@@ -244,7 +231,7 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->updateFeature( f2 ) );
 
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( mLayerObserver->fileName() ), QStringList({"patch", "patch"}) );
+      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ), QStringList({"patch", "patch"}) );
     }
     
   private:
@@ -255,12 +242,12 @@ class TestLayerObserver: public QObject
     QStringList getDeltaOperations( QString fileName )
     {
       QStringList operations;
-      QFile deltasFile( fileName );
+      QFile deltaFile( fileName );
 
-      if ( ! deltasFile.open( QIODevice::ReadOnly ) )
+      if ( ! deltaFile.open( QIODevice::ReadOnly ) )
         return operations;
       
-      QJsonDocument doc = QJsonDocument::fromJson( deltasFile.readAll() );
+      QJsonDocument doc = QJsonDocument::fromJson( deltaFile.readAll() );
 
       if ( doc.isNull() )
         return operations;
