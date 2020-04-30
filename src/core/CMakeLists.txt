@@ -59,7 +59,7 @@ SET(QFIELD_CORE_SRCS
   qfieldcloudconnection.cpp
   qfieldcloudprojectsmodel.cpp
   qfieldcloudutils.cpp
-  featuredeltas.cpp
+  deltafilewrapper.cpp
   layerobserver.cpp
 )
 
@@ -125,7 +125,7 @@ SET(QFIELD_CORE_HDRS
   qfieldcloudconnection.h
   qfieldcloudprojectsmodel.h
   qfieldcloudutils.h
-  featuredeltas.h
+  deltafilewrapper.h
   layerobserver.h
 )
 

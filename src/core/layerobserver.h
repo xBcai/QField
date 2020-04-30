@@ -19,7 +19,7 @@
 #define LAYEROBSERVER_H
 
 
-#include "featuredeltas.h"
+#include "deltafilewrapper.h"
 
 #include <QList>
 #include <qgsfeature.h>
@@ -165,9 +165,9 @@ class LayerObserver : public QObject
 
 
     /**
-     * The current Feature Deltas object that wraps the delta file
+     * The current Deltas File Wrapper object that wraps the delta file
      */
-    std::unique_ptr<FeatureDeltas> mFeatureDeltas;
+    std::unique_ptr<DeltaFileWrapper> mDeltaFileWrapper;
 
 
     /**

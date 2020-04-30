@@ -1,5 +1,5 @@
 /***************************************************************************
-                          test_featuredeltas.h
+                          test_deltafilewrapper.h
                              -------------------
   begin                : Apr 2020
   copyright            : (C) 2020 by Ivan Ivanov
@@ -18,27 +18,27 @@
 #include <QtTest>
 
 #include "qfield_testbase.h"
-#include "featuredeltas.h"
+#include "deltafilewrapper.h"
 
 
-class TestFeatureDeltas: public QObject
+class TestDeltaFileWrapper: public QObject
 {
     Q_OBJECT
   private slots:
     void testErrors()
     {
         // invalid filename
-        FeatureDeltas invalidFileNameFd( "" );
-        QCOMPARE( invalidFileNameFd.hasError(), true );
+        DeltaFileWrapper invalidFileNameDfw( "" );
+        QCOMPARE( invalidFileNameDfw.hasError(), true );
 
         // valid nonexisting file
         QString fileName( std::tmpnam( nullptr ) );
-        FeatureDeltas validNonexistingFileFd( fileName );
-        QCOMPARE( validNonexistingFileFd.hasError(), false );
+        DeltaFileWrapper validNonexistingFileDfw( fileName );
+        QCOMPARE( validNonexistingFileDfw.hasError(), false );
         QVERIFY( QFileInfo::exists( fileName ) );
-        FeatureDeltas validNonexistingFileCheckFd( fileName );
-        QCOMPARE( validNonexistingFileCheckFd.hasError(), false );
-        QJsonDocument validNonexistingFileDoc = normalizeSchema( validNonexistingFileCheckFd.toString() );
+        DeltaFileWrapper validNonexistingFileCheckDfw( fileName );
+        QCOMPARE( validNonexistingFileCheckDfw.hasError(), false );
+        QJsonDocument validNonexistingFileDoc = normalizeSchema( validNonexistingFileCheckDfw.toString() );
         QVERIFY( ! validNonexistingFileDoc.isNull() );
         QCOMPARE( validNonexistingFileDoc, QJsonDocument::fromJson( R""""(
             {
@@ -51,70 +51,70 @@ class TestFeatureDeltas: public QObject
 
 
         // prepare temporary file
-        QTemporaryFile tmpFile( QDir::tempPath() + QStringLiteral( "/feature_deltas.json" ) );
+        QTemporaryFile tmpFile( QDir::tempPath() + QStringLiteral( "/deltafile.json" ) );
         tmpFile.open();
 
         // invalid JSON
         QVERIFY( tmpFile.write( R""""( asd )"""" ) );
         tmpFile.flush();
-        FeatureDeltas invalidJsonFd( tmpFile.fileName() );
-        QCOMPARE( invalidJsonFd.hasError(), true );
+        DeltaFileWrapper invalidJsonDfw( tmpFile.fileName() );
+        QCOMPARE( invalidJsonDfw.hasError(), true );
         tmpFile.resize(0);
         
         // wrong version type
         QVERIFY( tmpFile.write( R""""({"version":5,"id":"11111111-1111-1111-1111-111111111111","projectId":"projectId","deltas":[]})"""" ) );
         tmpFile.flush();
-        FeatureDeltas wrongVersionTypeFd( tmpFile.fileName() );
-        QCOMPARE( wrongVersionTypeFd.hasError(), true );
+        DeltaFileWrapper wrongVersionTypeDfw( tmpFile.fileName() );
+        QCOMPARE( wrongVersionTypeDfw.hasError(), true );
         tmpFile.resize(0);
         
         // empty version
         QVERIFY( tmpFile.write( R""""({"version":"","id":"11111111-1111-1111-1111-111111111111","projectId":"projectId","deltas":[]})"""" ) );
         tmpFile.flush();
-        FeatureDeltas emptyVersionFd( tmpFile.fileName() );
-        QCOMPARE( emptyVersionFd.hasError(), true );
+        DeltaFileWrapper emptyVersionDfw( tmpFile.fileName() );
+        QCOMPARE( emptyVersionDfw.hasError(), true );
         tmpFile.resize(0);
 
         // wrong version number
         QVERIFY( tmpFile.write( R""""({"version":"2.0","id":"11111111-1111-1111-1111-111111111111","projectId":"projectId","deltas":[]})"""" ) );
         tmpFile.flush();
-        FeatureDeltas wrongVersionNumberFd( tmpFile.fileName() );
-        QCOMPARE( wrongVersionNumberFd.hasError(), true );
+        DeltaFileWrapper wrongVersionNumberDfw( tmpFile.fileName() );
+        QCOMPARE( wrongVersionNumberDfw.hasError(), true );
         tmpFile.resize(0);
 
         // wrong id type
         QVERIFY( tmpFile.write( R""""({"version":"2.0","id": 5,"projectId":"projectId","deltas":[]})"""" ) );
         tmpFile.flush();
-        FeatureDeltas wrongIdTypeFd( tmpFile.fileName() );
-        QCOMPARE( wrongIdTypeFd.hasError(), true );
+        DeltaFileWrapper wrongIdTypeDfw( tmpFile.fileName() );
+        QCOMPARE( wrongIdTypeDfw.hasError(), true );
         tmpFile.resize(0);
 
         // empty id
         QVERIFY( tmpFile.write( R""""({"version":"2.0","id": "","projectId":"projectId","deltas":[]})"""" ) );
         tmpFile.flush();
-        FeatureDeltas emptyIdFd( tmpFile.fileName() );
-        QCOMPARE( emptyIdFd.hasError(), true );
+        DeltaFileWrapper emptyIdDfw( tmpFile.fileName() );
+        QCOMPARE( emptyIdDfw.hasError(), true );
         tmpFile.resize(0);
 
         // wrong projectId type
         QVERIFY( tmpFile.write( R""""({"version":"2.0","id": "11111111-1111-1111-1111-111111111111","projectId":5,"deltas":[]})"""" ) );
         tmpFile.flush();
-        FeatureDeltas wrongProjectIdTypeFd( tmpFile.fileName() );
-        QCOMPARE( wrongProjectIdTypeFd.hasError(), true );
+        DeltaFileWrapper wrongProjectIdTypeDfw( tmpFile.fileName() );
+        QCOMPARE( wrongProjectIdTypeDfw.hasError(), true );
         tmpFile.resize(0);
 
         // empty projectId
         QVERIFY( tmpFile.write( R""""({"version":"2.0","id": "11111111-1111-1111-1111-111111111111","projectId":"","deltas":[]})"""" ) );
         tmpFile.flush();
-        FeatureDeltas emptyProjectIdFd( tmpFile.fileName() );
-        QCOMPARE( emptyProjectIdFd.hasError(), true );
+        DeltaFileWrapper emptyProjectIdDfw( tmpFile.fileName() );
+        QCOMPARE( emptyProjectIdDfw.hasError(), true );
         tmpFile.resize(0);
 
         // wrong deltas type
         QVERIFY( tmpFile.write( R""""({"version":"2.0","id": "11111111-1111-1111-1111-111111111111","projectId":"projectId","deltas":{}})"""" ) );
         tmpFile.flush();
-        FeatureDeltas wrongDeltasTypeFd( tmpFile.fileName() );
-        QCOMPARE( wrongDeltasTypeFd.hasError(), true );
+        DeltaFileWrapper wrongDeltasTypeDfw( tmpFile.fileName() );
+        QCOMPARE( wrongDeltasTypeDfw.hasError(), true );
         tmpFile.resize(0);
 
         // loads existing file
@@ -128,9 +128,9 @@ class TestFeatureDeltas: public QObject
         )"""" );
         QVERIFY( tmpFile.write( correctExistingContents.toUtf8() ) );
         tmpFile.flush();
-        FeatureDeltas correctExistingFd( tmpFile.fileName() );
-        QCOMPARE( correctExistingFd.hasError(), false );
-        QJsonDocument correctExistingDoc = normalizeSchema( correctExistingFd.toString() );
+        DeltaFileWrapper correctExistingDfw( tmpFile.fileName() );
+        QCOMPARE( correctExistingDfw.hasError(), false );
+        QJsonDocument correctExistingDoc = normalizeSchema( correctExistingDfw.toString() );
         QVERIFY( ! correctExistingDoc.isNull() );
         QCOMPARE( correctExistingDoc, QJsonDocument::fromJson( correctExistingContents.toUtf8() ) );
         tmpFile.resize(0);
@@ -140,30 +140,30 @@ class TestFeatureDeltas: public QObject
     void testFileName()
     {
         QString fileName( std::tmpnam( nullptr ) );
-        FeatureDeltas fd( fileName );
-        QCOMPARE( fd.fileName(), fileName );
+        DeltaFileWrapper dfw( fileName );
+        QCOMPARE( dfw.fileName(), fileName );
     }
 
 
     void testClear()
     {
-        FeatureDeltas fd( QString( std::tmpnam( nullptr ) ) );
-        fd.addCreate( "dummyLayerId", QgsFeature() );
+        DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
+        dfw.addCreate( "dummyLayerId", QgsFeature() );
 
-        QCOMPARE( getDeltasArray( fd.toString() ).size(), 1 );
+        QCOMPARE( getDeltasArray( dfw.toString() ).size(), 1 );
 
-        fd.clear();
+        dfw.clear();
 
-        QCOMPARE( getDeltasArray( fd.toString() ).size(), 0 );
+        QCOMPARE( getDeltasArray( dfw.toString() ).size(), 0 );
     }
 
 
     void testToString()
     {
-        FeatureDeltas fd( QString( std::tmpnam( nullptr ) ) );
-        fd.addCreate( "dummyLayerId", QgsFeature( QgsFields() , 100 ) );
-        fd.addDelete( "dummyLayerId", QgsFeature( QgsFields() , 101 ) );
-        QJsonDocument doc = normalizeSchema( fd.toString() );
+        DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
+        dfw.addCreate( "dummyLayerId", QgsFeature( QgsFields() , 100 ) );
+        dfw.addDelete( "dummyLayerId", QgsFeature( QgsFields() , 101 ) );
+        QJsonDocument doc = normalizeSchema( dfw.toString() );
 
         QVERIFY( ! doc.isNull() );
         QCOMPARE( doc, QJsonDocument::fromJson( R""""(
@@ -196,10 +196,10 @@ class TestFeatureDeltas: public QObject
 
     void testToJson()
     {
-        FeatureDeltas fd( QString( std::tmpnam( nullptr ) ) );
-        fd.addCreate( "dummyLayerId", QgsFeature( QgsFields() , 100 ) );
-        fd.addDelete( "dummyLayerId", QgsFeature( QgsFields() , 101 ) );
-        QJsonDocument doc = normalizeSchema( QString( fd.toJson() ) );
+        DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
+        dfw.addCreate( "dummyLayerId", QgsFeature( QgsFields() , 100 ) );
+        dfw.addDelete( "dummyLayerId", QgsFeature( QgsFields() , 101 ) );
+        QJsonDocument doc = normalizeSchema( QString( dfw.toJson() ) );
 
         QVERIFY( ! doc.isNull() );
         QCOMPARE( doc, QJsonDocument::fromJson( R""""(
@@ -239,63 +239,63 @@ class TestFeatureDeltas: public QObject
     void testIsDirty()
     {
         QString fileName = std::tmpnam( nullptr );
-        FeatureDeltas fd( fileName );
+        DeltaFileWrapper dfw( fileName );
 
-        QCOMPARE( fd.isDirty(), false );
+        QCOMPARE( dfw.isDirty(), false );
 
-        fd.addCreate( "dummyLayerId", QgsFeature() );
+        dfw.addCreate( "dummyLayerId", QgsFeature() );
 
-        QCOMPARE( fd.isDirty(), true );
-        QVERIFY( fd.toFile() );
-        QCOMPARE( fd.isDirty(), false );
+        QCOMPARE( dfw.isDirty(), true );
+        QVERIFY( dfw.toFile() );
+        QCOMPARE( dfw.isDirty(), false );
 
-        fd.clear();
+        dfw.clear();
 
-        QCOMPARE( fd.isDirty(), true );
+        QCOMPARE( dfw.isDirty(), true );
     }
 
 
     void testCount()
     {
         QString fileName = std::tmpnam( nullptr );
-        FeatureDeltas fd( fileName );
-        fd.addCreate( "dummyLayerId", QgsFeature() );
+        DeltaFileWrapper dfw( fileName );
+        dfw.addCreate( "dummyLayerId", QgsFeature() );
 
-        QCOMPARE( fd.count(), 1 );
+        QCOMPARE( dfw.count(), 1 );
 
-        fd.addCreate( "dummyLayerId", QgsFeature() );
+        dfw.addCreate( "dummyLayerId", QgsFeature() );
 
-        QCOMPARE( fd.count(), 2 );
+        QCOMPARE( dfw.count(), 2 );
 
-        fd.clear();
+        dfw.clear();
 
-        QCOMPARE( fd.count(), 0 );
+        QCOMPARE( dfw.count(), 0 );
     }
 
 
     void testToFile()
     {
         QString fileName = std::tmpnam( nullptr );
-        FeatureDeltas fd1( fileName );
-        fd1.addCreate( "dummyLayerId", QgsFeature() );
-        FeatureDeltas fd2( fileName );
+        DeltaFileWrapper dfw1( fileName );
+        dfw1.addCreate( "dummyLayerId", QgsFeature() );
+        DeltaFileWrapper dfw2( fileName );
 
-        QCOMPARE( getDeltasArray( fd1.toString() ).size(), 1);
-        QCOMPARE( getDeltasArray( fd1.toString() ).size(), getDeltasArray( fd2.toString() ).size() + 1 );
+        QCOMPARE( getDeltasArray( dfw1.toString() ).size(), 1);
+        QCOMPARE( getDeltasArray( dfw1.toString() ).size(), getDeltasArray( dfw2.toString() ).size() + 1 );
 
-        fd1.toFile();
-        FeatureDeltas fd3( fileName );
+        dfw1.toFile();
+        DeltaFileWrapper dfw3( fileName );
 
-        QCOMPARE( getDeltasArray( fd1.toString() ).size(), 1);
-        // TODO make sure that fd1 and fd2 are in sync
-        // QCOMPARE( getDeltasArray( fd1.toString() ).size(), getDeltasArray( fd2.toString() ).size() );
-        QCOMPARE( getDeltasArray( fd1.toString() ).size(), getDeltasArray( fd3.toString() ).size() );
+        QCOMPARE( getDeltasArray( dfw1.toString() ).size(), 1);
+        // TODO make sure that dfw1 and dfw2 are in sync
+        // QCOMPARE( getDeltasArray( dfw1.toString() ).size(), getDeltasArray( dfw2.toString() ).size() );
+        QCOMPARE( getDeltasArray( dfw1.toString() ).size(), getDeltasArray( dfw3.toString() ).size() );
     }
 
 
     void testAddCreate()
     {
-        FeatureDeltas fd( QString( std::tmpnam( nullptr ) ) );
+        DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
         QgsFields fields;
         fields.append( QgsField( "dbl", QVariant::Double, "double" ) );
         fields.append( QgsField( "int", QVariant::Int, "integer" ) );
@@ -307,9 +307,9 @@ class TestFeatureDeltas: public QObject
 
         // Check if creates delta of a feature with a geometry
         f.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
-        fd.addCreate( "dummyLayerId", f );
+        dfw.addCreate( "dummyLayerId", f );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( fd.toString() ) ), QJsonDocument::fromJson( R""""(
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
             [
                 {
                     "fid": 100,
@@ -330,11 +330,11 @@ class TestFeatureDeltas: public QObject
 
         // Check if creates delta of a feature with a NULL geometry. 
         // NOTE this is the same as calling f clearGeometry()
-        fd.clear();
+        dfw.clear();
         f.setGeometry( QgsGeometry() );
-        fd.addCreate( "dummyLayerId", f );
+        dfw.addCreate( "dummyLayerId", f );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( fd.toString() ) ), QJsonDocument::fromJson( R""""(
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
             [
                 {
                     "fid": 100,
@@ -354,12 +354,12 @@ class TestFeatureDeltas: public QObject
 
 
         // Check if creates delta of a feature without attributes
-        fd.clear();
+        dfw.clear();
         f.setFields( QgsFields(), true );
         f.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
-        fd.addCreate( "dummyLayerId", f );
+        dfw.addCreate( "dummyLayerId", f );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( fd.toString() ) ), QJsonDocument::fromJson( R""""(
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
             [
                 {
                     "fid": 100,
@@ -376,7 +376,7 @@ class TestFeatureDeltas: public QObject
 
     void testAddPatch()
     {
-        FeatureDeltas fd( QString( std::tmpnam( nullptr ) ) );
+        DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
         QgsFields fields;
         fields.append( QgsField( "dbl", QVariant::Double, "double" ) );
         fields.append( QgsField( "int", QVariant::Int, "integer" ) );
@@ -395,9 +395,9 @@ class TestFeatureDeltas: public QObject
         oldFeature.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
         newFeature.setGeometry( QgsGeometry( new QgsPoint( 23.398819, 41.7672147 ) ) );
 
-        fd.addPatch( "dummyLayerId", oldFeature, newFeature );
+        dfw.addPatch( "dummyLayerId", oldFeature, newFeature );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( fd.toString() ) ), QJsonDocument::fromJson( R""""(
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
             [
                 {
                     "fid": 100,
@@ -425,13 +425,13 @@ class TestFeatureDeltas: public QObject
 
 
         // Patch attributes only
-        fd.clear();
+        dfw.clear();
         newFeature.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
         oldFeature.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
 
-        fd.addPatch( "dummyLayerId", oldFeature, newFeature );
+        dfw.addPatch( "dummyLayerId", oldFeature, newFeature );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( fd.toString() ) ), QJsonDocument::fromJson( R""""(
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
             [
                 {
                     "fid": 100,
@@ -457,13 +457,13 @@ class TestFeatureDeltas: public QObject
 
 
         // Patch feature without geometry on attributes only
-        fd.clear();
+        dfw.clear();
         newFeature.setGeometry( QgsGeometry() );
         oldFeature.setGeometry( QgsGeometry() );
 
-        fd.addPatch( "dummyLayerId", oldFeature, newFeature );
+        dfw.addPatch( "dummyLayerId", oldFeature, newFeature );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( fd.toString() ) ), QJsonDocument::fromJson( R""""(
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
             [
                 {
                     "fid": 100,
@@ -491,16 +491,16 @@ class TestFeatureDeltas: public QObject
 
 
         // Patch geometry only
-        fd.clear();
+        dfw.clear();
         newFeature.setAttribute( QStringLiteral( "dbl" ), 3.14 );
         newFeature.setAttribute( QStringLiteral( "int" ), 42 );
         newFeature.setAttribute( QStringLiteral( "str" ), QStringLiteral( "stringy" ) );
         oldFeature.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
         newFeature.setGeometry( QgsGeometry( new QgsPoint( 23.398819, 41.7672147 ) ) );
 
-        fd.addPatch( "dummyLayerId", oldFeature, newFeature );
+        dfw.addPatch( "dummyLayerId", oldFeature, newFeature );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( fd.toString() ) ), QJsonDocument::fromJson( R""""(
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
             [
                 {
                     "fid": 100,
@@ -518,19 +518,19 @@ class TestFeatureDeltas: public QObject
 
 
         // Do not patch equal features
-        fd.clear();
+        dfw.clear();
         oldFeature.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
         newFeature.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
 
-        fd.addPatch( "dummyLayerId", oldFeature, newFeature );
+        dfw.addPatch( "dummyLayerId", oldFeature, newFeature );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( fd.toString() ) ), QJsonDocument::fromJson( "[]" ) );
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( "[]" ) );
     }
 
 
     void testAddDelete()
     {
-        FeatureDeltas fd( QString( std::tmpnam( nullptr ) ) );
+        DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
         QgsFields fields;
         fields.append( QgsField( "dbl", QVariant::Double, "double" ) );
         fields.append( QgsField( "int", QVariant::Int, "integer" ) );
@@ -544,9 +544,9 @@ class TestFeatureDeltas: public QObject
         f.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
         // ? why this is not working, as QgsPoint is QgsAbstractGeometry and there is example in the docs? https://qgis.org/api/classQgsFeature.html#a14dcfc99b476b613c21b8c35840ff388
         // f.setGeometry( QgsPoint( 25.9657, 43.8356 ) );
-        fd.addDelete( "dummyLayerId", f );
+        dfw.addDelete( "dummyLayerId", f );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( fd.toString() ) ), QJsonDocument::fromJson( R""""(
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
             [
                 {
                     "fid": 100,
@@ -567,11 +567,11 @@ class TestFeatureDeltas: public QObject
 
         // Check if creates delta of a feature with a NULL geometry. 
         // NOTE this is the same as calling f clearGeometry()
-        fd.clear();
+        dfw.clear();
         f.setGeometry( QgsGeometry() );
-        fd.addDelete( "dummyLayerId", f );
+        dfw.addDelete( "dummyLayerId", f );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( fd.toString() ) ), QJsonDocument::fromJson( R""""(
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
             [
                 {
                     "fid": 100,
@@ -591,12 +591,12 @@ class TestFeatureDeltas: public QObject
 
 
         // Check if creates delta of a feature without attributes
-        fd.clear();
+        dfw.clear();
         f.setFields( QgsFields(), true );
         f.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
-        fd.addDelete( "dummyLayerId", f );
+        dfw.addDelete( "dummyLayerId", f );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( fd.toString() ) ), QJsonDocument::fromJson( R""""(
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
             [
                 {
                     "fid": 100,
@@ -612,7 +612,7 @@ class TestFeatureDeltas: public QObject
 
     void testMultipleDeltaAdd()
     {
-        FeatureDeltas fd( QString( std::tmpnam( nullptr ) ) );
+        DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
         QgsFields fields;
         fields.append( QgsField( "dbl", QVariant::Double, "double" ) );
         fields.append( QgsField( "int", QVariant::Int, "integer" ) );
@@ -627,11 +627,11 @@ class TestFeatureDeltas: public QObject
 
         QgsFeature f3(fields, 102);
 
-        fd.addCreate( "dummyLayerId1", f1 );
-        fd.addDelete( "dummyLayerId2", f2 );
-        fd.addDelete( "dummyLayerId1", f3 );
+        dfw.addCreate( "dummyLayerId1", f1 );
+        dfw.addDelete( "dummyLayerId2", f2 );
+        dfw.addDelete( "dummyLayerId1", f3 );
 
-        QJsonDocument doc = normalizeSchema( fd.toString() );
+        QJsonDocument doc = normalizeSchema( dfw.toString() );
 
         QVERIFY( ! doc.isNull() );
         QCOMPARE( doc, QJsonDocument::fromJson( R""""(
@@ -697,7 +697,7 @@ class TestFeatureDeltas: public QObject
         
         QJsonObject o = doc.object();
 
-        if ( o.value( QStringLiteral( "version" ) ).toString() != FeatureDeltas::FormatVersion )
+        if ( o.value( QStringLiteral( "version" ) ).toString() != DeltaFileWrapper::FormatVersion )
             return QJsonDocument();
         if ( o.value( QStringLiteral( "projectId" ) ).toString().size() == 0 )
             return QJsonDocument();
@@ -722,5 +722,5 @@ class TestFeatureDeltas: public QObject
     }
 };
 
-QFIELDTEST_MAIN( TestFeatureDeltas )
-#include "test_featuredeltas.moc"
+QFIELDTEST_MAIN( TestDeltaFileWrapper )
+#include "test_deltafilewrapper.moc"
