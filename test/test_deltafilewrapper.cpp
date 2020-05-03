@@ -366,6 +366,18 @@ class TestDeltaFileWrapper: public QObject
     }
 
 
+    void testAttachmentFieldNames()
+    {
+        
+    }
+
+
+    void testAttachmentFileNames()
+    {
+        
+    }
+
+
     void testAddCreate()
     {
         DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
