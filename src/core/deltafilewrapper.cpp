@@ -242,9 +242,7 @@ QStringList DeltaFileWrapper::attachmentFieldNames( const QString &layerId )
 
   for ( const QgsField &field : fields)
   {
-    const QString type = vl->editFormConfig().widgetConfig( field.name() ).value( QStringLiteral( "type" ) ).toString();
-
-    if ( type == QStringLiteral() )
+    if ( field.editorWidgetSetup().type() == QStringLiteral( "ExternalResource" ) )
       attachmentFieldNames.append( field.name() );
   }
 
@@ -397,15 +395,16 @@ void DeltaFileWrapper::addPatch( const QString &layerId, const QgsFeature &oldFe
 
       if ( attachmentFieldsList.contains( name ) )
       {
+        const QString homeDir = QgsProject::instance()->homePath();
         const QString oldFileName = oldVal.toString();
-        const QByteArray oldFileChecksum = fileChecksum( oldFileName, QCryptographicHash::Sha256 );
-        const QJsonValue oldFileChecksumJson = oldFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( oldFileChecksum ) );
+        const QByteArray oldFileChecksum = fileChecksum( QStringLiteral( "%1/%2" ).arg( homeDir, oldFileName ), QCryptographicHash::Sha256 );
+        const QJsonValue oldFileChecksumJson = oldFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( oldFileChecksum.toHex() ) );
         const QString newFileName = newVal.toString();
-        const QByteArray newFileChecksum = fileChecksum( newFileName, QCryptographicHash::Sha256 );
-        const QJsonValue newFileChecksumJson = newFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( newFileChecksum ) );
+        const QByteArray newFileChecksum = fileChecksum( QStringLiteral( "%1/%2" ).arg( homeDir, newFileName ), QCryptographicHash::Sha256 );
+        const QJsonValue newFileChecksumJson = newFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( newFileChecksum.toHex() ) );
 
-        tmpOldFileChecksums.insert( oldVal.toString(), oldFileChecksumJson );
-        tmpNewFileChecksums.insert( newVal.toString(), newFileChecksumJson );
+        tmpOldFileChecksums.insert( oldFileName, oldFileChecksumJson );
+        tmpNewFileChecksums.insert( newFileName, newFileChecksumJson );
       }
     }
   }
