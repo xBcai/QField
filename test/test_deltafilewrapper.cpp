@@ -17,6 +17,8 @@
 
 #include <QtTest>
 
+#include <qgsproject.h>
+
 #include "qfield_testbase.h"
 #include "deltafilewrapper.h"
 
@@ -25,115 +27,169 @@ class TestDeltaFileWrapper: public QObject
 {
     Q_OBJECT
   private slots:
-    void testErrors()
+    void initTestCase()
     {
-        // invalid filename
-        DeltaFileWrapper invalidFileNameDfw( "" );
-        QCOMPARE( invalidFileNameDfw.hasError(), true );
+      QTemporaryDir projectDir;
+      projectDir.setAutoRemove( false );
+      
+      QVERIFY2( projectDir.isValid(), "Failed to create temp dir" );
+      QVERIFY2( mTmpFile.open(), "Cannot open temporary delta file" );
 
-        // valid nonexisting file
-        QString fileName( std::tmpnam( nullptr ) );
-        DeltaFileWrapper validNonexistingFileDfw( fileName );
-        QCOMPARE( validNonexistingFileDfw.hasError(), false );
-        QVERIFY( QFileInfo::exists( fileName ) );
-        DeltaFileWrapper validNonexistingFileCheckDfw( fileName );
-        QCOMPARE( validNonexistingFileCheckDfw.hasError(), false );
-        QJsonDocument validNonexistingFileDoc = normalizeSchema( validNonexistingFileCheckDfw.toString() );
-        QVERIFY( ! validNonexistingFileDoc.isNull() );
-        QCOMPARE( validNonexistingFileDoc, QJsonDocument::fromJson( R""""(
-            {
-                "deltas": [],
-                "id": "11111111-1111-1111-1111-111111111111",
-                "projectId": "projectId",
-                "version": "1.0"
-            }
-        )"""" ) );
+      
+      QgsProject::instance()->setPresetHomePath( projectDir.path() );
+      QgsProject::instance()->writeEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ), QStringLiteral( "TEST_PROJECT_ID" ) );
+
+      
+    //   QVERIFY( QgsProject::instance()->addMapLayer( mLayer.get(), false, false ) );
+    }
 
 
-        // prepare temporary file
-        QTemporaryFile tmpFile( QDir::tempPath() + QStringLiteral( "/deltafile.json" ) );
-        tmpFile.open();
+    void init()
+    {
+      mTmpFile.resize(0);
+    }
 
-        // invalid JSON
-        QVERIFY( tmpFile.write( R""""( asd )"""" ) );
-        tmpFile.flush();
-        DeltaFileWrapper invalidJsonDfw( tmpFile.fileName() );
-        QCOMPARE( invalidJsonDfw.hasError(), true );
-        tmpFile.resize(0);
-        
-        // wrong version type
-        QVERIFY( tmpFile.write( R""""({"version":5,"id":"11111111-1111-1111-1111-111111111111","projectId":"projectId","deltas":[]})"""" ) );
-        tmpFile.flush();
-        DeltaFileWrapper wrongVersionTypeDfw( tmpFile.fileName() );
-        QCOMPARE( wrongVersionTypeDfw.hasError(), true );
-        tmpFile.resize(0);
-        
-        // empty version
-        QVERIFY( tmpFile.write( R""""({"version":"","id":"11111111-1111-1111-1111-111111111111","projectId":"projectId","deltas":[]})"""" ) );
-        tmpFile.flush();
-        DeltaFileWrapper emptyVersionDfw( tmpFile.fileName() );
-        QCOMPARE( emptyVersionDfw.hasError(), true );
-        tmpFile.resize(0);
 
-        // wrong version number
-        QVERIFY( tmpFile.write( R""""({"version":"2.0","id":"11111111-1111-1111-1111-111111111111","projectId":"projectId","deltas":[]})"""" ) );
-        tmpFile.flush();
-        DeltaFileWrapper wrongVersionNumberDfw( tmpFile.fileName() );
-        QCOMPARE( wrongVersionNumberDfw.hasError(), true );
-        tmpFile.resize(0);
+    void testNoMoreThanOneInstance()
+    {
+      QString fileName( std::tmpnam( nullptr ) );
+      DeltaFileWrapper dfw1( fileName );
 
-        // wrong id type
-        QVERIFY( tmpFile.write( R""""({"version":"2.0","id": 5,"projectId":"projectId","deltas":[]})"""" ) );
-        tmpFile.flush();
-        DeltaFileWrapper wrongIdTypeDfw( tmpFile.fileName() );
-        QCOMPARE( wrongIdTypeDfw.hasError(), true );
-        tmpFile.resize(0);
+      QCOMPARE( dfw1.errorType(), DeltaFileWrapper::NoError );
+      
+      DeltaFileWrapper dfw2( fileName );
 
-        // empty id
-        QVERIFY( tmpFile.write( R""""({"version":"2.0","id": "","projectId":"projectId","deltas":[]})"""" ) );
-        tmpFile.flush();
-        DeltaFileWrapper emptyIdDfw( tmpFile.fileName() );
-        QCOMPARE( emptyIdDfw.hasError(), true );
-        tmpFile.resize(0);
+      QCOMPARE( dfw2.errorType(), DeltaFileWrapper::LockError );
+    }
+    
 
-        // wrong projectId type
-        QVERIFY( tmpFile.write( R""""({"version":"2.0","id": "11111111-1111-1111-1111-111111111111","projectId":5,"deltas":[]})"""" ) );
-        tmpFile.flush();
-        DeltaFileWrapper wrongProjectIdTypeDfw( tmpFile.fileName() );
-        QCOMPARE( wrongProjectIdTypeDfw.hasError(), true );
-        tmpFile.resize(0);
+    void testNoErrorExistingFile()
+    {
+      QString correctExistingContents = QStringLiteral( R""""(
+          {
+              "deltas":[],
+              "id":"11111111-1111-1111-1111-111111111111",
+              "projectId":"projectId",
+              "version":"1.0"
+          }
+      )"""" );
+      QVERIFY( mTmpFile.write( correctExistingContents.toUtf8() ) );
+      mTmpFile.flush();
+      DeltaFileWrapper correctExistingDfw( mTmpFile.fileName() );
+      QCOMPARE( correctExistingDfw.errorType(), DeltaFileWrapper::NoError );
+      QJsonDocument correctExistingDoc = normalizeSchema( correctExistingDfw.toString() );
+      QVERIFY( ! correctExistingDoc.isNull() );
+      QCOMPARE( correctExistingDoc, QJsonDocument::fromJson( correctExistingContents.toUtf8() ) );
+    }
 
-        // empty projectId
-        QVERIFY( tmpFile.write( R""""({"version":"2.0","id": "11111111-1111-1111-1111-111111111111","projectId":"","deltas":[]})"""" ) );
-        tmpFile.flush();
-        DeltaFileWrapper emptyProjectIdDfw( tmpFile.fileName() );
-        QCOMPARE( emptyProjectIdDfw.hasError(), true );
-        tmpFile.resize(0);
 
-        // wrong deltas type
-        QVERIFY( tmpFile.write( R""""({"version":"2.0","id": "11111111-1111-1111-1111-111111111111","projectId":"projectId","deltas":{}})"""" ) );
-        tmpFile.flush();
-        DeltaFileWrapper wrongDeltasTypeDfw( tmpFile.fileName() );
-        QCOMPARE( wrongDeltasTypeDfw.hasError(), true );
-        tmpFile.resize(0);
+    void testNoErrorNonExistingFile()
+    {
+      QString fileName( std::tmpnam( nullptr ) );
+      DeltaFileWrapper dfw( fileName );
+      QCOMPARE( dfw.errorType(), DeltaFileWrapper::NoError );
+      QVERIFY( QFileInfo::exists( fileName ) );
+      DeltaFileWrapper validNonexistingFileCheckDfw( fileName );
+      QFile deltaFile( fileName );
+      QVERIFY( deltaFile.open( QIODevice::ReadOnly ) );
+      QJsonDocument fileContents = normalizeSchema( deltaFile.readAll() );
+      QVERIFY( ! fileContents.isNull() );
+      QCOMPARE( fileContents, QJsonDocument::fromJson( R""""(
+        {
+          "deltas": [],
+          "id": "11111111-1111-1111-1111-111111111111",
+          "projectId": "projectId",
+          "version": "1.0"
+        }
+      )"""" ) );
+    }
 
-        // loads existing file
-        QString correctExistingContents = QStringLiteral( R""""(
-            {
-                "deltas":[],
-                "id":"11111111-1111-1111-1111-111111111111",
-                "projectId":"projectId",
-                "version":"1.0"
-            }
-        )"""" );
-        QVERIFY( tmpFile.write( correctExistingContents.toUtf8() ) );
-        tmpFile.flush();
-        DeltaFileWrapper correctExistingDfw( tmpFile.fileName() );
-        QCOMPARE( correctExistingDfw.hasError(), false );
-        QJsonDocument correctExistingDoc = normalizeSchema( correctExistingDfw.toString() );
-        QVERIFY( ! correctExistingDoc.isNull() );
-        QCOMPARE( correctExistingDoc, QJsonDocument::fromJson( correctExistingContents.toUtf8() ) );
-        tmpFile.resize(0);
+
+    void testErrorInvalidName()
+    {
+      DeltaFileWrapper dfw( "" );
+      QCOMPARE( dfw.errorType(), DeltaFileWrapper::IOError );
+    }
+
+
+    void testErrorInvalidJsonParse()
+    {
+      QVERIFY( mTmpFile.write( R""""( asd )"""" ) );
+      mTmpFile.flush();
+      DeltaFileWrapper dfw( mTmpFile.fileName() );
+      QCOMPARE( dfw.errorType(), DeltaFileWrapper::JsonParseError );
+    }
+
+
+    void testErrorJsonFormatVersionType()
+    {
+      QVERIFY( mTmpFile.write( R""""({"version":5,"id":"11111111-1111-1111-1111-111111111111","projectId":"projectId","deltas":[]})"""" ) );
+      mTmpFile.flush();
+      DeltaFileWrapper dfw( mTmpFile.fileName() );
+      QCOMPARE( dfw.errorType(), DeltaFileWrapper::JsonFormatVersionError );
+    }
+
+
+    void testErrorJsonFormatVersionEmpty()
+    {
+      QVERIFY( mTmpFile.write( R""""({"version":"","id":"11111111-1111-1111-1111-111111111111","projectId":"projectId","deltas":[]})"""" ) );
+      mTmpFile.flush();
+      DeltaFileWrapper emptyVersionDfw( mTmpFile.fileName() );
+      QCOMPARE( emptyVersionDfw.errorType(), DeltaFileWrapper::JsonFormatVersionError );
+    }
+
+
+    void testErrorJsonFormatVersionValue()
+    {
+      QVERIFY( mTmpFile.write( R""""({"version":"2.0","id":"11111111-1111-1111-1111-111111111111","projectId":"projectId","deltas":[]})"""" ) );
+      mTmpFile.flush();
+      DeltaFileWrapper wrongVersionNumberDfw( mTmpFile.fileName() );
+      QCOMPARE( wrongVersionNumberDfw.errorType(), DeltaFileWrapper::JsonIncompatibleVersionError );
+    }
+
+
+    void testErrorJsonFormatIdType()
+    {
+      QVERIFY( mTmpFile.write( R""""({"version":"2.0","id": 5,"projectId":"projectId","deltas":[]})"""" ) );
+      mTmpFile.flush();
+      DeltaFileWrapper wrongIdTypeDfw( mTmpFile.fileName() );
+      QCOMPARE( wrongIdTypeDfw.errorType(), DeltaFileWrapper::JsonFormatIdError );
+    }
+
+
+    void testErrorJsonFormatIdEmpty()
+    {
+      QVERIFY( mTmpFile.write( R""""({"version":"2.0","id": "","projectId":"projectId","deltas":[]})"""" ) );
+      mTmpFile.flush();
+      DeltaFileWrapper emptyIdDfw( mTmpFile.fileName() );
+      QCOMPARE( emptyIdDfw.errorType(), DeltaFileWrapper::JsonFormatIdError );
+    }
+
+
+    void testErrorJsonFormatProjectIdType()
+    {
+      QVERIFY( mTmpFile.write( R""""({"version":"2.0","id": "11111111-1111-1111-1111-111111111111","projectId":5,"deltas":[]})"""" ) );
+      mTmpFile.flush();
+      DeltaFileWrapper wrongProjectIdTypeDfw( mTmpFile.fileName() );
+      QCOMPARE( wrongProjectIdTypeDfw.errorType(), DeltaFileWrapper::JsonFormatProjectIdError );
+    }
+
+
+    void testErrorJsonFormatProjectIdEmpty()
+    {
+      QVERIFY( mTmpFile.write( R""""({"version":"2.0","id": "11111111-1111-1111-1111-111111111111","projectId":"","deltas":[]})"""" ) );
+      mTmpFile.flush();
+      DeltaFileWrapper emptyProjectIdDfw( mTmpFile.fileName() );
+      QCOMPARE( emptyProjectIdDfw.errorType(), DeltaFileWrapper::JsonFormatProjectIdError );
+    }
+
+
+    void testErrorJsonFormatDeltasType()
+    {
+        QVERIFY( mTmpFile.write( R""""({"version":"2.0","id": "11111111-1111-1111-1111-111111111111","projectId":"projectId","deltas":{}})"""" ) );
+        mTmpFile.flush();
+        DeltaFileWrapper wrongDeltasTypeDfw( mTmpFile.fileName() );
+        QCOMPARE( wrongDeltasTypeDfw.errorType(), DeltaFileWrapper::JsonFormatDeltasError );
     }
 
 
@@ -340,18 +396,15 @@ class TestDeltaFileWrapper: public QObject
         QString fileName = std::tmpnam( nullptr );
         DeltaFileWrapper dfw1( fileName );
         dfw1.addCreate( "dummyLayerId", QgsFeature() );
-        DeltaFileWrapper dfw2( fileName );
 
+        QVERIFY( ! dfw1.hasError() );
         QCOMPARE( getDeltasArray( dfw1.toString() ).size(), 1);
-        QCOMPARE( getDeltasArray( dfw1.toString() ).size(), getDeltasArray( dfw2.toString() ).size() + 1 );
-
-        dfw1.toFile();
-        DeltaFileWrapper dfw3( fileName );
-
+        QVERIFY( dfw1.toFile() );
         QCOMPARE( getDeltasArray( dfw1.toString() ).size(), 1);
-        // TODO make sure that dfw1 and dfw2 are in sync
-        // QCOMPARE( getDeltasArray( dfw1.toString() ).size(), getDeltasArray( dfw2.toString() ).size() );
-        QCOMPARE( getDeltasArray( dfw1.toString() ).size(), getDeltasArray( dfw3.toString() ).size() );
+
+        QFile deltaFile( fileName );
+        QVERIFY( deltaFile.open( QIODevice::ReadOnly ) );
+        QCOMPARE( getDeltasArray( deltaFile.readAll() ).size(), 1);
     }
 
 
@@ -765,6 +818,9 @@ class TestDeltaFileWrapper: public QObject
     }
 
   private:
+    QTemporaryFile mTmpFile;
+
+
     /**
      * Normalized the random part of the delta file JSON schema to static values.
      * "id"         - "11111111-1111-1111-1111-111111111111"
@@ -797,6 +853,7 @@ class TestDeltaFileWrapper: public QObject
 
         return QJsonDocument( o );
     }
+
 
     QJsonArray getDeltasArray ( const QString &json )
     {

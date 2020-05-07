@@ -94,6 +94,7 @@ void LayerObserver::onHomePathChanged()
 
   if ( QgsProject::instance()->readEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ) ).isEmpty() )
     return;
+
   mCurrentDeltaFileWrapper.reset( new DeltaFileWrapper( generateDeltaFileName( true ) ) );
   mCommittedDeltaFileWrapper.reset( new DeltaFileWrapper( generateDeltaFileName( false ) ) );
 }
@@ -107,7 +108,8 @@ void LayerObserver::onLayersAdded( const QList<QgsMapLayer *> layers )
 
     if ( vl && vl->dataProvider() )
     {
-      //   continue;
+      if ( vl->customProperty( "layer_type" ) == QStringLiteral( "HYBRID" ) )
+        continue;
 
       connect( vl, &QgsVectorLayer::beforeCommitChanges, this, &LayerObserver::onBeforeCommitChanges );
       connect( vl, &QgsVectorLayer::committedFeaturesAdded, this, &LayerObserver::onCommittedFeaturesAdded );
