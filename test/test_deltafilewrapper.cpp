@@ -306,7 +306,9 @@ class TestDeltaFileWrapper: public QObject
 
     void testProjectId()
     {
-      QSKIP("decide how we get the current project id");
+        DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
+
+        QCOMPARE( dfw.projectId(), QStringLiteral( "TEST_PROJECT_ID" ) );
     }
 
 
