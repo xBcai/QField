@@ -38,9 +38,11 @@ class TestDeltaFileWrapper: public QObject
       
       QgsProject::instance()->setPresetHomePath( projectDir.path() );
       QgsProject::instance()->writeEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ), QStringLiteral( "TEST_PROJECT_ID" ) );
-
       
-    //   QVERIFY( QgsProject::instance()->addMapLayer( mLayer.get(), false, false ) );
+      mLayer.reset( new QgsVectorLayer( QStringLiteral( "Point?crs=EPSG:3857&field=id:int&field=name:string&field=image_path:string" ), QStringLiteral( "layer_name" ), QStringLiteral( "memory" ) ) );
+      mLayer->setEditorWidgetSetup( 2, QgsEditorWidgetSetup( QStringLiteral( "ExternalResource" ), QVariantMap() ) );
+
+      QVERIFY( QgsProject::instance()->addMapLayer( mLayer.get(), false, false ) );
     }
 
 
@@ -423,7 +425,11 @@ class TestDeltaFileWrapper: public QObject
 
     void testAttachmentFieldNames()
     {
+        DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
+
+        QStringList attachmentFields = dfw.attachmentFieldNames( mLayer->id() );
         
+        QCOMPARE( QStringList({QStringLiteral("image_path")}), attachmentFields );
     }
 
 
@@ -821,6 +827,9 @@ class TestDeltaFileWrapper: public QObject
 
   private:
     QTemporaryFile mTmpFile;
+
+
+    std::unique_ptr<QgsVectorLayer> mLayer;
 
 
     /**
