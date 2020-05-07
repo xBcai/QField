@@ -34,6 +34,25 @@ class DeltaFileWrapper
 {
   public:
     /**
+     * Error types
+     */
+    enum ErrorTypes
+    {
+      NoError,
+      LockError,
+      NotCloudProjectError,
+      IOError,
+      JsonParseError,
+      JsonFormatIdError,
+      JsonFormatProjectIdError,
+      JsonFormatVersionError,
+      JsonFormatDeltasError,
+      JsonFormatDeltaItemError,
+      JsonIncompatibleVersionError
+    };
+
+
+    /**
      * Stores the current version of the format.
      */
     const static QString FormatVersion;
@@ -45,6 +64,11 @@ class DeltaFileWrapper
      * @param fileName full file name with path where the object should be stored
      */
     DeltaFileWrapper( const QString &fileName );
+
+    /**
+     * Destroy the Delta File Wrapper object
+     */
+    ~DeltaFileWrapper();
 
 
     /**
@@ -128,6 +152,13 @@ class DeltaFileWrapper
      */
     QJsonArray deltas() const;
 
+
+    /**
+     * Error type why the class has an error.
+     * 
+     * @return ErrorTypes error type
+     */
+    ErrorTypes errorType() const;
 
     /**
      * Human readable error description why the class has an error.
@@ -220,6 +251,12 @@ class DeltaFileWrapper
 
 
     /**
+     * Storage to keep track of the currently opened files. The stored paths are absolute, to ensure they are unique.
+     */
+    static QSet<QString> sFileLocks;
+
+
+    /**
      * The list of JSON deltas.
      */
     QJsonArray mDeltas;
@@ -240,25 +277,25 @@ class DeltaFileWrapper
     /**
      * The delta file project id.
      */
-    QString mProjectId;
+    QString mCloudProjectId;
 
 
     /**
-     * Holds whether the constructor experienced I/O error.
+     * Type of error that the constructor has encountered.
      */
-    bool mHasError = false;
+    ErrorTypes mErrorType = NoError;
+
+
+    /**
+     * Additional details describing the error.
+     */
+    QString mErrorDetails;
 
 
     /**
      * Holds whether the deltas in the memory differ from the deltas in the file
      */
     bool mIsDirty = false;
-
-
-    /**
-     * Error string describing the reason for the error. Should be checked if hasError() returns true.
-     */
-    QString mErrorReason;
 };
 
 #endif // FEATUREDELTAS_H
