@@ -1,6 +1,6 @@
 /***************************************************************************
-                          deltafilewrapper.h
-                             -------------------
+                        deltafilewrapper.h
+                        ------------------
   begin                : Apr 2020
   copyright            : (C) 2020 by Ivan Ivanov
   email                : ivan@opengis.ch
