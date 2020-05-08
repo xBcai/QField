@@ -54,8 +54,10 @@ class TestLayerObserver: public QObject
       QVERIFY2( projectDir.isValid(), "Failed to create temp dir" );
       
       QgsProject::instance()->setPresetHomePath( projectDir.path() );
+      QgsProject::instance()->writeEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ), QStringLiteral( "TEST_PROJECT_ID" ) );
+
       mLayerObserver.reset( new LayerObserver( QgsProject::instance() ) );
-      
+
       QVERIFY( QgsProject::instance()->addMapLayer( mLayer.get(), false, false ) );
       QVERIFY( ! mLayerObserver->hasError() );
     }
@@ -96,38 +98,25 @@ class TestLayerObserver: public QObject
       QVERIFY( QFile::exists( currentDeltaFileName ) );
       QVERIFY( QFile::exists( committedDeltaFileName ) );
 
-      DeltaFileWrapper currentDeltaFile( currentDeltaFileName );
-      DeltaFileWrapper committedDeltaFile( committedDeltaFileName );
-      QString oldIdCurrentDeltaFile = currentDeltaFile.id();
-      QString oldIdCommittedDeltaFile = committedDeltaFile.id();
+      QString oldIdCurrentDeltaFile = getId( currentDeltaFileName );
+      QString oldIdCommittedDeltaFile = getId( committedDeltaFileName );
 
       QgsFeature f1( mLayer->fields() );
       f1.setAttribute( QStringLiteral( "int" ), 1000 );
       f1.setAttribute( QStringLiteral( "str" ), "new_string1" );
       f1.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
 
-
-      QVERIFY( ! currentDeltaFile.hasError() );
-      QVERIFY( ! committedDeltaFile.hasError() );
       QVERIFY( mLayer->startEditing() );
       QVERIFY( mLayer->addFeature( f1 ) );
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( currentDeltaFile.count(), 1 );
-      QCOMPARE( committedDeltaFile.count(), 0 );
+      QCOMPARE( getDeltaOperations( currentDeltaFileName ).count(), 1 );
+      QCOMPARE( getDeltaOperations( committedDeltaFileName ).count(), 0 );
       QVERIFY( mLayerObserver->commit() );
-      QCOMPARE( currentDeltaFile.count(), 0 );
-      QCOMPARE( committedDeltaFile.count(), 1 );
-
-      // Sometimes in test cases I need to have more than instance of DeltaFileWrapper of the same file. What is the best approach in this situation?
-      // 1) Keep some kind of singleton based on the filename, so using the same instance everywhere.
-      // 2) Add file system observer to keep the instances updated.
-      DeltaFileWrapper currentDeltaFile2( currentDeltaFileName );
-      DeltaFileWrapper committedDeltaFile2( committedDeltaFileName );
-
-      QVERIFY( ! currentDeltaFile2.hasError() );
-      QVERIFY( ! committedDeltaFile2.hasError() );
-      QVERIFY( oldIdCurrentDeltaFile != currentDeltaFile2.id() );
-      QVERIFY( oldIdCommittedDeltaFile == committedDeltaFile2.id() );
+      QCOMPARE( getDeltaOperations( currentDeltaFileName ).count(), 0 );
+      QCOMPARE( getDeltaOperations( committedDeltaFileName ).count(), 1 );
+      // make sure the current delta file id has changes
+      QVERIFY( oldIdCurrentDeltaFile != getId( currentDeltaFileName ) );
+      QVERIFY( oldIdCommittedDeltaFile == getId( committedDeltaFileName ) );
     }
 
 
@@ -256,6 +245,21 @@ class TestLayerObserver: public QObject
         operations.append( v.toObject().value( QStringLiteral( "method" ) ).toString() );
 
       return operations;
+    }
+
+    QString getId( QString fileName )
+    {
+      QFile deltaFile( fileName );
+
+      if ( ! deltaFile.open( QIODevice::ReadOnly ) )
+        return QString();
+      
+      QJsonDocument doc = QJsonDocument::fromJson( deltaFile.readAll() );
+
+      if ( doc.isNull() )
+        return QString();
+
+      return doc.object().value( "id" ).toString();
     }
 };
 
