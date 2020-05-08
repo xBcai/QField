@@ -77,6 +77,12 @@ bool LayerObserver::commit()
  
   mCurrentDeltaFileWrapper->reset( true );
 
+  if ( ! mCurrentDeltaFileWrapper->toFile() )
+  {
+    QgsLogger::warning( QStringLiteral( "Cannot write the current delta file: %1" ).arg( mCurrentDeltaFileWrapper->errorString() ) );
+    return false;
+  }
+
   return true;
 }
 
