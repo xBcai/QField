@@ -202,9 +202,9 @@ class DeltaFileWrapper
     /**
      * Returns a set of file names to be uploaded
      * 
-     * @return QSet<QString> unique file names
+     * @return QMap<QString, QString> unique file names
      */
-    QSet<QString> attachmentFileNames() const;
+    QMap<QString, QString> attachmentFileNames() const;
 
 
     /**

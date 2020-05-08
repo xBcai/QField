@@ -203,6 +203,7 @@ QString DeltaFileWrapper::errorString() const
     {DeltaFileWrapper::LockError, QStringLiteral( "Delta file is already opened" )},
     {DeltaFileWrapper::NotCloudProjectError, QStringLiteral( "The current project is not a cloud project" ) },
     {DeltaFileWrapper::IOError, QStringLiteral( "Cannot open file for read and write" ) },
+    {DeltaFileWrapper::JsonParseError, QStringLiteral( "Unable to parse JSON" ) },
     {DeltaFileWrapper::JsonFormatIdError, QStringLiteral( "Delta file is missing a valid id" ) },
     {DeltaFileWrapper::JsonFormatProjectIdError, QStringLiteral( "Delta file is missing a valid project id" ) },
     {DeltaFileWrapper::JsonFormatVersionError, QStringLiteral( "Delta file is missing a valid version" ) },
@@ -302,28 +303,21 @@ QStringList DeltaFileWrapper::attachmentFieldNames( const QString &layerId )
 }
 
 
-QSet<QString> DeltaFileWrapper::attachmentFileNames() const
+QMap<QString, QString> DeltaFileWrapper::attachmentFileNames() const
 {
   // NOTE represents { layerId: { featureId: { attributeName: fileName } } }
   // We store all the changes in such mapping that we can return only the last attachment file name that is associated with a feature.
   // E.g. for given feature we start with attachment A.jpg, then we update to B.jpg. Later we change our mind and we apply C.jpg. In this case we only care about C.jpg.
-  QMap<QString, QMap<QString, QMap<QString, QString>>> fileNamesMap;
+  QMap<QString, QString> fileNames;
+  QMap<QString, QString> fileChecksums;
 
   for ( const QJsonValue &deltaJson: qgis::as_const( mDeltas ) )
   {
-    Q_ASSERT( deltaJson.isObject() );
-
     QVariantMap delta = deltaJson.toObject().toVariantMap();
     const QString layerId = delta.value( QStringLiteral( "layerId" ) ).toString();
-    
-    Q_ASSERT( ! layerId.isEmpty() );
-
     const QString method = delta.value( QStringLiteral( "method" ) ).toString();
     const QString fid = delta.value( QStringLiteral( "fid" ) ).toString();
-    const QStringList attachmentFieldsList = attachmentFieldNames( layerId );
-
-    QMap<QString, QMap<QString, QString>> featureAttributeFileNames = fileNamesMap.value( layerId );
-    QMap<QString, QString> attributeFileNames = featureAttributeFileNames.value( fid );
+    const QStringList attachmentFieldNamesList = attachmentFieldNames( layerId );
 
     if ( method == QStringLiteral( "delete" ) || method == QStringLiteral( "patch" ) )
     {
@@ -331,7 +325,8 @@ QSet<QString> DeltaFileWrapper::attachmentFileNames() const
 
       Q_ASSERT( ! oldData.isEmpty() );
     }
-    else if ( method == QStringLiteral( "create" ) || method == QStringLiteral( "patch" ) )
+    
+    if ( method == QStringLiteral( "create" ) || method == QStringLiteral( "patch" ) )
     {
       const QVariantMap newData = delta.value( QStringLiteral( "new" ) ).toMap();
 
@@ -347,10 +342,18 @@ QSet<QString> DeltaFileWrapper::attachmentFileNames() const
 
         for ( const QString &fieldName : attributes.keys() )
         {
-          if ( ! attachmentFieldsList.contains( fieldName ) )
+          if ( ! attachmentFieldNamesList.contains( fieldName ) )
             continue;
 
-          attributeFileNames.insert( fieldName, attributes.value( fieldName ).toString() );
+          const QString fileName = attributes.value( fieldName ).toString();
+
+          Q_ASSERT( filesChecksum.contains( fileName ) );
+
+          const QString key = QStringLiteral( "%1//%2//%3" ).arg( layerId, fid, fieldName );
+          const QString fileChecksum = filesChecksum.value( fileName ).toString();
+
+          fileNames.insert( key, fileName );
+          fileChecksums.insert( fileName, fileChecksum );
         }
       }
     }
@@ -359,27 +362,16 @@ QSet<QString> DeltaFileWrapper::attachmentFileNames() const
       QgsLogger::debug( QStringLiteral( "File `%1` contains unknown method `%2`" ).arg( mFileName, method ) );
       Q_ASSERT(0);
     }
-
-    featureAttributeFileNames.insert( fid, attributeFileNames );
-    fileNamesMap.insert( layerId, featureAttributeFileNames );
   }
 
-  QSet<QString> fileNames;
+  QMap<QString, QString> fileNameChecksum;
 
-  for ( const QString &layerId : fileNamesMap.keys() )
+  for ( const QString &fileName : fileNames.values() )
   {
-    const QMap<QString, QMap<QString, QString>> featureAttributeFileNames = fileNamesMap.value( layerId );
-    for ( const QString &fid : featureAttributeFileNames.keys() )
-    {
-      const QMap<QString, QString> attributeFileNames = featureAttributeFileNames.value( fid );
-      for ( const QString &fieldName : attributeFileNames.keys() )
-      {
-        fileNames.insert( attributeFileNames.value( fieldName ) );
-      }
-    }
+    fileNameChecksum.insert( fileName, fileChecksums.value( fileName ) );
   }
 
-  return fileNames;
+  return fileNameChecksum;
 }
 
 
@@ -505,7 +497,7 @@ void DeltaFileWrapper::addDelete( const QString &layerId, const QgsFeature &oldF
     const QString name = oldFeature.fields().at( idx ).name();
     tmpOldAttrs.insert( name, QJsonValue::fromVariant( oldVal ) );
 
-    if ( attachmentFieldsList.contains( name ) )
+    if ( attachmentFieldsList.contains( name ) && ! oldVal.isNull() )
     {
       const QString oldFileName = oldVal.toString();
       const QByteArray oldFileChecksum = fileChecksum( oldFileName, QCryptographicHash::Sha256 );
