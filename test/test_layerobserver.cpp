@@ -242,7 +242,9 @@ class TestLayerObserver: public QObject
       if ( doc.isNull() )
         return operations;
 
-      for ( const QJsonValue &v : doc.object().value( "deltas" ).toArray() )
+      QJsonArray deltasJsonArray = doc.object().value( QStringLiteral( "deltas" ) ).toArray();
+
+      for ( const QJsonValue &v : qgis::as_const( deltasJsonArray ) )
         operations.append( v.toObject().value( QStringLiteral( "method" ) ).toString() );
 
       return operations;
@@ -261,7 +263,7 @@ class TestLayerObserver: public QObject
       if ( doc.isNull() )
         return QString();
 
-      return doc.object().value( "id" ).toString();
+      return doc.object().value( QStringLiteral( "id" ) ).toString();
     }
 };
 
