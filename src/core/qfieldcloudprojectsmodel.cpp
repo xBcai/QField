@@ -380,30 +380,3 @@ QVariant QFieldCloudProjectsModel::data( const QModelIndex &index, int role ) co
 
   return QVariant();
 }
-
-
-bool QFieldCloudProjectsModel::uploadDeltas( const QString &projectId )
-{
-  auto projectIt = std::find_if( mCloudProjects.cbegin(), mCloudProjects.cend(), [&projectId] (const CloudProject& project) {
-    return project.id == projectId;
-  } );
-
-  if ( projectIt == mCloudProjects.end() )
-    return false;
-
-  CloudProject project = mCloudProjects.at( projectIt - mCloudProjects.begin() );
-  
-  qDebug() << projectId << project.id;
-
-  QString committedDeltaFileName = LayerObserver::generateDeltaFileName();
-
-  if ( ! QFile::exists( committedDeltaFileName ) )
-    return false;
-
-  DeltaFileWrapper committedDeltaFile( committedDeltaFileName );
-
-  // committedDeltaFile.toString();
-
-
-  return true;
-}
