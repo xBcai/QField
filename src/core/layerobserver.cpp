@@ -115,7 +115,7 @@ void LayerObserver::onLayersAdded( const QList<QgsMapLayer *> layers )
 
     if ( vl && vl->dataProvider() )
     {
-      if ( vl->customProperty( "layer_type" ) == QStringLiteral( "HYBRID" ) )
+      if ( vl->customProperty( QStringLiteral( "layer_type" ) ) == QStringLiteral( "HYBRID" ) )
         continue;
 
       connect( vl, &QgsVectorLayer::beforeCommitChanges, this, &LayerObserver::onBeforeCommitChanges );
@@ -138,16 +138,18 @@ void LayerObserver::onBeforeCommitChanges()
     return;
 
   const QgsFeatureIds deletedFids = eb->deletedFeatureIds();
+  const QgsFeatureIds changedGeometriesFids = eb->changedGeometries().keys().toSet();
+  const QgsFeatureIds changedAttributesFids = eb->changedAttributeValues().keys().toSet();
   // NOTE QgsFeatureIds underlying implementation is QSet, so no need to check if the QgsFeatureId already exists
   QgsFeatureIds changedFids;
 
-  for ( const QgsFeatureId fid : eb->deletedFeatureIds() )
+  for ( const QgsFeatureId fid : deletedFids )
     changedFids.insert( fid );
 
-  for ( const QgsFeatureId fid : eb->changedGeometries().keys() )
+  for ( const QgsFeatureId fid : changedGeometriesFids )
     changedFids.insert( fid );
 
-  for ( const QgsFeatureId fid : eb->changedAttributeValues().keys() )
+  for ( const QgsFeatureId fid : changedAttributesFids )
     changedFids.insert( fid );
 
   QgsChangedFeatures changedFeatures;
@@ -194,8 +196,9 @@ void LayerObserver::onCommittedAttributeValuesChanges( const QString &layerId, c
   QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( sender() );
   QgsFeatureIds patchedFids = mPatchedFids.value( layerId );
   QgsChangedFeatures changedFeatures = mChangedFeatures.value( layerId );
-  
-  for ( const QgsFeatureId &fid : changedAttributesValues.keys() )
+  const QgsFeatureIds changedAttributesValuesFids = changedAttributesValues.keys().toSet();
+
+  for ( const QgsFeatureId &fid : changedAttributesValuesFids )
   {
     if ( patchedFids.contains( fid ) )
       continue;
@@ -219,8 +222,9 @@ void LayerObserver::onCommittedGeometriesChanges( const QString &layerId, const 
   QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( sender() );
   QgsFeatureIds patchedFids = mPatchedFids.value( layerId );
   QgsChangedFeatures changedFeatures = mChangedFeatures.value( layerId );
+  const QgsFeatureIds changedGeometriesFids = changedGeometries.keys().toSet();
 
-  for ( const QgsFeatureId &fid : changedGeometries.keys() )
+  for ( const QgsFeatureId &fid : changedGeometriesFids )
   {
     if ( patchedFids.contains( fid ) )
       continue;
@@ -250,6 +254,6 @@ void LayerObserver::onEditingStopped( )
   if ( ! mCurrentDeltaFileWrapper->toFile() )
   {
     // TODO somehow indicate the user that writing failed
-    QgsLogger::warning( "Failed writing JSON file" );
+    QgsLogger::warning( QStringLiteral( "Failed writing JSON file" ) );
   }
 }

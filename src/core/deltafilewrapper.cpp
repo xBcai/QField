@@ -72,24 +72,26 @@ DeltaFileWrapper::DeltaFileWrapper( const QgsProject *project, const QString &fi
       mErrorDetails = jsonError.errorString();
     }
 
-    if ( mErrorType == DeltaFileWrapper::NoError && ( ! mJsonRoot.value( "id" ).isString() || mJsonRoot.value( "id" ).toString().isEmpty() ) )
+    if ( mErrorType == DeltaFileWrapper::NoError && ( ! mJsonRoot.value( QStringLiteral( "id" ) ).isString() || mJsonRoot.value( QStringLiteral( "id" ) ).toString().isEmpty() ) )
       mErrorType = DeltaFileWrapper::JsonFormatIdError;
 
-    if ( mErrorType == DeltaFileWrapper::NoError && ( ! mJsonRoot.value( "projectId" ).isString() || mJsonRoot.value( "projectId" ).toString().isEmpty() ) )
+    if ( mErrorType == DeltaFileWrapper::NoError && ( ! mJsonRoot.value( QStringLiteral( "projectId" ) ).isString() || mJsonRoot.value( QStringLiteral( "projectId" ) ).toString().isEmpty() ) )
       mErrorType = DeltaFileWrapper::JsonFormatProjectIdError;
 
-    if ( mErrorType == DeltaFileWrapper::NoError && ! mJsonRoot.value( "deltas" ).isArray() )
+    if ( mErrorType == DeltaFileWrapper::NoError && ! mJsonRoot.value( QStringLiteral( "deltas" ) ).isArray() )
       mErrorType = DeltaFileWrapper::JsonFormatDeltasError;
 
-    if ( mErrorType == DeltaFileWrapper::NoError && ( ! mJsonRoot.value( "version" ).isString() || mJsonRoot.value( "version" ).toString().isEmpty() ) )
+    if ( mErrorType == DeltaFileWrapper::NoError && ( ! mJsonRoot.value( QStringLiteral( "version" ) ).isString() || mJsonRoot.value( QStringLiteral( "version" ) ).toString().isEmpty() ) )
       mErrorType = DeltaFileWrapper::JsonFormatVersionError;
 
-    if ( mErrorType == DeltaFileWrapper::NoError && mJsonRoot.value( "version" ) != DeltaFileWrapper::FormatVersion )
+    if ( mErrorType == DeltaFileWrapper::NoError && mJsonRoot.value( QStringLiteral( "version" ) ) != DeltaFileWrapper::FormatVersion )
       mErrorType = DeltaFileWrapper::JsonIncompatibleVersionError;
 
     if ( mErrorType == DeltaFileWrapper::NoError )
     {
-      for ( const QJsonValue &v : mJsonRoot.value( "deltas" ).toArray() )
+      const QJsonArray deltasJsonArray = mJsonRoot.value( QStringLiteral( "deltas" ) ).toArray();
+
+      for ( const QJsonValue &v : deltasJsonArray )
       {
         if ( ! v.isObject() )
         {
@@ -340,8 +342,9 @@ QMap<QString, QString> DeltaFileWrapper::attachmentFileNames() const
         Q_ASSERT( ! filesChecksum.isEmpty() );
 
         const QVariantMap attributes = newData.value( QStringLiteral( "attributes" ) ).toMap();
+        const QStringList attributeNames = attributes.keys();
 
-        for ( const QString &fieldName : attributes.keys() )
+        for ( const QString &fieldName : attributeNames )
         {
           if ( ! attachmentFieldNamesList.contains( fieldName ) )
             continue;
@@ -366,8 +369,9 @@ QMap<QString, QString> DeltaFileWrapper::attachmentFileNames() const
   }
 
   QMap<QString, QString> fileNameChecksum;
+  const QStringList fileNamesList = fileNames.values();
 
-  for ( const QString &fileName : fileNames.values() )
+  for ( const QString &fileName : fileNamesList )
   {
     fileNameChecksum.insert( fileName, fileChecksums.value( fileName ) );
   }
