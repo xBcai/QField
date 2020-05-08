@@ -714,37 +714,6 @@ class TestDeltaFileWrapper: public QObject
 
       dfw.addPatch( mLayer->id(), oldFeature, newFeature );
 
-      qDebug() << QJsonDocument( getDeltasArray( dfw.toString() ) ) << QJsonDocument::fromJson( QStringLiteral( R""""(
-        [
-          {
-            "fid": 100,
-            "layerId": "dummyLayerId1",
-            "method": "patch",
-            "new": {
-              "attributes": {
-                "attachment": "%1",
-                "dbl": 9.81,
-                "int": 680,
-                "str": "pingy"
-              },
-              "files_sha256": {
-                "%1": null  
-              },
-              "geometry": null
-            },
-            "old": {
-              "attributes": {
-                "attachment": null,
-                "dbl": 3.14,
-                "int": 42,
-                "str": "stringy"
-              },
-              "geometry": null
-            }
-          }
-        ]
-      )"""" ).arg( newFeature.attribute( "attachment" ).toString() ).toUtf8() );
-
       // Patch geometry only
       dfw.reset();
       newFeature.setAttribute( QStringLiteral( "dbl" ), 3.14 );
