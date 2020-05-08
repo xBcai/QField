@@ -39,6 +39,15 @@ class TestDeltaFileWrapper: public QObject
       QgsProject::instance()->setPresetHomePath( projectDir.path() );
       QgsProject::instance()->writeEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ), QStringLiteral( "TEST_PROJECT_ID" ) );
       
+      QFile attachmentFile( QStringLiteral( "%1/%2" ) .arg( projectDir.path(), QStringLiteral( "attachment.jpg" ) ) );
+
+      const char* fileContents = "кирилица"; // SHA 256 71055d022f50027387eae32426a1857d6e2fa2d416d64753b63470db7f00f239
+      QVERIFY( attachmentFile.open( QIODevice::ReadWrite ) );
+      QVERIFY( attachmentFile.write( fileContents ) );
+      QVERIFY( attachmentFile.flush() );
+
+      mAttachmentFileName = attachmentFile.fileName();
+      mAttachmentFileChecksum = DeltaFileWrapper::fileChecksum( mAttachmentFileName ).toHex();
       mLayer.reset( new QgsVectorLayer( QStringLiteral( "Point?crs=EPSG:3857&field=int:integer&field=dbl:double&field=str:string&field=attachment:string" ), QStringLiteral( "layer_name" ), QStringLiteral( "memory" ) ) );
       mLayer->setEditorWidgetSetup( 3, QgsEditorWidgetSetup( QStringLiteral( "ExternalResource" ), QVariantMap() ) );
 
@@ -503,7 +512,7 @@ class TestDeltaFileWrapper: public QObject
           "projectId": "projectId",
           "version": "1.0"
         }
-      )"""" ).arg( mLayer->id() ).toLatin1() ) );
+      )"""" ).arg( mLayer->id() ).toUtf8() ) );
       QVERIFY( deltaFile.flush() );
 
       DeltaFileWrapper dfw( deltaFile.fileName() );
@@ -527,13 +536,13 @@ class TestDeltaFileWrapper: public QObject
         f.setAttribute( QStringLiteral( "dbl" ), 3.14 );
         f.setAttribute( QStringLiteral( "int" ), 42 );
         f.setAttribute( QStringLiteral( "str" ), QStringLiteral( "stringy" ) );
-        f.setAttribute( QStringLiteral( "attachment" ), QStringLiteral( "filename" ) );
+        f.setAttribute( QStringLiteral( "attachment" ), mAttachmentFileName );
 
-        // Check if creates delta of a feature with a geometry
+        // Check if creates delta of a feature with a geometry and existing attachment
         f.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
         dfw.addCreate( mLayer->id(), f );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( QStringLiteral( R""""(
             [
                 {
                     "fid": 100,
@@ -541,28 +550,29 @@ class TestDeltaFileWrapper: public QObject
                     "method": "create",
                     "new": {
                         "attributes": {
-                            "attachment": "filename",
+                            "attachment": "%1",
                             "dbl": 3.14,
                             "int": 42,
                             "str": "stringy"
                         },
                         "files_sha256": {
-                          "filename": null
+                          "%1": "%2"
                         },
                         "geometry": "Point (25.96569999999999823 43.83559999999999945)"
                     }
                 }
             ]
-        )"""" ) );
+        )"""" ).arg( mAttachmentFileName, mAttachmentFileChecksum ).toUtf8() ) );
 
 
-        // Check if creates delta of a feature with a NULL geometry. 
+        // Check if creates delta of a feature with a NULL geometry and non existant attachment. 
         // NOTE this is the same as calling f clearGeometry()
         dfw.reset();
         f.setGeometry( QgsGeometry() );
+        f.setAttribute( QStringLiteral( "attachment" ), std::tmpnam( nullptr ) );
         dfw.addCreate( mLayer->id(), f );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( QStringLiteral( R""""(
             [
                 {
                     "fid": 100,
@@ -570,19 +580,19 @@ class TestDeltaFileWrapper: public QObject
                     "method": "create",
                     "new": {
                         "attributes": {
+                            "attachment": "%1",
                             "dbl": 3.14,
                             "int": 42,
-                            "str": "stringy",
-                            "attachment": "filename"
+                            "str": "stringy"
                         },
                         "files_sha256": {
-                          "filename": null
+                          "%1": null
                         },
                         "geometry": null
                     }
                 }
             ]
-        )"""" ) );
+        )"""" ).arg( f.attribute( QStringLiteral( "attachment" ) ).toString() ).toUtf8() ) );
 
 
         // Check if creates delta of a feature without attributes
@@ -613,19 +623,21 @@ class TestDeltaFileWrapper: public QObject
         oldFeature.setAttribute( QStringLiteral( "dbl" ), 3.14 );
         oldFeature.setAttribute( QStringLiteral( "int" ), 42 );
         oldFeature.setAttribute( QStringLiteral( "str" ), QStringLiteral( "stringy" ) );
+        oldFeature.setAttribute( QStringLiteral( "attachment" ), QString() );
         QgsFeature newFeature( mLayer->fields(), 100 );
         newFeature.setAttribute( QStringLiteral( "dbl" ), 9.81 );
         newFeature.setAttribute( QStringLiteral( "int" ), 680 );
         newFeature.setAttribute( QStringLiteral( "str" ), QStringLiteral( "pingy" ) );
+        newFeature.setAttribute( QStringLiteral( "attachment" ), mAttachmentFileName );
 
 
-        // Patch both the attributes and the geometry
+        // Patch both the attributes with existing attachment and the geometry
         oldFeature.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
         newFeature.setGeometry( QgsGeometry( new QgsPoint( 23.398819, 41.7672147 ) ) );
 
         dfw.addPatch( mLayer->id(), oldFeature, newFeature );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( QStringLiteral( R""""(
             [
                 {
                     "fid": 100,
@@ -633,14 +645,19 @@ class TestDeltaFileWrapper: public QObject
                     "method": "patch",
                     "new": {
                         "attributes": {
+                            "attachment": "%1",
                             "dbl": 9.81,
                             "int": 680,
                             "str": "pingy"
+                        },
+                        "files_sha256": {
+                          "%1": "%2"
                         },
                         "geometry": "Point (23.39881899999999959 41.7672146999999967)"
                     },
                     "old": {
                         "attributes": {
+                            "attachment": null,
                             "dbl": 3.14,
                             "int": 42,
                             "str": "stringy"
@@ -649,17 +666,18 @@ class TestDeltaFileWrapper: public QObject
                     }
                 }
             ]
-        )"""" ) );
+        )"""" ).arg( mAttachmentFileName, mAttachmentFileChecksum ).toUtf8() ) );
 
 
-        // Patch attributes only
+        // Patch attributes only with non existing attachnment
         dfw.reset();
         newFeature.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
+        newFeature.setAttribute( QStringLiteral( "attachment" ), std::tmpnam( nullptr ) );
         oldFeature.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
 
         dfw.addPatch( mLayer->id(), oldFeature, newFeature );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( QStringLiteral( R""""(
             [
                 {
                     "fid": 100,
@@ -667,13 +685,18 @@ class TestDeltaFileWrapper: public QObject
                     "method": "patch",
                     "new": {
                         "attributes": {
+                            "attachment": "%1",
                             "dbl": 9.81,
                             "int": 680,
                             "str": "pingy"
+                        },
+                        "files_sha256": {
+                          "%1": null  
                         }
                     },
                     "old": {
                         "attributes": {
+                            "attachment": null,
                             "dbl": 3.14,
                             "int": 42,
                             "str": "stringy"
@@ -681,17 +704,17 @@ class TestDeltaFileWrapper: public QObject
                     }
                 }
             ]
-        )"""" ) );
+        )"""" ).arg( newFeature.attribute( "attachment" ).toString() ).toUtf8() ) );
 
 
-        // Patch feature without geometry on attributes only
+        // Patch feature without geometry on attributes only with non existant attachment
         dfw.reset();
         newFeature.setGeometry( QgsGeometry() );
         oldFeature.setGeometry( QgsGeometry() );
 
         dfw.addPatch( mLayer->id(), oldFeature, newFeature );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
+        qDebug() << QJsonDocument( getDeltasArray( dfw.toString() ) ) << QJsonDocument::fromJson( QStringLiteral( R""""(
             [
                 {
                     "fid": 100,
@@ -699,14 +722,19 @@ class TestDeltaFileWrapper: public QObject
                     "method": "patch",
                     "new": {
                         "attributes": {
+                            "attachment": "%1",
                             "dbl": 9.81,
                             "int": 680,
                             "str": "pingy"
+                        },
+                        "files_sha256": {
+                          "%1": null  
                         },
                         "geometry": null
                     },
                     "old": {
                         "attributes": {
+                            "attachment": null,
                             "dbl": 3.14,
                             "int": 42,
                             "str": "stringy"
@@ -715,16 +743,17 @@ class TestDeltaFileWrapper: public QObject
                     }
                 }
             ]
-        )"""" ) );
-
+        )"""" ).arg( newFeature.attribute( "attachment" ).toString() ).toUtf8() );
 
         // Patch geometry only
         dfw.reset();
         newFeature.setAttribute( QStringLiteral( "dbl" ), 3.14 );
         newFeature.setAttribute( QStringLiteral( "int" ), 42 );
         newFeature.setAttribute( QStringLiteral( "str" ), QStringLiteral( "stringy" ) );
-        oldFeature.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
+        newFeature.setAttribute( QStringLiteral( "attachment" ), QVariant() );
         newFeature.setGeometry( QgsGeometry( new QgsPoint( 23.398819, 41.7672147 ) ) );
+        oldFeature.setAttribute( QStringLiteral( "attachment" ), QVariant() );
+        oldFeature.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
 
         dfw.addPatch( mLayer->id(), oldFeature, newFeature );
 
@@ -763,14 +792,15 @@ class TestDeltaFileWrapper: public QObject
         f.setAttribute( QStringLiteral( "dbl" ), 3.14 );
         f.setAttribute( QStringLiteral( "int" ), 42 );
         f.setAttribute( QStringLiteral( "str" ), QStringLiteral( "stringy" ) );
+        f.setAttribute( QStringLiteral( "attachment" ), mAttachmentFileName );
 
-        // Check if creates delta of a feature with a geometry
+        // Check if creates delta of a feature with a geometry and existant attachment.
         f.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
         // ? why this is not working, as QgsPoint is QgsAbstractGeometry and there is example in the docs? https://qgis.org/api/classQgsFeature.html#a14dcfc99b476b613c21b8c35840ff388
         // f.setGeometry( QgsPoint( 25.9657, 43.8356 ) );
         dfw.addDelete( mLayer->id(), f );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( QStringLiteral( R""""(
             [
                 {
                     "fid": 100,
@@ -778,25 +808,29 @@ class TestDeltaFileWrapper: public QObject
                     "method": "delete",
                     "old": {
                         "attributes": {
-                            "attachment": null,
+                            "attachment": "%1",
                             "dbl": 3.14,
                             "int": 42,
                             "str": "stringy"
+                        },
+                        "files_sha256": {
+                          "%1": "%2"
                         },
                         "geometry": "Point (25.96569999999999823 43.83559999999999945)"
                     }
                 }
             ]
-        )"""" ) );
+        )"""" ).arg( mAttachmentFileName, mAttachmentFileChecksum ).toUtf8() ) );
 
 
-        // Check if creates delta of a feature with a NULL geometry. 
+        // Check if creates delta of a feature with a NULL geometry and non existant attachment. 
         // NOTE this is the same as calling f clearGeometry()
         dfw.reset();
         f.setGeometry( QgsGeometry() );
+        f.setAttribute( QStringLiteral( "attachment" ), std::tmpnam( nullptr ) );
         dfw.addDelete( mLayer->id(), f );
 
-        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( R""""(
+        QCOMPARE( QJsonDocument( getDeltasArray( dfw.toString() ) ), QJsonDocument::fromJson( QStringLiteral( R""""(
             [
                 {
                     "fid": 100,
@@ -804,16 +838,20 @@ class TestDeltaFileWrapper: public QObject
                     "method": "delete",
                     "old": {
                         "attributes": {
-                            "attachment": null,
+                            "attachment": "%1",
                             "dbl": 3.14,
                             "int": 42,
                             "str": "stringy"
+                        },
+                        "files_sha256": {
+                          "%1": null
                         },
                         "geometry": null
                     }
                 }
             ]
-        )"""" ) );
+        )"""" ).arg( f.attribute( QStringLiteral( "attachment" ) ).toString() ).toUtf8() ) );
+
 
 
         // Check if creates delta of a feature without attributes
@@ -910,6 +948,12 @@ class TestDeltaFileWrapper: public QObject
 
 
     std::unique_ptr<QgsVectorLayer> mLayer;
+
+
+    QString mAttachmentFileName;
+
+
+    QString mAttachmentFileChecksum;
 
 
     /**
