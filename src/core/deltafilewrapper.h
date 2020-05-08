@@ -63,7 +63,7 @@ class DeltaFileWrapper
      * 
      * @param fileName full file name with path where the object should be stored
      */
-    DeltaFileWrapper( const QString &fileName );
+    DeltaFileWrapper( const QgsProject *project, const QString &fileName );
 
     /**
      * Destroy the Delta File Wrapper object
@@ -74,10 +74,11 @@ class DeltaFileWrapper
     /**
      * Returns a list of field names that have edit form as attachments
      * 
-     * @param layerId
+     * @param project current project instance
+     * @param layerId layer ID
      * @return QStringList list of field names
      */
-    static QStringList attachmentFieldNames( const QString &layerId );
+    static QStringList attachmentFieldNames( const QgsProject *project, const QString &layerId );
 
 
     /**
@@ -254,6 +255,12 @@ class DeltaFileWrapper
      * Storage to keep track of the currently opened files. The stored paths are absolute, to ensure they are unique.
      */
     static QSet<QString> sFileLocks;
+
+
+    /**
+     * The current project instance
+     */
+    const QgsProject *mProject = nullptr;
 
 
     /**

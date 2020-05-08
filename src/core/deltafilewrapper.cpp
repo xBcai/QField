@@ -29,7 +29,8 @@ QMap<QString, QStringList> DeltaFileWrapper::sCacheAttachmentFieldNames;
 QSet<QString> DeltaFileWrapper::sFileLocks;
 
 
-DeltaFileWrapper::DeltaFileWrapper( const QString &fileName )
+DeltaFileWrapper::DeltaFileWrapper( const QgsProject *project, const QString &fileName )
+  : mProject( project )
 {
   QFileInfo fileInfo = QFileInfo( fileName );
 
@@ -43,7 +44,7 @@ DeltaFileWrapper::DeltaFileWrapper( const QString &fileName )
     mErrorType = DeltaFileWrapper::LockError;
 
   if ( mErrorType == DeltaFileWrapper::NoError )
-    mCloudProjectId = QgsProject::instance()->readEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ) );
+    mCloudProjectId = mProject->readEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ) );
 
   if ( mErrorType == DeltaFileWrapper::NoError && mCloudProjectId.isEmpty() )
     mErrorType = DeltaFileWrapper::NotCloudProjectError;
@@ -278,12 +279,12 @@ bool DeltaFileWrapper::append( const DeltaFileWrapper *deltaFileWrapper )
 }
 
 
-QStringList DeltaFileWrapper::attachmentFieldNames( const QString &layerId )
+QStringList DeltaFileWrapper::attachmentFieldNames( const QgsProject *project, const QString &layerId )
 {
   if ( sCacheAttachmentFieldNames.contains( layerId ) )
     return sCacheAttachmentFieldNames.value( layerId );
 
-  const QgsVectorLayer *vl = static_cast<QgsVectorLayer *>( QgsProject::instance()->mapLayer( layerId ) );
+  const QgsVectorLayer *vl = static_cast<QgsVectorLayer *>( project->mapLayer( layerId ) );
   QStringList attachmentFieldNames;
 
   if ( ! vl )
@@ -317,7 +318,7 @@ QMap<QString, QString> DeltaFileWrapper::attachmentFileNames() const
     const QString layerId = delta.value( QStringLiteral( "layerId" ) ).toString();
     const QString method = delta.value( QStringLiteral( "method" ) ).toString();
     const QString fid = delta.value( QStringLiteral( "fid" ) ).toString();
-    const QStringList attachmentFieldNamesList = attachmentFieldNames( layerId );
+    const QStringList attachmentFieldNamesList = attachmentFieldNames( mProject, layerId );
 
     if ( method == QStringLiteral( "delete" ) || method == QStringLiteral( "patch" ) )
     {
@@ -398,7 +399,7 @@ void DeltaFileWrapper::addPatch( const QString &layerId, const QgsFeature &oldFe
     {"layerId", layerId},
     {"method", "patch"}
   } );
-  const QStringList attachmentFieldsList = attachmentFieldNames( layerId );
+  const QStringList attachmentFieldsList = attachmentFieldNames( mProject, layerId );
   const QgsGeometry oldGeom = oldFeature.geometry();
   const QgsGeometry newGeom = newFeature.geometry();
   const QgsAttributes oldAttrs = oldFeature.attributes();
@@ -438,7 +439,7 @@ void DeltaFileWrapper::addPatch( const QString &layerId, const QgsFeature &oldFe
 
       if ( attachmentFieldsList.contains( name ) )
       {
-        const QString homeDir = QgsProject::instance()->homePath();
+        const QString homeDir = mProject->homePath();
         const QString oldFileName = oldVal.toString();
         const QString newFileName = newVal.toString();
 
@@ -508,7 +509,7 @@ void DeltaFileWrapper::addDelete( const QString &layerId, const QgsFeature &oldF
   QJsonObject delta( {{"fid", oldFeature.id()},
                       {"layerId", layerId},
                       {"method", "delete"}} );
-  const QStringList attachmentFieldsList = attachmentFieldNames( layerId );
+  const QStringList attachmentFieldsList = attachmentFieldNames( mProject, layerId );
   const QgsAttributes oldAttrs = oldFeature.attributes();
   QJsonObject oldData( {{"geometry", geometryToJsonValue( oldFeature.geometry() )}});
   QJsonObject tmpOldAttrs;
@@ -556,7 +557,7 @@ void DeltaFileWrapper::addCreate( const QString &layerId, const QgsFeature &newF
   QJsonObject delta( {{"fid", newFeature.id()},
                       {"layerId", layerId},
                       {"method", "create"}} );
-  const QStringList attachmentFieldsList = attachmentFieldNames( layerId );
+  const QStringList attachmentFieldsList = attachmentFieldNames( mProject, layerId );
   const QgsAttributes newAttrs = newFeature.attributes();
   QJsonObject newData( {{"geometry", geometryToJsonValue( newFeature.geometry() )}});
   QJsonObject tmpNewAttrs;

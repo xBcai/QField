@@ -51,7 +51,7 @@ class LayerObserver : public QObject
      * @param isCurrentDeltaFile if true, no timestamp is appended
      * @return QString 
      */
-    static QString generateDeltaFileName( bool isCurrentDeltaFile = false );
+    QString generateDeltaFileName( bool isCurrentDeltaFile = false );
 
 
     /**
@@ -152,6 +152,12 @@ class LayerObserver : public QObject
      * The commited Deltas File Wrapper object
      */
     std::unique_ptr<DeltaFileWrapper> mCommittedDeltaFileWrapper;
+
+
+    /**
+     * The current project instance
+     */
+    const QgsProject *mProject = nullptr;
 
 
     /**

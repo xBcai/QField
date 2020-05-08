@@ -64,11 +64,11 @@ class TestDeltaFileWrapper: public QObject
     void testNoMoreThanOneInstance()
     {
       QString fileName( std::tmpnam( nullptr ) );
-      DeltaFileWrapper dfw1( fileName );
+      DeltaFileWrapper dfw1( mProject, fileName );
 
       QCOMPARE( dfw1.errorType(), DeltaFileWrapper::NoError );
       
-      DeltaFileWrapper dfw2( fileName );
+      DeltaFileWrapper dfw2( mProject, fileName );
 
       QCOMPARE( dfw2.errorType(), DeltaFileWrapper::LockError );
     }
@@ -86,7 +86,7 @@ class TestDeltaFileWrapper: public QObject
       )"""" );
       QVERIFY( mTmpFile.write( correctExistingContents.toUtf8() ) );
       mTmpFile.flush();
-      DeltaFileWrapper correctExistingDfw( mTmpFile.fileName() );
+      DeltaFileWrapper correctExistingDfw( mProject, mTmpFile.fileName() );
       QCOMPARE( correctExistingDfw.errorType(), DeltaFileWrapper::NoError );
       QJsonDocument correctExistingDoc = normalizeSchema( correctExistingDfw.toString() );
       QVERIFY( ! correctExistingDoc.isNull() );
@@ -97,10 +97,10 @@ class TestDeltaFileWrapper: public QObject
     void testNoErrorNonExistingFile()
     {
       QString fileName( std::tmpnam( nullptr ) );
-      DeltaFileWrapper dfw( fileName );
+      DeltaFileWrapper dfw( mProject, fileName );
       QCOMPARE( dfw.errorType(), DeltaFileWrapper::NoError );
       QVERIFY( QFileInfo::exists( fileName ) );
-      DeltaFileWrapper validNonexistingFileCheckDfw( fileName );
+      DeltaFileWrapper validNonexistingFileCheckDfw( mProject, fileName );
       QFile deltaFile( fileName );
       QVERIFY( deltaFile.open( QIODevice::ReadOnly ) );
       QJsonDocument fileContents = normalizeSchema( deltaFile.readAll() );
@@ -118,7 +118,7 @@ class TestDeltaFileWrapper: public QObject
 
     void testErrorInvalidName()
     {
-      DeltaFileWrapper dfw( "" );
+      DeltaFileWrapper dfw( mProject, "" );
       QCOMPARE( dfw.errorType(), DeltaFileWrapper::IOError );
     }
 
@@ -127,7 +127,7 @@ class TestDeltaFileWrapper: public QObject
     {
       QVERIFY( mTmpFile.write( R""""( asd )"""" ) );
       mTmpFile.flush();
-      DeltaFileWrapper dfw( mTmpFile.fileName() );
+      DeltaFileWrapper dfw( mProject, mTmpFile.fileName() );
       QCOMPARE( dfw.errorType(), DeltaFileWrapper::JsonParseError );
     }
 
@@ -136,7 +136,7 @@ class TestDeltaFileWrapper: public QObject
     {
       QVERIFY( mTmpFile.write( R""""({"version":5,"id":"11111111-1111-1111-1111-111111111111","projectId":"projectId","deltas":[]})"""" ) );
       mTmpFile.flush();
-      DeltaFileWrapper dfw( mTmpFile.fileName() );
+      DeltaFileWrapper dfw( mProject, mTmpFile.fileName() );
       QCOMPARE( dfw.errorType(), DeltaFileWrapper::JsonFormatVersionError );
     }
 
@@ -145,7 +145,7 @@ class TestDeltaFileWrapper: public QObject
     {
       QVERIFY( mTmpFile.write( R""""({"version":"","id":"11111111-1111-1111-1111-111111111111","projectId":"projectId","deltas":[]})"""" ) );
       mTmpFile.flush();
-      DeltaFileWrapper emptyVersionDfw( mTmpFile.fileName() );
+      DeltaFileWrapper emptyVersionDfw( mProject, mTmpFile.fileName() );
       QCOMPARE( emptyVersionDfw.errorType(), DeltaFileWrapper::JsonFormatVersionError );
     }
 
@@ -154,7 +154,7 @@ class TestDeltaFileWrapper: public QObject
     {
       QVERIFY( mTmpFile.write( R""""({"version":"2.0","id":"11111111-1111-1111-1111-111111111111","projectId":"projectId","deltas":[]})"""" ) );
       mTmpFile.flush();
-      DeltaFileWrapper wrongVersionNumberDfw( mTmpFile.fileName() );
+      DeltaFileWrapper wrongVersionNumberDfw( mProject, mTmpFile.fileName() );
       QCOMPARE( wrongVersionNumberDfw.errorType(), DeltaFileWrapper::JsonIncompatibleVersionError );
     }
 
@@ -163,7 +163,7 @@ class TestDeltaFileWrapper: public QObject
     {
       QVERIFY( mTmpFile.write( R""""({"version":"2.0","id": 5,"projectId":"projectId","deltas":[]})"""" ) );
       mTmpFile.flush();
-      DeltaFileWrapper wrongIdTypeDfw( mTmpFile.fileName() );
+      DeltaFileWrapper wrongIdTypeDfw( mProject, mTmpFile.fileName() );
       QCOMPARE( wrongIdTypeDfw.errorType(), DeltaFileWrapper::JsonFormatIdError );
     }
 
@@ -172,7 +172,7 @@ class TestDeltaFileWrapper: public QObject
     {
       QVERIFY( mTmpFile.write( R""""({"version":"2.0","id": "","projectId":"projectId","deltas":[]})"""" ) );
       mTmpFile.flush();
-      DeltaFileWrapper emptyIdDfw( mTmpFile.fileName() );
+      DeltaFileWrapper emptyIdDfw( mProject, mTmpFile.fileName() );
       QCOMPARE( emptyIdDfw.errorType(), DeltaFileWrapper::JsonFormatIdError );
     }
 
@@ -181,7 +181,7 @@ class TestDeltaFileWrapper: public QObject
     {
       QVERIFY( mTmpFile.write( R""""({"version":"2.0","id": "11111111-1111-1111-1111-111111111111","projectId":5,"deltas":[]})"""" ) );
       mTmpFile.flush();
-      DeltaFileWrapper wrongProjectIdTypeDfw( mTmpFile.fileName() );
+      DeltaFileWrapper wrongProjectIdTypeDfw( mProject, mTmpFile.fileName() );
       QCOMPARE( wrongProjectIdTypeDfw.errorType(), DeltaFileWrapper::JsonFormatProjectIdError );
     }
 
@@ -190,7 +190,7 @@ class TestDeltaFileWrapper: public QObject
     {
       QVERIFY( mTmpFile.write( R""""({"version":"2.0","id": "11111111-1111-1111-1111-111111111111","projectId":"","deltas":[]})"""" ) );
       mTmpFile.flush();
-      DeltaFileWrapper emptyProjectIdDfw( mTmpFile.fileName() );
+      DeltaFileWrapper emptyProjectIdDfw( mProject, mTmpFile.fileName() );
       QCOMPARE( emptyProjectIdDfw.errorType(), DeltaFileWrapper::JsonFormatProjectIdError );
     }
 
@@ -199,7 +199,7 @@ class TestDeltaFileWrapper: public QObject
     {
       QVERIFY( mTmpFile.write( R""""({"version":"2.0","id": "11111111-1111-1111-1111-111111111111","projectId":"projectId","deltas":{}})"""" ) );
       mTmpFile.flush();
-      DeltaFileWrapper wrongDeltasTypeDfw( mTmpFile.fileName() );
+      DeltaFileWrapper wrongDeltasTypeDfw( mProject, mTmpFile.fileName() );
       QCOMPARE( wrongDeltasTypeDfw.errorType(), DeltaFileWrapper::JsonFormatDeltasError );
     }
 
@@ -207,14 +207,14 @@ class TestDeltaFileWrapper: public QObject
     void testFileName()
     {
       QString fileName( std::tmpnam( nullptr ) );
-      DeltaFileWrapper dfw( fileName );
+      DeltaFileWrapper dfw( mProject, fileName );
       QCOMPARE( dfw.fileName(), fileName );
     }
 
 
     void testId()
     {
-      DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
+      DeltaFileWrapper dfw( mProject, QString( std::tmpnam( nullptr ) ) );
 
       QVERIFY( ! QUuid::fromString( dfw.id() ).isNull() );
     }
@@ -222,7 +222,7 @@ class TestDeltaFileWrapper: public QObject
 
     void testReset()
     {
-      DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
+      DeltaFileWrapper dfw( mProject, QString( std::tmpnam( nullptr ) ) );
       dfw.addCreate( mLayer->id(), QgsFeature() );
 
       QCOMPARE( getDeltasArray( dfw.toString() ).size(), 1 );
@@ -245,7 +245,7 @@ class TestDeltaFileWrapper: public QObject
 
     void testToString()
     {
-      DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
+      DeltaFileWrapper dfw( mProject, QString( std::tmpnam( nullptr ) ) );
       dfw.addCreate( mLayer->id(), QgsFeature( QgsFields() , 100 ) );
       dfw.addDelete( mLayer->id(), QgsFeature( QgsFields() , 101 ) );
       QJsonDocument doc = normalizeSchema( dfw.toString() );
@@ -281,7 +281,7 @@ class TestDeltaFileWrapper: public QObject
 
     void testToJson()
     {
-      DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
+      DeltaFileWrapper dfw( mProject, QString( std::tmpnam( nullptr ) ) );
       dfw.addCreate( mLayer->id(), QgsFeature( QgsFields() , 100 ) );
       dfw.addDelete( mLayer->id(), QgsFeature( QgsFields() , 101 ) );
       QJsonDocument doc = normalizeSchema( QString( dfw.toJson() ) );
@@ -317,7 +317,7 @@ class TestDeltaFileWrapper: public QObject
 
     void testProjectId()
     {
-      DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
+      DeltaFileWrapper dfw( mProject, QString( std::tmpnam( nullptr ) ) );
 
       QCOMPARE( dfw.projectId(), QStringLiteral( "TEST_PROJECT_ID" ) );
     }
@@ -326,7 +326,7 @@ class TestDeltaFileWrapper: public QObject
     void testIsDirty()
     {
       QString fileName = std::tmpnam( nullptr );
-      DeltaFileWrapper dfw( fileName );
+      DeltaFileWrapper dfw( mProject, fileName );
 
       QCOMPARE( dfw.isDirty(), false );
 
@@ -344,7 +344,7 @@ class TestDeltaFileWrapper: public QObject
 
     void testCount()
     {
-      DeltaFileWrapper dfw( std::tmpnam( nullptr ) );
+      DeltaFileWrapper dfw( mProject, std::tmpnam( nullptr ) );
       
       QCOMPARE( dfw.count(), 0 );
 
@@ -360,7 +360,7 @@ class TestDeltaFileWrapper: public QObject
 
     void testDeltas()
     {
-      DeltaFileWrapper dfw( std::tmpnam( nullptr ) );
+      DeltaFileWrapper dfw( mProject, std::tmpnam( nullptr ) );
 
       QCOMPARE( QJsonDocument( dfw.deltas() ), QJsonDocument::fromJson( "[]" ) );
 
@@ -407,7 +407,7 @@ class TestDeltaFileWrapper: public QObject
     void testToFile()
     {
       QString fileName = std::tmpnam( nullptr );
-      DeltaFileWrapper dfw1( fileName );
+      DeltaFileWrapper dfw1( mProject, fileName );
       dfw1.addCreate( mLayer->id(), QgsFeature() );
 
       QVERIFY( ! dfw1.hasError() );
@@ -423,8 +423,8 @@ class TestDeltaFileWrapper: public QObject
 
     void testAppend() 
     {
-      DeltaFileWrapper dfw1( QString( std::tmpnam( nullptr ) ) );
-      DeltaFileWrapper dfw2( QString( std::tmpnam( nullptr ) ) );
+      DeltaFileWrapper dfw1( mProject, QString( std::tmpnam( nullptr ) ) );
+      DeltaFileWrapper dfw2( mProject, QString( std::tmpnam( nullptr ) ) );
       dfw1.addCreate( mLayer->id(), QgsFeature (QgsFields(), 100) );
       dfw2.append( &dfw1 );
       
@@ -434,9 +434,9 @@ class TestDeltaFileWrapper: public QObject
 
     void testAttachmentFieldNames()
     {
-      DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
+      DeltaFileWrapper dfw( mProject, QString( std::tmpnam( nullptr ) ) );
 
-      QStringList attachmentFields = dfw.attachmentFieldNames( mLayer->id() );
+      QStringList attachmentFields = dfw.attachmentFieldNames( mProject, mLayer->id() );
       
       QCOMPARE( QStringList({QStringLiteral("attachment")}), attachmentFields );
     }
@@ -515,7 +515,7 @@ class TestDeltaFileWrapper: public QObject
       )"""" ).arg( mLayer->id() ).toUtf8() ) );
       QVERIFY( deltaFile.flush() );
 
-      DeltaFileWrapper dfw( deltaFile.fileName() );
+      DeltaFileWrapper dfw( mProject, deltaFile.fileName() );
 
       QVERIFY( ! dfw.hasError() );
 
@@ -531,7 +531,7 @@ class TestDeltaFileWrapper: public QObject
 
     void testAddCreate()
     {
-      DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
+      DeltaFileWrapper dfw( mProject, QString( std::tmpnam( nullptr ) ) );
       QgsFeature f( mLayer->fields(), 100 );
       f.setAttribute( QStringLiteral( "dbl" ), 3.14 );
       f.setAttribute( QStringLiteral( "int" ), 42 );
@@ -618,7 +618,7 @@ class TestDeltaFileWrapper: public QObject
 
     void testAddPatch()
     {
-      DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
+      DeltaFileWrapper dfw( mProject, QString( std::tmpnam( nullptr ) ) );
       QgsFeature oldFeature( mLayer->fields(), 100 );
       oldFeature.setAttribute( QStringLiteral( "dbl" ), 3.14 );
       oldFeature.setAttribute( QStringLiteral( "int" ), 42 );
@@ -787,7 +787,7 @@ class TestDeltaFileWrapper: public QObject
 
     void testAddDelete()
     {
-      DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
+      DeltaFileWrapper dfw( mProject, QString( std::tmpnam( nullptr ) ) );
       QgsFeature f( mLayer->fields(), 100 );
       f.setAttribute( QStringLiteral( "dbl" ), 3.14 );
       f.setAttribute( QStringLiteral( "int" ), 42 );
@@ -875,7 +875,7 @@ class TestDeltaFileWrapper: public QObject
 
     void testMultipleDeltaAdd()
     {
-      DeltaFileWrapper dfw( QString( std::tmpnam( nullptr ) ) );
+      DeltaFileWrapper dfw( mProject, QString( std::tmpnam( nullptr ) ) );
       QgsFields fields;
       fields.append( QgsField( "dbl", QVariant::Double, "double" ) );
       fields.append( QgsField( "int", QVariant::Int, "integer" ) );
@@ -943,6 +943,9 @@ class TestDeltaFileWrapper: public QObject
     }
 
   private:
+    QgsProject *mProject = QgsProject::instance();
+
+
     QTemporaryFile mTmpFile;
 
 
