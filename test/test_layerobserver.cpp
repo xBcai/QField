@@ -228,6 +228,7 @@ class TestLayerObserver: public QObject
     std::unique_ptr<QgsVectorLayer> mLayer;
     std::unique_ptr<LayerObserver> mLayerObserver;
 
+
     QStringList getDeltaOperations( QString fileName )
     {
       QStringList operations;
@@ -246,6 +247,7 @@ class TestLayerObserver: public QObject
 
       return operations;
     }
+
 
     QString getId( QString fileName )
     {
