@@ -77,7 +77,7 @@ class TestLayerObserver: public QObject
 
     void testGenerateDeltaFileName()
     {
-      QVERIFY( LayerObserver::generateDeltaFileName( true ) != LayerObserver::generateDeltaFileName( false ) );
+      QVERIFY( mLayerObserver->generateDeltaFileName( true ) != mLayerObserver->generateDeltaFileName( false ) );
     }
 
 
@@ -86,14 +86,14 @@ class TestLayerObserver: public QObject
       // ? how I can test such thing?
       QSKIP("decide how we test errors");
       QCOMPARE( mLayerObserver->hasError(), false );
-      QVERIFY( QFile::exists( LayerObserver::generateDeltaFileName( true ) ) );
+      QVERIFY( QFile::exists( mLayerObserver->generateDeltaFileName( true ) ) );
     }
 
 
     void testCommit()
     {
-      QString currentDeltaFileName = LayerObserver::generateDeltaFileName( true );
-      QString committedDeltaFileName = LayerObserver::generateDeltaFileName( false );
+      QString currentDeltaFileName = mLayerObserver->generateDeltaFileName( true );
+      QString committedDeltaFileName = mLayerObserver->generateDeltaFileName( false );
 
       QVERIFY( QFile::exists( currentDeltaFileName ) );
       QVERIFY( QFile::exists( committedDeltaFileName ) );
@@ -130,7 +130,7 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->startEditing() );
       QVERIFY( mLayer->addFeature( f1 ) );
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ).size(), 1 );
+      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ).size(), 1 );
 
       QgsFeature f2( mLayer->fields() );
       f2.setAttribute( QStringLiteral( "int" ), 1001 );
@@ -140,13 +140,13 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->startEditing() );
       QVERIFY( mLayer->addFeature( f1 ) );
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ).size(), 2 );
+      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ).size(), 2 );
 
       mLayerObserver->reset();
       QVERIFY( mLayer->startEditing() );
       QVERIFY( mLayer->commitChanges() );
 
-      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ).size(), 0 );
+      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ).size(), 0 );
     }
 
 
@@ -160,10 +160,10 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->startEditing() );
       QVERIFY( mLayer->addFeature( f1 ) );
       // the changes are not written on the disk yet
-      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ), QStringList() );
+      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList() );
       // when we stop editing, all changes are written
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ), QStringList({"create"}) );
+      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList({"create"}) );
     }
 
 
@@ -177,7 +177,7 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->startEditing() );
       QVERIFY( mLayer->addFeature( f1 ) );
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ), QStringList({"create"}) );
+      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList({"create"}) );
     }
 
 
@@ -186,7 +186,7 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->startEditing() );
       QVERIFY( mLayer->deleteFeature( 1 ) );
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ), QStringList({"delete"}) );
+      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList({"delete"}) );
     }
 
 
@@ -202,7 +202,7 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->updateFeature( f1 ) );
       QVERIFY( mLayer->updateFeature( f2 ) );
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ), QStringList({"patch", "patch"}) );
+      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList({"patch", "patch"}) );
     }
 
 
@@ -220,7 +220,7 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->updateFeature( f2 ) );
 
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( LayerObserver::generateDeltaFileName( true ) ), QStringList({"patch", "patch"}) );
+      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList({"patch", "patch"}) );
     }
     
   private:

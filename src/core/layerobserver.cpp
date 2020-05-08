@@ -27,12 +27,13 @@
 
 
 LayerObserver::LayerObserver( const QgsProject *project )
+  : mProject( project )
 {
-  mCurrentDeltaFileWrapper.reset( new DeltaFileWrapper( generateDeltaFileName( true ) ) );
-  mCommittedDeltaFileWrapper.reset( new DeltaFileWrapper( generateDeltaFileName( false ) ) );
+  mCurrentDeltaFileWrapper.reset( new DeltaFileWrapper( mProject, generateDeltaFileName( true ) ) );
+  mCommittedDeltaFileWrapper.reset( new DeltaFileWrapper( mProject, generateDeltaFileName( false ) ) );
 
-  connect( project, &QgsProject::homePathChanged, this, &LayerObserver::onHomePathChanged );
-  connect( project, &QgsProject::layersAdded, this, &LayerObserver::onLayersAdded );
+  connect( mProject, &QgsProject::homePathChanged, this, &LayerObserver::onHomePathChanged );
+  connect( mProject, &QgsProject::layersAdded, this, &LayerObserver::onLayersAdded );
 }
 
 
@@ -40,9 +41,9 @@ QString LayerObserver::generateDeltaFileName( bool isCurrentDeltaFile )
 {
   return ( isCurrentDeltaFile )
     ? QStringLiteral( "%1/deltafile.json" )
-        .arg( QgsProject::instance()->homePath() )
+        .arg( mProject->homePath() )
     : QStringLiteral( "%1/deltafile_commited.json" )
-        .arg( QgsProject::instance()->homePath() );
+        .arg( mProject->homePath() );
 }
 
 
@@ -98,11 +99,11 @@ void LayerObserver::onHomePathChanged()
   Q_ASSERT( ! mCurrentDeltaFileWrapper->isDirty() );
   Q_ASSERT( ! mCommittedDeltaFileWrapper->isDirty() );
 
-  if ( QgsProject::instance()->readEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ) ).isEmpty() )
+  if ( mProject->readEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ) ).isEmpty() )
     return;
 
-  mCurrentDeltaFileWrapper.reset( new DeltaFileWrapper( generateDeltaFileName( true ) ) );
-  mCommittedDeltaFileWrapper.reset( new DeltaFileWrapper( generateDeltaFileName( false ) ) );
+  mCurrentDeltaFileWrapper.reset( new DeltaFileWrapper( mProject, generateDeltaFileName( true ) ) );
+  mCommittedDeltaFileWrapper.reset( new DeltaFileWrapper( mProject, generateDeltaFileName( false ) ) );
 }
 
 
