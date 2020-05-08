@@ -427,28 +427,51 @@ void DeltaFileWrapper::addPatch( const QString &layerId, const QgsFeature &oldFe
   {
     const QVariant oldVal = oldAttrs.at( idx );
     const QVariant newVal = newAttrs.at( idx );
+    int attachmentFieldsDiffed = 0;
 
     if ( newVal != oldVal )
     {
       const QString name = fields.at( idx ).name();
-      tmpOldAttrs.insert( name, QJsonValue::fromVariant( oldVal ) );
-      tmpNewAttrs.insert( name, QJsonValue::fromVariant( newVal ) );
+      tmpOldAttrs.insert( name, oldVal.isNull() ? QJsonValue::Null : QJsonValue::fromVariant( oldVal ) );
+      tmpNewAttrs.insert( name, newVal.isNull() ? QJsonValue::Null : QJsonValue::fromVariant( newVal ) );
       areFeaturesEqual = true;
 
       if ( attachmentFieldsList.contains( name ) )
       {
         const QString homeDir = QgsProject::instance()->homePath();
         const QString oldFileName = oldVal.toString();
-        const QByteArray oldFileChecksum = fileChecksum( QStringLiteral( "%1/%2" ).arg( homeDir, oldFileName ), QCryptographicHash::Sha256 );
-        const QJsonValue oldFileChecksumJson = oldFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( oldFileChecksum.toHex() ) );
         const QString newFileName = newVal.toString();
-        const QByteArray newFileChecksum = fileChecksum( QStringLiteral( "%1/%2" ).arg( homeDir, newFileName ), QCryptographicHash::Sha256 );
-        const QJsonValue newFileChecksumJson = newFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( newFileChecksum.toHex() ) );
 
-        tmpOldFileChecksums.insert( oldFileName, oldFileChecksumJson );
-        tmpNewFileChecksums.insert( newFileName, newFileChecksumJson );
+        // if the file name is an empty or null string, there is not much we can do
+        if ( ! oldFileName.isEmpty() )
+        {
+          const QString oldFullFileName = QFileInfo( oldFileName ).isAbsolute() ? oldFileName : QStringLiteral( "%1/%2" ).arg( homeDir, oldFileName );
+          const QByteArray oldFileChecksum = fileChecksum( oldFullFileName, QCryptographicHash::Sha256 );
+          const QJsonValue oldFileChecksumJson = oldFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( oldFileChecksum.toHex() ) );
+          tmpOldFileChecksums.insert( oldFullFileName, oldFileChecksumJson );
+        }
+
+        if ( ! newFileName.isEmpty() )
+        {
+          const QString newFullFileName = QFileInfo( newFileName ).isAbsolute() ? newFileName : QStringLiteral( "%1/%2" ).arg( homeDir, newFileName );
+          const QByteArray newFileChecksum = fileChecksum( newFullFileName, QCryptographicHash::Sha256 );
+          const QJsonValue newFileChecksumJson = newFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( newFileChecksum.toHex() ) );
+          tmpNewFileChecksums.insert( newFullFileName, newFileChecksumJson );
+        }
+        
+        attachmentFieldsDiffed++;
       }
     }
+#  if defined(QT_NO_DEBUG) && !defined(QT_FORCE_ASSERTS)
+    else
+    {
+      const QString name = fields.at( idx ).name();
+      if ( attachmentFieldsList.contains( name ) )
+        attachmentFieldsDiffed++;
+    }
+
+    Q_ASSERT( attachmentFieldsDiffed == attachmentFieldsList.size() );
+#  endif
   }
 
   // if features are completely equal, there is no need to change the JSON
@@ -460,11 +483,11 @@ void DeltaFileWrapper::addPatch( const QString &layerId, const QgsFeature &oldFe
     oldData.insert( QStringLiteral( "attributes" ), tmpOldAttrs );
     newData.insert( QStringLiteral( "attributes" ), tmpNewAttrs );
 
-    if ( tmpOldFileChecksums.length() > 0 || tmpNewFileChecksums.length() > 0 )
-    {
+    if ( tmpOldFileChecksums.length() > 0 )
       oldData.insert( QStringLiteral( "files_sha256" ), tmpOldFileChecksums );
+
+    if ( tmpNewFileChecksums.length() > 0 )
       newData.insert( QStringLiteral( "files_sha256" ), tmpNewFileChecksums );
-    }
   }
   else
   {
@@ -501,7 +524,7 @@ void DeltaFileWrapper::addDelete( const QString &layerId, const QgsFeature &oldF
     {
       const QString oldFileName = oldVal.toString();
       const QByteArray oldFileChecksum = fileChecksum( oldFileName, QCryptographicHash::Sha256 );
-      const QJsonValue oldFileChecksumJson = oldFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( oldFileChecksum ) );
+      const QJsonValue oldFileChecksumJson = oldFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( oldFileChecksum.toHex() ) );
 
       tmpOldFileChecksums.insert( oldVal.toString(), oldFileChecksumJson );
     }
@@ -549,7 +572,7 @@ void DeltaFileWrapper::addCreate( const QString &layerId, const QgsFeature &newF
     {
       const QString newFileName = newVal.toString();
       const QByteArray newFileChecksum = fileChecksum( newFileName, QCryptographicHash::Sha256 );
-      const QJsonValue newFileChecksumJson = newFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( newFileChecksum ) );
+      const QJsonValue newFileChecksumJson = newFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( newFileChecksum.toHex() ) );
 
       tmpNewFileChecksums.insert( newVal.toString(), newFileChecksumJson );
     }

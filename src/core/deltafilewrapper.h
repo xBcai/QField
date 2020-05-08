@@ -87,7 +87,7 @@ class DeltaFileWrapper
      * @param hashAlgorithm hash algorithm (md5, sha1, sha256 etc)
      * @return QByteArray checksum
      */
-    static QByteArray fileChecksum( const QString &fileName, const QCryptographicHash::Algorithm hashAlgorithm );
+    static QByteArray fileChecksum( const QString &fileName, const QCryptographicHash::Algorithm hashAlgorithm = QCryptographicHash::Sha256 );
 
 
     /**
