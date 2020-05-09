@@ -61,7 +61,7 @@ class DeltaFileWrapper
     /**
      * Construct a new Feature Deltas object.
      * 
-     * @param fileName full file name with path where the object should be stored
+     * @param fileName complete file name with path where the object should be stored
      */
     DeltaFileWrapper( const QgsProject *project, const QString &fileName );
 

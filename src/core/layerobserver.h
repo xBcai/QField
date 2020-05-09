@@ -46,7 +46,7 @@ class LayerObserver : public QObject
 
 
     /**
-     * Generates a new deltas file full name
+     * Generates a new complete name with path for deltas file
      * 
      * @param isCurrentDeltaFile if true, no timestamp is appended
      * @return QString 

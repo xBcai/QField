@@ -55,35 +55,42 @@ bool LayerObserver::hasError() const
 
 bool LayerObserver::commit()
 {
+  // First make sure the current delta file is synced to the disk storage. There might be some unsynced changes.
   if ( ! mCurrentDeltaFileWrapper->toFile() )
   {
     QgsLogger::warning( QStringLiteral( "Cannot write the current delta file: %1" ).arg( mCurrentDeltaFileWrapper->errorString() ) );
     return false;
   }
 
+  // If the delta file is empty, there is nothing to commit, so we return success.
   if ( mCurrentDeltaFileWrapper->count() == 0 )
     return true;
 
+  // Try to append the contents of the current delta file to the committed one. Very unlikely to break there.
   if ( ! mCommittedDeltaFileWrapper->append( mCurrentDeltaFileWrapper.get() ) )
   {
     QgsLogger::warning( QStringLiteral( "Unable to append delta file wrapper contents!" ) );
     return false;
   }
 
+  // Make sure the committed changes are synced to the disk storage.
   if ( ! mCommittedDeltaFileWrapper->toFile() )
   {
     QgsLogger::warning( QStringLiteral( "Cannot write the committed delta file: %1" ).arg( mCommittedDeltaFileWrapper->errorString() ) );
     return false;
   }
  
+  // Create brand new delta file for the current (uncommitted) deltas.
   mCurrentDeltaFileWrapper->reset( true );
 
+  // Make sure the brand new current delta file is synced to the disk storage.
   if ( ! mCurrentDeltaFileWrapper->toFile() )
   {
     QgsLogger::warning( QStringLiteral( "Cannot write the current delta file: %1" ).arg( mCurrentDeltaFileWrapper->errorString() ) );
     return false;
   }
 
+  // Successfully committed!
   return true;
 }
 
@@ -152,8 +159,10 @@ void LayerObserver::onBeforeCommitChanges()
   for ( const QgsFeatureId fid : changedAttributesFids )
     changedFids.insert( fid );
 
-  QgsChangedFeatures changedFeatures;
+  // NOTE we read the features from the dataProvider directly as we want to access the old values. 
+  // If we use the layer, we get the values from the edit buffer.
   QgsFeatureIterator featuresIt = vl->dataProvider()->getFeatures( QgsFeatureRequest( changedFids ) );
+  QgsChangedFeatures changedFeatures;
   QgsFeature f;
 
   // ? is it possible to use the iterator in a less ugly way? something like normal `for ( QgsFeature &f : it ) {}`
