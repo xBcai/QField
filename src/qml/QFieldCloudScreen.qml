@@ -217,6 +217,7 @@ Page {
 
               delegate: Rectangle {
                   id: rectangle
+                  property string projectId: Id
                   property string projectOwner: Owner
                   property string projectName: Name
                   property string projectLocalPath: LocalPath
@@ -271,7 +272,17 @@ Page {
                           Text {
                               id: projectNote
                               leftPadding: 3 * dp
-                              text: connection.status != QFieldCloudConnection.LoggedIn ? qsTr( '(Available locally)' ) : Description + ' ' + ( LocalPath != '' ? Status === QFieldCloudProjectsModel.ProjectStatus.LocalOnly ? qsTr( '(Available locally, missing on cloud)' ) : qsTr( '(Available locally)' ) : Status === QFieldCloudProjectsModel.ProjectStatus.Downloading ? qsTr( '(Downloading...)' ) : '' )
+                              text: connection.status != QFieldCloudConnection.LoggedIn 
+                                ? qsTr( '(Available locally)' ) 
+                                : Description + ' ' + ( 
+                                  LocalPath == '' 
+                                    ? Status === QFieldCloudProjectsModel.ProjectStatus.Downloading 
+                                      ? qsTr( '(Downloading...)' ) 
+                                      : '' 
+                                    : Status === QFieldCloudProjectsModel.ProjectStatus.LocalOnly 
+                                      ? qsTr( '(Available locally, missing on cloud)' ) 
+                                      : qsTr( '(Available locally)' ) 
+                                  )
                               visible: text != ""
                               font.pointSize: Theme.tipFont.pointSize - 2
                               font.italic: true
@@ -294,7 +305,7 @@ Page {
                     } else {
                       // fetch remote project
                       displayToast( qsTr( "Downloading project %1" ).arg( item.projectName ) )
-                      projectsModel.downloadProject( item.projectOwner, item.projectName )
+                      projectsModel.downloadProject( item.projectId )
                     }
                   }
                 }
@@ -321,6 +332,7 @@ Page {
                 onPressAndHold: {
                     var item = table.itemAt(mouse.x, mouse.y)
                     if (item) {
+                      projectActions.projectId = item.projectId
                       projectActions.projectOwner = item.projectOwner
                       projectActions.projectName = item.projectName
                       projectActions.projectLocalPath = item.projectLocalPath
@@ -337,6 +349,7 @@ Page {
       Menu {
         id: projectActions
 
+        property string projectId: ''
         property string projectOwner: ''
         property string projectName: ''
         property string projectLocalPath: ''
@@ -354,7 +367,7 @@ Page {
 
           text: qsTr( "Download Project" )
           onTriggered: {
-            projectsModel.downloadProject(projectActions.projectOwner, projectActions.projectName)
+            projectsModel.downloadProject(projectActions.projectId)
           }
         }
 
@@ -385,7 +398,7 @@ Page {
 
           text: qsTr( "Remove Stored Project" )
           onTriggered: {
-            projectsModel.removeLocalProject(projectActions.projectOwner, projectActions.projectName)
+            projectsModel.removeLocalProject(projectActions.projectId)
           }
         }
       }

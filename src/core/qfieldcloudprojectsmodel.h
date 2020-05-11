@@ -44,8 +44,8 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     void setCloudConnection( QFieldCloudConnection *cloudConnection );
 
     Q_INVOKABLE void refreshProjectsList();
-    Q_INVOKABLE void downloadProject( const QString &owner, const QString &projectName );
-    Q_INVOKABLE void removeLocalProject( const QString &owner, const QString &projectName );
+    Q_INVOKABLE void downloadProject( const QString &projectId );
+    Q_INVOKABLE void removeLocalProject( const QString &projectId );
 
     QHash<int, QByteArray> roleNames() const;
 
@@ -57,15 +57,15 @@ class QFieldCloudProjectsModel : public QAbstractListModel
   signals:
     void cloudConnectionChanged();
     void warning( const QString &message );
-    void projectDownloaded( const QString owner, const QString projectName, const bool failed = false );
+    void projectDownloaded( const QString projectId, const QString projectName, const bool failed = false );
 
   private slots:
     void connectionStatusChanged();
     void projectListReceived();
 
-    void downloadFile( const QString &owner, const QString &projectName, const QString &fileName );
+    void downloadFile( const QString &projectId, const QString &fileName );
 
-    int findProject( const QString &owner, const QString &projectName );
+    int findProject( const QString &projectId );
 
   private:
     struct CloudProject

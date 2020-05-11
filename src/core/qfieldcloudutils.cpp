@@ -9,9 +9,9 @@ const QString QFieldCloudUtils::localCloudDirectory()
   return QDir::cleanPath( QgsApplication::qgisSettingsDirPath() ) + QStringLiteral( "/cloud_projects");
 }
 
-const QString QFieldCloudUtils::localProjectFilePath( const QString &owner, const QString &projectName )
+const QString QFieldCloudUtils::localProjectFilePath( const QString &projectId )
 {
-  QString project = QStringLiteral( "%1/%2/%3" ).arg( QFieldCloudUtils::localCloudDirectory(), owner, projectName );
+  QString project = QStringLiteral( "%1/%2" ).arg( QFieldCloudUtils::localCloudDirectory(), projectId );
   QDir projectDir( project );
   QStringList projectFiles = projectDir.entryList( QStringList() << QStringLiteral( "*.qgz" ) << QStringLiteral( "*.qgs" ) );
   if ( projectFiles.count() > 0 )
