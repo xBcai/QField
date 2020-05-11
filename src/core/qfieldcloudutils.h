@@ -8,7 +8,7 @@ class QFieldCloudUtils
   public:
   
   static const QString localCloudDirectory();
-  static const QString localProjectFilePath( const QString &owner, const QString &projectName );
+  static const QString localProjectFilePath( const QString &projectId );
 };
 
 #endif // QFIELDCLOUDUTILS_H
