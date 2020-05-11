@@ -139,15 +139,15 @@ class DeltaFileWrapper
 
 
     /**
-     * Returns the number of deltas
+     * Returns the number of delta elements
      *
-     * @return int number of deltas
+     * @return int number of delta elements
      */
     int count() const;
 
 
     /**
-     * Returns the current deltas JSON array 
+     * Returns the deltas as a JSON array of delta elements
      * 
      * @return QJsonArray deltas JSON array
      */
