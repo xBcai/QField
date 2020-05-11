@@ -164,6 +164,8 @@ Page {
               height: passwordField.activeFocus ? 2 * dp : 1 * dp
               color: passwordField.activeFocus ? "#4CAF50" : "#C8E6C9"
           }
+
+          Keys.onReturnPressed: loginFormSumbitHandler()
       }
 
       FontMetrics {
@@ -177,15 +179,7 @@ Page {
           text: connection.status == QFieldCloudConnection.LoggedIn ? qsTr( "Logout" ) : connection.status == QFieldCloudConnection.Connecting ? qsTr( "Logging in, please wait" ) : qsTr( "Login" )
           enabled: connection.status != QFieldCloudConnection.Connecting
 
-          onClicked: {
-              if (connection.status == QFieldCloudConnection.LoggedIn) {
-                  connection.logout()
-              } else {
-                  connection.username = usernameField.text
-                  connection.password = passwordField.text
-                  connection.login()
-              }
-          }
+          onClicked: loginFormSumbitHandler()
       }
 
       Item {
@@ -442,6 +436,16 @@ Page {
         projects.visible = true
         connectionSettings.visible = false
       }
+    }
+  }
+
+  function loginFormSumbitHandler() {
+    if (connection.status == QFieldCloudConnection.LoggedIn) {
+      connection.logout()
+    } else {
+      connection.username = usernameField.text
+      connection.password = passwordField.text
+      connection.login()
     }
   }
 
