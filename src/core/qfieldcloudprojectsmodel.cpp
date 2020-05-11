@@ -269,26 +269,22 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
     mCloudProjects << cloudProject;
   }
 
-  QDirIterator ownerDirs( QFieldCloudUtils::localCloudDirectory(), QDir::Dirs | QDir::NoDotAndDotDot );
-  while( ownerDirs.hasNext() )
+  QDirIterator projectDirs( QFieldCloudUtils::localCloudDirectory(), QDir::Dirs | QDir::NoDotAndDotDot );
+  while( projectDirs.hasNext() )
   {
-    ownerDirs.next();
-    QDirIterator projectNameDirs( ownerDirs.filePath(), QDir::Dirs | QDir::NoDotAndDotDot );
-    while( projectNameDirs.hasNext() )
-    {
-      projectNameDirs.next();
-      int index = findProject( ownerDirs.fileName() );
-      if ( index == -1 )
-      {
-        CloudProject cloudProject( QString(),
-                                   ownerDirs.fileName(),
-                                   projectNameDirs.fileName(),
-                                   QString(),
-                                   ProjectStatus::LocalOnly );
-        cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.id );
-        mCloudProjects << cloudProject;
-      }
-    }
+    projectDirs.next();
+    
+    const QString projectId = projectDirs.fileName();
+    int index = findProject( projectId );
+
+    if ( index != -1 )
+      continue;
+
+    CloudProject cloudProject( projectId, QString(), QString(), QString(), ProjectStatus::LocalOnly );
+    cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.id );
+    mCloudProjects << cloudProject;
+
+    Q_ASSERT( projectId == cloudProject.id );
   }
 
   endResetModel();
