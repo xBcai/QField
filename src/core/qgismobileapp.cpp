@@ -412,7 +412,8 @@ void QgisMobileapp::onReadProject( const QDomDocument &doc )
   if ( mProject->fileName().startsWith( QFieldCloudUtils::localCloudDirectory() ) )
   {
     // Overwrite the title to match what is used in QField Cloud
-    title =fi.dir().dirName();
+    const QString projectId = fi.dir().dirName();
+    title = QSettings().value( QStringLiteral( "QFieldCloud/projects/%1/name").arg( projectId ), fi.fileName() ).toString();
   }
   else
   {

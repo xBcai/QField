@@ -13,6 +13,7 @@
 #include <QJsonObject>
 #include <QDir>
 #include <QDirIterator>
+#include <QSettings>
 #include <QDebug>
 
 QFieldCloudProjectsModel::QFieldCloudProjectsModel()
@@ -100,6 +101,8 @@ void QFieldCloudProjectsModel::removeLocalProject( const QString &projectId )
 
     dir.removeRecursively();
   }
+
+  QSettings().remove( QStringLiteral( "QFieldCloud/projects/%1" ).arg( projectId ) );
 }
 
 void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
@@ -262,6 +265,11 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
                           projectDetails.value( "description" ).toString(),
                           ProjectStatus::Available );
 
+    const QString projectPrefix = QStringLiteral( "QFieldCloud/projects/%1" ).arg( cloudProject.id );
+    QSettings().setValue( QStringLiteral( "%1/owner" ).arg( projectPrefix ), cloudProject.owner );
+    QSettings().setValue( QStringLiteral( "%1/name" ).arg( projectPrefix ), cloudProject.name );
+    QSettings().setValue( QStringLiteral( "%1/description" ).arg( projectPrefix ), cloudProject.description );
+
     QDir localPath( QStringLiteral( "%1/%2" ).arg( QFieldCloudUtils::localCloudDirectory(), cloudProject.id ) );
     if( localPath.exists()  )
       cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.id );
@@ -280,7 +288,12 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
     if ( index != -1 )
       continue;
 
-    CloudProject cloudProject( projectId, QString(), QString(), QString(), ProjectStatus::LocalOnly );
+    const QString projectPrefix = QStringLiteral( "QFieldCloud/projects/%1" ).arg( projectId );
+    const QString owner = QSettings().value( QStringLiteral( "%1/owner" ).arg( projectPrefix ) ).toString();
+    const QString name = QSettings().value( QStringLiteral( "%1/name" ).arg( projectPrefix ) ).toString();
+    const QString description = QSettings().value( QStringLiteral( "%1/description" ).arg( projectPrefix ) ).toString();
+
+    CloudProject cloudProject( projectId, owner, name, description, ProjectStatus::LocalOnly );
     cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.id );
     mCloudProjects << cloudProject;
 
