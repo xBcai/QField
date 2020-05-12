@@ -67,6 +67,7 @@ class QFieldCloudConnection : public QObject
      * The returned reply needs to be deleted by the caller.
      */
     QNetworkReply *post( const QString &endpoint, const QVariantMap &parameters = QVariantMap() );
+    QNetworkReply *post( const QString &endpoint, const QVariantMap &parameters, const QStringList &fileNames );
 
     /**
      * Sends a get request to the given \a endpoint.

@@ -16,11 +16,12 @@
 #include "qfieldcloudprojectsmodel.h"
 #include "qfieldcloudconnection.h"
 #include "qfieldcloudutils.h"
+#include "deltafilewrapper.h"
 
 #include <qgis.h>
 #include <qgsnetworkaccessmanager.h>
 #include <qgsapplication.h>
-#include <layerobserver.h>
+#include <qgsproject.h>
 
 #include <QNetworkReply>
 #include <QTemporaryFile>
@@ -187,6 +188,72 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
   } );
 }
 
+
+void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
+{
+  if ( !mCloudConnection )
+    return;
+
+  int index = findProject( projectId );
+
+  if ( index == -1 )
+    return;
+
+  if ( mCloudProjects[index].status != ProjectStatus::HasLocalChanges )
+    return;
+
+  mCloudProjects[index].filesFailed = 0;
+  mCloudProjects[index].uploadedSize = 0;
+  mCloudProjects[index].uploadProgress = 0.0;
+  mCloudProjects[index].status = ProjectStatus::Uploading;
+
+  QModelIndex idx = createIndex( index, 0 );
+  emit dataChanged( idx, idx,  QVector<int>() << StatusRole << UploadProgressRole );
+
+  DeltaFileWrapper deltaFile( QgsProject::instance(), QStringLiteral( "%1/deltafile_commited.json" ).arg( QgsProject::instance()->homePath() ) );
+
+  if ( deltaFile.hasError() )
+  {
+    QgsLogger::warning( QStringLiteral( "The delta file has an error: %1" ).arg( deltaFile.errorString() ) );
+    return;
+  }
+
+  QNetworkReply *deltasReply = mCloudConnection->post( QStringLiteral( "/api/v1/deltas/%1/" ).arg( projectId ), QVariantMap({
+    {"data", deltaFile.toJson()}
+  }) );
+
+  if ( ! deltasReply )
+    return;
+
+  connect( deltasReply, &QNetworkReply::finished, this, [deltasReply, this, projectId]()
+  {
+    DeltaFileWrapper deltaFile( QgsProject::instance(), QStringLiteral( "%1/deltafile_commited.json" ).arg( QgsProject::instance()->homePath() ) );
+    int index = findProject( projectId );
+    
+    if ( deltasReply->error() == QNetworkReply::NoError )
+    {
+      const QStringList fileNames = deltaFile.attachmentFileNames().keys();
+
+      for ( const QString &fileName : fileNames )
+      {
+        const QFileInfo fi( fileName );
+
+        mCloudProjects[index].files.insert( fileName, fi.size() );
+        mCloudProjects[index].filesSize += fi.size();
+
+        uploadFile( projectId, fileName );
+      }
+    }
+    else
+    {
+      if ( index > -1 )
+        mCloudProjects[index].status = ProjectStatus::HasLocalChanges;
+
+      emit warning( QStringLiteral( "Error uploading project: %1" ).arg( deltasReply->errorString() ) );
+    }
+  } );
+}
+
 void QFieldCloudProjectsModel::connectionStatusChanged()
 {
   refreshProjectsList();
@@ -267,6 +334,19 @@ void QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QSt
 
     file->deleteLater();
     reply->deleteLater();
+  } );
+}
+
+void QFieldCloudProjectsModel::uploadFile( const QString &projectId, const QString &fileName )
+{
+  QNetworkReply *reply = mCloudConnection->post( QStringLiteral( "/api/v1/files/%1/%2/" ).arg( projectId, fileName ), QVariantMap(), QStringList({fileName}) );
+
+  connect( reply, &QNetworkReply::readyRead, this, [reply, projectId, fileName]()
+  {
+    if ( reply->error() == QNetworkReply::NoError )
+    {
+      // TODO finish this
+    }
   } );
 }
 
