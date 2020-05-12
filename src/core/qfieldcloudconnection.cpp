@@ -20,7 +20,10 @@
 #include <QJsonDocument>
 #include <QNetworkCookieJar>
 #include <QNetworkCookie>
+#include <QHttpMultiPart>
+#include <QHttpPart>
 #include <QSettings>
+#include <QFile>
 
 QFieldCloudConnection::QFieldCloudConnection()
   : mToken( QSettings().value( "/QFieldCloud/token" ).toByteArray() )
@@ -168,6 +171,53 @@ QNetworkReply *QFieldCloudConnection::post( const QString &endpoint, const QVari
 #endif
 
   return reply;
+}
+
+QNetworkReply *QFieldCloudConnection::post( const QString &endpoint, const QVariantMap &parameters, const QStringList &fileNames )
+{
+  if ( mToken.isNull() )
+    return nullptr;
+
+  if ( fileNames.isEmpty() )
+    return post( endpoint, parameters );
+
+  QgsNetworkAccessManager *nam = QgsNetworkAccessManager::instance();
+  QNetworkRequest request( mUrl + endpoint );
+  QHttpMultiPart *multiPart = new QHttpMultiPart( QHttpMultiPart::FormDataType );
+  QByteArray requestBody = QJsonDocument( QJsonObject::fromVariantMap( parameters ) ).toJson();
+  QHttpPart textPart;
+
+  setAuthenticationToken( request );
+
+  textPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("application/json"));
+  textPart.setBody("toto");/* toto is the name I give to my file in the server */
+
+  for ( const QString &fileName : fileNames )
+  {
+    QHttpPart imagePart;
+    QFile *file = new QFile( fileName );
+    file->setParent( multiPart );
+
+    if ( ! file->open(QIODevice::ReadOnly) )
+      return nullptr;
+    
+    const QString header = QStringLiteral( "form-data; name=\"file\"; filename=\"%1\"" ).arg( fileName );
+    imagePart.setHeader( QNetworkRequest::ContentDispositionHeader, QVariant( fileName ) );
+    imagePart.setBodyDevice( file );
+    multiPart->append( imagePart );
+  }
+
+  QNetworkReply *reply = nam->post( request, requestBody );
+
+  multiPart->setParent(reply);
+
+#if 0
+  // TODO generic error handling
+  connect( reply, &QNetworkReply::error, this, [ this ]( QNetworkReply::NetworkError err )
+  {
+    emit error( err );
+  } );
+#endif
 }
 
 QNetworkReply *QFieldCloudConnection::get( const QString &endpoint )

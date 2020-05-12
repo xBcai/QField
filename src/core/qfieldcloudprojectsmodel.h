@@ -35,6 +35,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       CheckoutRole,
       StatusRole,
       DownloadProgressRole,
+      UploadProgressRole,
       LocalPathRole
     };
 
@@ -91,6 +92,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     Q_INVOKABLE void refreshProjectsList();
     Q_INVOKABLE void downloadProject( const QString &projectId );
+    Q_INVOKABLE void uploadProject( const QString &projectId );
     Q_INVOKABLE void removeLocalProject( const QString &projectId );
 
     QHash<int, QByteArray> roleNames() const;
@@ -110,6 +112,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     void projectListReceived();
 
     void downloadFile( const QString &projectId, const QString &fileName );
+    void uploadFile( const QString &projectId, const QString &fileName );
 
     int findProject( const QString &projectId ) const;
 
@@ -140,6 +143,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       int filesFailed = 0;
       int downloadedSize = 0;
       double downloadProgress = 0.0; // range from 0.0 to 1.0
+      int uploadedSize = 0;
       double uploadProgress = 0.0; // range from 0.0 to 1.0
     };
 
