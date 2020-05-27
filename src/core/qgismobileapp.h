@@ -34,7 +34,6 @@
 #include "qgsquickutils.h"
 #include "qgsgpkgflusher.h"
 #include "geometryeditorsmodel.h"
-#include "layerobserver.h"
 
 #if VERSION_INT >= 30600
 #include "qfieldappauthrequesthandler.h"
@@ -54,6 +53,7 @@ class LayerTreeModel;
 class LegendImageProvider;
 class TrackingModel;
 class QgsProject;
+class LayerObserver;
 
 
 #define REGISTER_SINGLETON(uri, _class, name) qmlRegisterSingletonType<_class>( uri, 1, 0, name, [] ( QQmlEngine *engine, QJSEngine *scriptEngine ) -> QObject * { Q_UNUSED(engine); Q_UNUSED(scriptEngine); return new _class(); } )

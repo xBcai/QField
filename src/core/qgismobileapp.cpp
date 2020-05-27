@@ -109,6 +109,8 @@
 #include "qfieldcloudconnection.h"
 #include "qfieldcloudprojectsmodel.h"
 #include "qfieldcloudutils.h"
+#include "layerobserver.h"
+#include "deltafilewrapper.h"
 
 // Check QGIS Version
 #if VERSION_INT >= 30600
@@ -310,6 +312,7 @@ void QgisMobileapp::initDeclarative()
   qmlRegisterUncreatableType<FlatLayerTreeModel>( "org.qfield", 1, 0, "FlatLayerTreeModel", "The FlatLayerTreeModel is available as context property `flatLayerTree`." );
   qmlRegisterUncreatableType<TrackingModel>( "org.qfield", 1, 0, "TrackingModel", "The TrackingModel is available as context property `trackingModel`." );
   qmlRegisterUncreatableType<LayerObserver>( "org.qfield", 1, 0, "LayerObserver", "" );
+  qmlRegisterUncreatableType<LayerObserver>( "org.qfield", 1, 0, "DeltaFileWrapper", "" );
 
   qRegisterMetaType<SnappingResult>( "SnappingResult" );
 
