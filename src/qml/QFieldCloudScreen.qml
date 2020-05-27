@@ -29,6 +29,7 @@ Page {
                                   displayToast( qsTr( "Project %1 successfully downloaded, it's now available to open" ).arg( projectName ) );
     onWarning: displayToast( message )
   }
+  property LayerObserver layerObserver
 
   header: PageHeader {
       title: qsTr("QField Cloud")
