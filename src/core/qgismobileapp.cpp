@@ -491,6 +491,7 @@ void QgisMobileapp::reloadProjectFile( const QString &path )
 {
   mProject->removeAllMapLayers();
   mTrackingModel->reset();
+  mLayerObserver.reset( new LayerObserver( mProject) );
 
   emit loadProjectStarted( path );
   mProject->read( path );
@@ -506,11 +507,6 @@ void QgisMobileapp::reloadProjectFile( const QString &path )
       QgsMessageLog::logMessage( tr( "Could not load font %1" ).arg( fontFile ) );
     else
       QgsMessageLog::logMessage( tr( "Loading font %1" ).arg( fontFile ) );
-  }
-
-  if ( path.startsWith( QFieldCloudUtils::localCloudDirectory() ) )
-  { 
-    // TODO 
   }
 
   loadProjectQuirks();
