@@ -53,3 +53,10 @@ const QFieldCloudProjectsModel::LayerAction QFieldCloudUtils::layerAction( const
 
   return QFieldCloudProjectsModel::LayerAction::Unknown;
 }
+
+const QString QFieldCloudUtils::getProjectId( const QgsProject *project )
+{
+  Q_ASSERT( project );
+
+  return project->readEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ) );
+}
