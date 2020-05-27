@@ -1499,8 +1499,33 @@ ApplicationWindow {
     Component.onCompleted: focusstack.addFocusTaker( this )
   }
 
+  QFieldCloudConnection {
+    id: cloudConnection
+    url: "https://dev.qfield.cloud"
+    onStatusChanged: {
+        if ( status == QFieldCloudConnection.LoggedIn ) {
+          projects.visible = true
+          connectionSettings.visible = false
+          usernameField.text = connection.username
+        }
+    }
+    onLoginFailed: displayToast( qsTr( "Login failed" ) )
+  }
+
+  QFieldCloudProjectsModel {
+    id: projectsModel
+    cloudConnection: cloudConnection
+
+    onProjectDownloaded: failed ? displayToast( qsTr( "Project %1 failed to download" ).arg( projectName ) ) :
+                                  displayToast( qsTr( "Project %1 successfully downloaded, it's now available to open" ).arg( projectName ) );
+    onWarning: displayToast( message )
+  }
+
   QFieldCloudScreen {
     id: qfieldCloudScreen
+    connection: cloudConnection
+    projectsModel: projectsModel
+    layerObserver: layerObserver
 
     anchors.fill: parent
     visible: false
