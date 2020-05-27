@@ -101,6 +101,24 @@ void LayerObserver::reset( bool isHardReset ) const
 }
 
 
+bool LayerObserver::isDirty() const
+{
+  return mIsDirty;
+}
+
+
+DeltaFileWrapper *LayerObserver::currentDeltaFileWrapper() const
+{
+  return mCurrentDeltaFileWrapper.get();
+}
+
+
+DeltaFileWrapper *LayerObserver::committedDeltaFileWrapper() const
+{
+  return mCommittedDeltaFileWrapper.get();
+}
+
+
 void LayerObserver::onHomePathChanged()
 {
   Q_ASSERT( ! mCurrentDeltaFileWrapper->isDirty() );
@@ -290,10 +308,4 @@ void LayerObserver::onEditingStopped( )
       QgsLogger::warning( QStringLiteral( "Failed writing JSON file" ) );
     }
   }
-}
-
-
-bool LayerObserver::isDirty() const
-{
-  return mIsDirty;
 }

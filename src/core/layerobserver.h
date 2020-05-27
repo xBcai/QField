@@ -80,16 +80,31 @@ class LayerObserver : public QObject
 
     /**
      * Clears the current delta file changes
-     * 
      */
     void reset( bool isHardReset = false ) const;
 
 
-  signals:
+    /**
+     * Gets the current delta file
+     *
+     * @return current delta file
+     */
+    Q_INVOKABLE DeltaFileWrapper *currentDeltaFileWrapper() const;
+
+
+    /**
+     * Gets the committed delta file
+     *
+     * @return committed delta file
+     */
+    Q_INVOKABLE DeltaFileWrapper *committedDeltaFileWrapper() const;
+
+
+signals:
     void isDirtyChanged();
 
 
-  private slots:
+private slots:
     /**
      * Monitors the current project for new layers. Add the needed event listeners to monitor for changes.
      * Assigns listeners only for layer actions of `cloud` and `offline`.
