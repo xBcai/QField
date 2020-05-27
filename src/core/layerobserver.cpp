@@ -79,7 +79,7 @@ bool LayerObserver::commit()
     QgsLogger::warning( QStringLiteral( "Cannot write the committed delta file: %1" ).arg( mCommittedDeltaFileWrapper->errorString() ) );
     return false;
   }
- 
+
   // Create brand new delta file for the current (uncommitted) deltas.
   mCurrentDeltaFileWrapper->reset( true );
 
@@ -173,7 +173,7 @@ void LayerObserver::onBeforeCommitChanges()
   for ( const QgsFeatureId fid : changedAttributesFids )
     changedFids.insert( fid );
 
-  // NOTE we read the features from the dataProvider directly as we want to access the old values. 
+  // NOTE we read the features from the dataProvider directly as we want to access the old values.
   // If we use the layer, we get the values from the edit buffer.
   QgsFeatureIterator featuresIt = vl->dataProvider()->getFeatures( QgsFeatureRequest( changedFids ) );
   QgsChangedFeatures changedFeatures;
@@ -201,7 +201,7 @@ void LayerObserver::onCommittedFeaturesAdded( const QString &layerId, const QgsF
 void LayerObserver::onCommittedFeaturesRemoved( const QString &layerId, const QgsFeatureIds &deletedFeatureIds )
 {
   QgsChangedFeatures changedFeatures = mChangedFeatures.value( layerId );
-  
+
   for ( const QgsFeatureId &fid : deletedFeatureIds )
   {
     Q_ASSERT( changedFeatures.contains( fid ) );
@@ -253,7 +253,7 @@ void LayerObserver::onCommittedGeometriesChanges( const QString &layerId, const 
       continue;
 
     Q_ASSERT( changedFeatures.contains( fid ) );
-    
+
     patchedFids.insert(fid);
 
     QgsFeature oldFeature = changedFeatures.take( fid );
@@ -264,7 +264,7 @@ void LayerObserver::onCommittedGeometriesChanges( const QString &layerId, const 
 
   mPatchedFids.insert( layerId, patchedFids );
   mChangedFeatures.insert( layerId, changedFeatures );
-} 
+}
 
 
 void LayerObserver::onEditingStopped( )
@@ -276,7 +276,7 @@ void LayerObserver::onEditingStopped( )
   {
     // TODO make the project dirty
     return;
-  } 
+  }
   else if ( layerAction != QFieldCloudProjectsModel::LayerAction::Cloud  )
   {
     mPatchedFids.take( vl->id() );
