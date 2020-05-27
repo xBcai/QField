@@ -16,14 +16,26 @@
 #ifndef QFIELDCLOUDUTILS_H
 #define QFIELDCLOUDUTILS_H
 
+#include <qgsmaplayer.h>
+#include <qfieldcloudprojectsmodel.h>
+
 class QString;
+class QFieldCloudProjectsModel;
 
 class QFieldCloudUtils
 {
   public:
+  
+  static const QString localCloudDirectory();
+  static const QString localProjectFilePath( const QString &projectId );
 
-    static const QString localCloudDirectory();
-    static const QString localProjectFilePath( const QString &projectId );
+  /**
+   * Get the \layer action at QFieldCloud.
+   * 
+   * @param layer to be checked
+   * @return const QFieldCloudProjectsModel::LayerAction action of the layer
+   */
+  static const QFieldCloudProjectsModel::LayerAction layerAction( const QgsMapLayer *layer );
 };
 
 #endif // QFIELDCLOUDUTILS_H
