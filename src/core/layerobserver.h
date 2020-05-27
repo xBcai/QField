@@ -63,6 +63,14 @@ class LayerObserver : public QObject
 
 
     /**
+     * Returns whether any of the cloud dependent layers is dirty.
+     * 
+     * @return bool
+     */
+    bool isDirty() const;
+
+
+    /**
      * Starts new delta file and finishes writing for the old one
      * 
      * @return bool whether the commit was successful
@@ -76,6 +84,8 @@ class LayerObserver : public QObject
      */
     void reset( bool isHardReset = false ) const;
 
+  signals:
+    void isDirtyChanged();
 
   private slots:
     /**
@@ -175,6 +185,12 @@ class LayerObserver : public QObject
      * value  - patched feature IDs for that layer
      */
     QMap<QString, QgsFeatureIds> mPatchedFids;
+
+
+    /**
+     * Store whether the cloud layers have changed.
+     */
+    bool mIsDirty = false;
 };
 
 #endif // LAYEROBSERVER_H

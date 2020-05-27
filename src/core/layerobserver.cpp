@@ -274,13 +274,15 @@ void LayerObserver::onEditingStopped( )
 
   if ( layerAction == QFieldCloudProjectsModel::LayerAction::Offline  )
   {
-    // TODO make the project dirty
-    return;
+    mIsDirty = true;
+    emit isDirtyChanged();
   }
   else if ( layerAction != QFieldCloudProjectsModel::LayerAction::Cloud  )
   {
     mPatchedFids.take( vl->id() );
     mChangedFeatures.take( vl->id() );
+    mIsDirty = true;
+    emit isDirtyChanged();
 
     if ( ! mCurrentDeltaFileWrapper->toFile() )
     {
@@ -288,4 +290,10 @@ void LayerObserver::onEditingStopped( )
       QgsLogger::warning( QStringLiteral( "Failed writing JSON file" ) );
     }
   }
+}
+
+
+bool LayerObserver::isDirty() const
+{
+  return mIsDirty;
 }
