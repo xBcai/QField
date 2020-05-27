@@ -155,6 +155,7 @@ QgisMobileapp::QgisMobileapp( QgsApplication *app, QObject *parent )
 
   mProject = QgsProject::instance();
   mGpkgFlusher = qgis::make_unique<QgsGpkgFlusher>( mProject );
+  mLayerObserver = qgis::make_unique<LayerObserver>( mProject );
   mFlatLayerTree = new FlatLayerTreeModel( mProject->layerTreeRoot(), mProject, this );
   mLegendImageProvider = new LegendImageProvider( mFlatLayerTree->layerTreeModel() );
   mTrackingModel = new TrackingModel;
@@ -491,7 +492,6 @@ void QgisMobileapp::reloadProjectFile( const QString &path )
 {
   mProject->removeAllMapLayers();
   mTrackingModel->reset();
-  mLayerObserver.reset( new LayerObserver( mProject) );
 
   emit loadProjectStarted( path );
   mProject->read( path );
