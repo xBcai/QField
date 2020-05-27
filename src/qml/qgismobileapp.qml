@@ -75,6 +75,7 @@ ApplicationWindow {
 
   //currentRubberband provides the rubberband depending on the current state (digitize or measure)
   property Rubberband currentRubberband
+  property LayerObserver layerObserverAlias: layerObserver
 
   signal closeMeasureTool()
   signal changeMode( string mode )
@@ -1515,6 +1516,7 @@ ApplicationWindow {
   QFieldCloudProjectsModel {
     id: projectsModel
     cloudConnection: cloudConnection
+    layerObserver: layerObserverAlias
 
     onProjectDownloaded: failed ? displayToast( qsTr( "Project %1 failed to download" ).arg( projectName ) ) :
                                   displayToast( qsTr( "Project %1 successfully downloaded, it's now available to open" ).arg( projectName ) );
@@ -1525,7 +1527,6 @@ ApplicationWindow {
     id: qfieldCloudScreen
     connection: cloudConnection
     projectsModel: projectsModel
-    layerObserver: layerObserver
 
     anchors.fill: parent
     visible: false

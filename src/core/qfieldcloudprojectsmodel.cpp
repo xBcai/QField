@@ -16,6 +16,7 @@
 #include "qfieldcloudprojectsmodel.h"
 #include "qfieldcloudconnection.h"
 #include "qfieldcloudutils.h"
+#include "layerobserver.h"
 #include "deltafilewrapper.h"
 
 #include <qgis.h>
@@ -54,6 +55,24 @@ void QFieldCloudProjectsModel::setCloudConnection( QFieldCloudConnection *cloudC
 
   mCloudConnection = cloudConnection;
   emit cloudConnectionChanged();
+}
+
+LayerObserver *QFieldCloudProjectsModel::layerObserver() const
+{
+  return mLayerObserver;
+}
+
+void QFieldCloudProjectsModel::setLayerObserver( LayerObserver *layerObserver )
+{
+  if ( mLayerObserver == layerObserver )
+    return;
+
+  if ( layerObserver )
+    connect( layerObserver, &LayerObserver::isDirtyChanged, this, &QFieldCloudProjectsModel::layerObserverIsDirtyChanged );
+
+  mLayerObserver = layerObserver;
+
+  emit layerObserverChanged();
 }
 
 void QFieldCloudProjectsModel::refreshProjectsList()
@@ -259,6 +278,11 @@ void QFieldCloudProjectsModel::connectionStatusChanged()
   refreshProjectsList();
 }
 
+void QFieldCloudProjectsModel::layerObserverIsDirtyChanged()
+{
+    qDebug() << "IHAAAAA999";
+}
+
 void QFieldCloudProjectsModel::projectListReceived()
 {
   QNetworkReply *reply = qobject_cast<QNetworkReply *>( sender() );
@@ -368,7 +392,7 @@ QHash<int, QByteArray> QFieldCloudProjectsModel::roleNames() const
 void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
 {
   beginResetModel();
-  mCloudProjects .clear();
+  mCloudProjects.clear();
 
   for ( const auto project : remoteProjects )
   {
