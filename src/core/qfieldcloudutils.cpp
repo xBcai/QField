@@ -35,3 +35,21 @@ const QString QFieldCloudUtils::localProjectFilePath( const QString &projectId )
   }
   return QString();
 }
+
+const QFieldCloudProjectsModel::LayerAction QFieldCloudUtils::layerAction( const QgsMapLayer *layer )
+{
+  Q_ASSERT( layer );
+
+  const QString layerAction( layer->customProperty( QStringLiteral( "QFieldSync/action" ) ).toString().toUpper() );
+  
+  if ( layerAction == QStringLiteral( "OFFLINE" ) )
+    return QFieldCloudProjectsModel::LayerAction::Offline;
+  else if ( layerAction == QStringLiteral( "NO_ACTION" ) )
+    return QFieldCloudProjectsModel::LayerAction::NoAction;
+  else if ( layerAction == QStringLiteral( "REMOVE" ) )
+    return QFieldCloudProjectsModel::LayerAction::Remove;
+  else if ( layerAction == QStringLiteral( "HYBRID" ) || layerAction == QStringLiteral( "CLOUD" ) )
+    return QFieldCloudProjectsModel::LayerAction::Cloud;
+
+  return QFieldCloudProjectsModel::LayerAction::Unknown;
+}
