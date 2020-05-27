@@ -475,6 +475,14 @@ Page {
     }
   }
 
+  Connections {
+    target: layerObserver
+
+    onIsDirtyChanged: {
+      console.log(111)
+    }
+  }
+
   function prepareCloudLogin() {
     if ( visible ) {
       usernameField.text = connection.username

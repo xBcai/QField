@@ -106,7 +106,8 @@ void LayerObserver::onHomePathChanged()
   Q_ASSERT( ! mCurrentDeltaFileWrapper->isDirty() );
   Q_ASSERT( ! mCommittedDeltaFileWrapper->isDirty() );
 
-  if ( mProject->readEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ) ).isEmpty() )
+  // we should make deltas only on cloud projects
+  if ( QFieldCloudUtils::getProjectId( mProject ).isEmpty() )
     return;
 
   mCurrentDeltaFileWrapper.reset( new DeltaFileWrapper( mProject, generateDeltaFileName( true ) ) );
@@ -116,21 +117,34 @@ void LayerObserver::onHomePathChanged()
 
 void LayerObserver::onLayersAdded( const QList<QgsMapLayer *> layers )
 {
+  // we should keep track only of the layers on cloud projects
+  if ( QFieldCloudUtils::getProjectId( mProject ).isEmpty() )
+    return;
+
   for ( QgsMapLayer *layer : layers )
   {
     QgsVectorLayer *vl = dynamic_cast<QgsVectorLayer *>( layer );
 
     if ( vl && vl->dataProvider() )
     {
-      if ( vl->customProperty( QStringLiteral( "layer_type" ) ) == QStringLiteral( "HYBRID" ) )
-        continue;
-
-      connect( vl, &QgsVectorLayer::beforeCommitChanges, this, &LayerObserver::onBeforeCommitChanges );
-      connect( vl, &QgsVectorLayer::committedFeaturesAdded, this, &LayerObserver::onCommittedFeaturesAdded );
-      connect( vl, &QgsVectorLayer::committedFeaturesRemoved, this, &LayerObserver::onCommittedFeaturesRemoved );
-      connect( vl, &QgsVectorLayer::committedAttributeValuesChanges, this, &LayerObserver::onCommittedAttributeValuesChanges );
-      connect( vl, &QgsVectorLayer::committedGeometriesChanges, this, &LayerObserver::onCommittedGeometriesChanges );
-      connect( vl, &QgsVectorLayer::editingStopped, this, &LayerObserver::onEditingStopped );
+      // keep track of `offline` or `cloud` layers has changed, so we should sync them
+      if ( QFieldCloudUtils::layerAction( vl ) == QFieldCloudProjectsModel::LayerAction::Offline )
+      {
+        // we just make sure that a committed `offline` layer mark the project as dirty
+        // TODO use the future "afterCommitChanges" signal
+        connect( vl, &QgsVectorLayer::editingStopped, this, &LayerObserver::onEditingStopped );
+      }
+      else if ( QFieldCloudUtils::layerAction( vl ) == QFieldCloudProjectsModel::LayerAction::Cloud )
+      {
+        // for `cloud` projects, we keep track of any change that has occurred
+        connect( vl, &QgsVectorLayer::beforeCommitChanges, this, &LayerObserver::onBeforeCommitChanges );
+        connect( vl, &QgsVectorLayer::committedFeaturesAdded, this, &LayerObserver::onCommittedFeaturesAdded );
+        connect( vl, &QgsVectorLayer::committedFeaturesRemoved, this, &LayerObserver::onCommittedFeaturesRemoved );
+        connect( vl, &QgsVectorLayer::committedAttributeValuesChanges, this, &LayerObserver::onCommittedAttributeValuesChanges );
+        connect( vl, &QgsVectorLayer::committedGeometriesChanges, this, &LayerObserver::onCommittedGeometriesChanges );
+        // TODO use the future "afterCommitChanges" signal
+        connect( vl, &QgsVectorLayer::editingStopped, this, &LayerObserver::onEditingStopped );
+      }
     }
   }
 }
@@ -250,19 +264,28 @@ void LayerObserver::onCommittedGeometriesChanges( const QString &layerId, const 
 
   mPatchedFids.insert( layerId, patchedFids );
   mChangedFeatures.insert( layerId, changedFeatures );
-}
+} 
 
 
 void LayerObserver::onEditingStopped( )
 {
-  QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( sender() );
+  const QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( sender() );
+  const QFieldCloudProjectsModel::LayerAction layerAction = QFieldCloudUtils::layerAction( vl );
 
-  mPatchedFids.take( vl->id() );
-  mChangedFeatures.take( vl->id() );
-
-  if ( ! mCurrentDeltaFileWrapper->toFile() )
+  if ( layerAction == QFieldCloudProjectsModel::LayerAction::Offline  )
   {
-    // TODO somehow indicate the user that writing failed
-    QgsLogger::warning( QStringLiteral( "Failed writing JSON file" ) );
+    // TODO make the project dirty
+    return;
+  } 
+  else if ( layerAction != QFieldCloudProjectsModel::LayerAction::Cloud  )
+  {
+    mPatchedFids.take( vl->id() );
+    mChangedFeatures.take( vl->id() );
+
+    if ( ! mCurrentDeltaFileWrapper->toFile() )
+    {
+      // TODO somehow indicate the user that writing failed
+      QgsLogger::warning( QStringLiteral( "Failed writing JSON file" ) );
+    }
   }
 }

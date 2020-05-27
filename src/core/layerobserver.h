@@ -79,7 +79,8 @@ class LayerObserver : public QObject
 
   private slots:
     /**
-     * Monitors the current project for new layers
+     * Monitors the current project for new layers. Add the needed event listeners to monitor for changes.
+     * Assigns listeners only for layer actions of `cloud` and `offline`.
      * 
      * @param layers layers added
      */
