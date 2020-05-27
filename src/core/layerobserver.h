@@ -84,8 +84,10 @@ class LayerObserver : public QObject
      */
     void reset( bool isHardReset = false ) const;
 
+
   signals:
     void isDirtyChanged();
+
 
   private slots:
     /**
