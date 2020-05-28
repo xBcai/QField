@@ -1096,6 +1096,47 @@ ApplicationWindow {
     }
   }
 
+  Menu {
+    id: cloudMenu
+    title: qsTr( "Cloud Menu" )
+
+    width: Math.max(200, mainWindow.width/4)
+
+    MenuItem {
+      id: cloudCommitMenuItem
+
+      font: Theme.defaultFont
+      width: parent.width
+      height: 48
+      leftPadding: 10
+
+      text: qsTr( "Commit changes" )
+      enabled: layerObserver.currentDeltaFileWrapper().count() > 0
+      onTriggered: {
+        console.log(layerObserver.currentDeltaFileWrapper().count())
+        if ( layerObserver.commit() ) {
+          displayToast( qsTr( "Successfully committed!" ) )
+        } else {
+          displayToast( qsTr( "Not committed!" ) )
+        }
+      }
+    }
+
+    MenuItem {
+      id: cloudSyncMenuItem
+
+      font: Theme.defaultFont
+      width: parent.width
+      height: 48
+      leftPadding: 10
+
+      text: qsTr( "Upload project" )
+//      TODO
+//      enabled: cloudProjectsModel.projectStatus(cloudProjectsModel.currentProject)
+      onTriggered: cloudProjectsModel.uploadProject(cloudProjectsModel.currentProject)
+    }
+  }
+
   PositioningSettings {
       id: positioningSettings
 
@@ -1514,7 +1555,7 @@ ApplicationWindow {
   }
 
   QFieldCloudProjectsModel {
-    id: projectsModel
+    id: cloudProjectsModel
     cloudConnection: cloudConnection
     layerObserver: layerObserverAlias
 
@@ -1526,7 +1567,7 @@ ApplicationWindow {
   QFieldCloudScreen {
     id: qfieldCloudScreen
     connection: cloudConnection
-    projectsModel: projectsModel
+    projectsModel: cloudProjectsModel
 
     anchors.fill: parent
     visible: false
