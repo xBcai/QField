@@ -75,6 +75,20 @@ void QFieldCloudProjectsModel::setLayerObserver( LayerObserver *layerObserver )
   emit layerObserverChanged();
 }
 
+QString QFieldCloudProjectsModel::currentCloudProjectId() const
+{
+  return mCurrentCloudProjectId;
+}
+
+void QFieldCloudProjectsModel::setCurrentCloudProjectId(const QString &currentCloudProjectId)
+{
+  if ( mCurrentCloudProjectId == currentCloudProjectId )
+    return;
+
+  mCurrentCloudProjectId = currentCloudProjectId;
+  emit currentCloudProjectIdChanged();
+}
+
 void QFieldCloudProjectsModel::refreshProjectsList()
 {
   switch ( mCloudConnection->status() )
