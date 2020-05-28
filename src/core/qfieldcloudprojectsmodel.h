@@ -96,6 +96,11 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     LayerObserver *layerObserver() const;
     void setLayerObserver( LayerObserver *layerObserver );
 
+    Q_PROPERTY( QString currentCloudProjectId READ currentCloudProjectId WRITE setCurrentCloudProjectId NOTIFY currentCloudProjectIdChanged )
+
+    QString currentCloudProjectId() const;
+    void setCurrentCloudProjectId(const QString &currentCloudProjectId);
+
     Q_INVOKABLE void refreshProjectsList();
     Q_INVOKABLE void downloadProject( const QString &projectId );
     Q_INVOKABLE void uploadProject( const QString &projectId );
@@ -111,6 +116,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 signals:
     void cloudConnectionChanged();
     void layerObserverChanged();
+    void currentCloudProjectIdChanged();
     void warning( const QString &message );
     void projectDownloaded( const QString &projectId, const QString &projectName, const bool failed = false );
 
@@ -157,6 +163,7 @@ private:
 
     QList<CloudProject> mCloudProjects;
     QFieldCloudConnection *mCloudConnection = nullptr;
+    QString mCurrentCloudProjectId;
     LayerObserver *mLayerObserver = nullptr;
 
 };
