@@ -41,7 +41,7 @@ QFieldCloudProjectsModel::LayerAction QFieldCloudUtils::layerAction( const QgsMa
   Q_ASSERT( layer );
 
   const QString layerAction( layer->customProperty( QStringLiteral( "QFieldSync/action" ) ).toString().toUpper() );
-  
+
   if ( layerAction == QStringLiteral( "OFFLINE" ) )
     return QFieldCloudProjectsModel::LayerAction::Offline;
   else if ( layerAction == QStringLiteral( "NO_ACTION" ) )
@@ -55,6 +55,13 @@ QFieldCloudProjectsModel::LayerAction QFieldCloudUtils::layerAction( const QgsMa
 }
 
 const QString QFieldCloudUtils::getProjectId( const QgsProject *project )
+{
+  Q_ASSERT( project );
+
+  return project->readEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ) );
+}
+
+const QString QFieldCloudUtils::getProjectId( QgsProject *project )
 {
   Q_ASSERT( project );
 
