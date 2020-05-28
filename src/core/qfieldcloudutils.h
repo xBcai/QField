@@ -23,28 +23,38 @@
 class QString;
 class QFieldCloudProjectsModel;
 
-class QFieldCloudUtils
+class QFieldCloudUtils : public QObject
 {
+    Q_OBJECT
+
   public:
-  
-  static const QString localCloudDirectory();
-  static const QString localProjectFilePath( const QString &projectId );
 
-  /**
-   * Get the \layer action at QFieldCloud.
-   * 
-   * @param layer to be checked
-   * @return const QFieldCloudProjectsModel::LayerAction action of the layer
-   */
-  static QFieldCloudProjectsModel::LayerAction layerAction( const QgsMapLayer *layer );
+    static const QString localCloudDirectory();
+    static const QString localProjectFilePath( const QString &projectId );
 
-  /**
-   * Get the cloud project id.
-   * 
-   * @param project project to be checked
-   * @return const QString either UUID-like string or a null string in case of failure
-   */
-  static const QString getProjectId( const QgsProject *project );
+    /**
+     * Get the \layer action at QFieldCloud.
+     *
+     * @param layer to be checked
+     * @return const QFieldCloudProjectsModel::LayerAction action of the layer
+     */
+    static QFieldCloudProjectsModel::LayerAction layerAction( const QgsMapLayer *layer );
+
+    /**
+     * Get the cloud project id.
+     *
+     * @param project project to be checked, const
+     * @return const QString either UUID-like string or a null string in case of failure
+     */
+    Q_INVOKABLE static const QString getProjectId( const QgsProject *project );
+
+    /**
+     * Get the cloud project id.
+     *
+     * @param project project to be checked
+     * @return const QString either UUID-like string or a null string in case of failure
+     */
+    Q_INVOKABLE static const QString getProjectId( QgsProject *project );
 };
 
 #endif // QFIELDCLOUDUTILS_H
