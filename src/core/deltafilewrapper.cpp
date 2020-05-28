@@ -95,7 +95,7 @@ DeltaFileWrapper::DeltaFileWrapper( const QgsProject *project, const QString &fi
       {
         if ( ! v.isObject() )
         {
-          mErrorType == DeltaFileWrapper::JsonFormatDeltaItemError;
+          mErrorType = DeltaFileWrapper::JsonFormatDeltaItemError;
           continue;
         }
 
