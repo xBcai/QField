@@ -149,23 +149,23 @@ void LayerObserver::onLayersAdded( const QList<QgsMapLayer *> layers )
 
     if ( vl && vl->dataProvider() )
     {
-      // keep track of `offline` or `cloud` layers has changed, so we should sync them
-      if ( QFieldCloudUtils::layerAction( vl ) == QFieldCloudProjectsModel::LayerAction::Offline )
+      switch ( QFieldCloudUtils::layerAction( vl ) )
       {
-        // we just make sure that a committed `offline` layer mark the project as dirty
-        // TODO use the future "afterCommitChanges" signal
-        connect( vl, &QgsVectorLayer::editingStopped, this, &LayerObserver::onEditingStopped );
-      }
-      else if ( QFieldCloudUtils::layerAction( vl ) == QFieldCloudProjectsModel::LayerAction::Cloud )
-      {
-        // for `cloud` projects, we keep track of any change that has occurred
-        connect( vl, &QgsVectorLayer::beforeCommitChanges, this, &LayerObserver::onBeforeCommitChanges );
-        connect( vl, &QgsVectorLayer::committedFeaturesAdded, this, &LayerObserver::onCommittedFeaturesAdded );
-        connect( vl, &QgsVectorLayer::committedFeaturesRemoved, this, &LayerObserver::onCommittedFeaturesRemoved );
-        connect( vl, &QgsVectorLayer::committedAttributeValuesChanges, this, &LayerObserver::onCommittedAttributeValuesChanges );
-        connect( vl, &QgsVectorLayer::committedGeometriesChanges, this, &LayerObserver::onCommittedGeometriesChanges );
-        // TODO use the future "afterCommitChanges" signal
-        connect( vl, &QgsVectorLayer::editingStopped, this, &LayerObserver::onEditingStopped );
+        case QFieldCloudProjectsModel::LayerAction::Offline:
+          // we just make sure that a committed `offline` layer mark the project as dirty
+          // TODO use the future "afterCommitChanges" signal
+          connect( vl, &QgsVectorLayer::editingStopped, this, &LayerObserver::onEditingStopped );
+        case QFieldCloudProjectsModel::LayerAction::Cloud:
+          // for `cloud` projects, we keep track of any change that has occurred
+          connect( vl, &QgsVectorLayer::beforeCommitChanges, this, &LayerObserver::onBeforeCommitChanges );
+          connect( vl, &QgsVectorLayer::committedFeaturesAdded, this, &LayerObserver::onCommittedFeaturesAdded );
+          connect( vl, &QgsVectorLayer::committedFeaturesRemoved, this, &LayerObserver::onCommittedFeaturesRemoved );
+          connect( vl, &QgsVectorLayer::committedAttributeValuesChanges, this, &LayerObserver::onCommittedAttributeValuesChanges );
+          connect( vl, &QgsVectorLayer::committedGeometriesChanges, this, &LayerObserver::onCommittedGeometriesChanges );
+          // TODO use the future "afterCommitChanges" signal
+          connect( vl, &QgsVectorLayer::editingStopped, this, &LayerObserver::onEditingStopped );
+        default:
+          Q_ASSERT( 0 );
       }
     }
   }
@@ -294,22 +294,25 @@ void LayerObserver::onEditingStopped( )
   const QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( sender() );
   const QFieldCloudProjectsModel::LayerAction layerAction = QFieldCloudUtils::layerAction( vl );
 
-  if ( layerAction == QFieldCloudProjectsModel::LayerAction::Offline  )
+  switch ( QFieldCloudUtils::layerAction( vl ) )
   {
-    mIsDirty = true;
-    emit isDirtyChanged();
-  }
-  else if ( layerAction != QFieldCloudProjectsModel::LayerAction::Cloud  )
-  {
-    mPatchedFids.take( vl->id() );
-    mChangedFeatures.take( vl->id() );
-    mIsDirty = true;
-    emit isDirtyChanged();
+    case QFieldCloudProjectsModel::LayerAction::Offline:
+      mIsDirty = true;
+      emit isDirtyChanged();
+      break;
+    case QFieldCloudProjectsModel::LayerAction::Cloud:
+      mIsDirty = true;
+      emit isDirtyChanged();
+      mPatchedFids.take( vl->id() );
+      mChangedFeatures.take( vl->id() );
 
-    if ( ! mCurrentDeltaFileWrapper->toFile() )
-    {
-      // TODO somehow indicate the user that writing failed
-      QgsLogger::warning( QStringLiteral( "Failed writing JSON file" ) );
-    }
+      if ( ! mCurrentDeltaFileWrapper->toFile() )
+      {
+        // TODO somehow indicate the user that writing failed
+        QgsLogger::warning( QStringLiteral( "Failed writing JSON file" ) );
+      }
+      break;
+    default:
+      Q_ASSERT( 0 );
   }
 }
