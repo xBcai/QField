@@ -1113,7 +1113,6 @@ ApplicationWindow {
       text: qsTr( "Commit changes" )
       enabled: layerObserver.currentDeltaFileWrapper().count() > 0
       onTriggered: {
-        console.log(layerObserver.currentDeltaFileWrapper().count())
         if ( layerObserver.commit() ) {
           displayToast( qsTr( "Successfully committed!" ) )
         } else {
@@ -1130,7 +1129,21 @@ ApplicationWindow {
       height: 48
       leftPadding: 10
 
-      text: qsTr( "Upload project" )
+      text: qsTr( "Syncronize" )
+//      TODO
+//      enabled: cloudProjectsModel.projectStatus(cloudProjectsModel.currentProject)
+      onTriggered: cloudProjectsModel.uploadProject(cloudProjectsModel.currentProject)
+    }
+
+    MenuItem {
+      id: cloudSyncSlowMenuItem
+
+      font: Theme.defaultFont
+      width: parent.width
+      height: 48
+      leftPadding: 10
+
+      text: qsTr( "Syncronize (slow)" )
 //      TODO
 //      enabled: cloudProjectsModel.projectStatus(cloudProjectsModel.currentProject)
       onTriggered: cloudProjectsModel.uploadProject(cloudProjectsModel.currentProject)
