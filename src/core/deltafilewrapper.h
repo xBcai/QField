@@ -30,8 +30,10 @@
  * A class that wraps the operations with a delta file. All read and write operations to a delta file should go through this class.
  * 
  */
-class DeltaFileWrapper
+class DeltaFileWrapper : public QObject
 {
+  Q_OBJECT
+
   public:
     /**
      * Error types
@@ -143,7 +145,7 @@ class DeltaFileWrapper
      *
      * @return int number of delta elements
      */
-    int count() const;
+    Q_INVOKABLE int count() const;
 
 
     /**
