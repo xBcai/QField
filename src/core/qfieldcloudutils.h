@@ -36,7 +36,7 @@ class QFieldCloudUtils
    * @param layer to be checked
    * @return const QFieldCloudProjectsModel::LayerAction action of the layer
    */
-  static const QFieldCloudProjectsModel::LayerAction layerAction( const QgsMapLayer *layer );
+  static QFieldCloudProjectsModel::LayerAction layerAction( const QgsMapLayer *layer );
 
   /**
    * Get the cloud project id.
