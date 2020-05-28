@@ -71,7 +71,8 @@ Drawer {
           id: cloudButton
           anchors.verticalCenter: parent.verticalCenter
           iconSource: Theme.getThemeIcon( 'ic_alert_black_24dp' )
-          bgcolor: "transparent"
+          enabled: cloudProjectsModel.currentCloudProjectId.length > 0
+          bgcolor: 'transparent'
           onClicked: showCloudMenu()
         }
       }
