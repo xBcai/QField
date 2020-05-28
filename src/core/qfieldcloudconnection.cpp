@@ -218,6 +218,8 @@ QNetworkReply *QFieldCloudConnection::post( const QString &endpoint, const QVari
     emit error( err );
   } );
 #endif
+
+  return reply;
 }
 
 QNetworkReply *QFieldCloudConnection::get( const QString &endpoint )
