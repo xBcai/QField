@@ -173,13 +173,13 @@ private slots:
     /**
      * The current Deltas File Wrapper object
      */
-    std::unique_ptr<DeltaFileWrapper> mCurrentDeltaFileWrapper;
+    DeltaFileWrapper *mCurrentDeltaFileWrapper;
 
 
     /**
      * The commited Deltas File Wrapper object
      */
-    std::unique_ptr<DeltaFileWrapper> mCommittedDeltaFileWrapper;
+    DeltaFileWrapper *mCommittedDeltaFileWrapper;
 
 
     /**
