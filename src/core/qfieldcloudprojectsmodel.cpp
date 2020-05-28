@@ -478,6 +478,8 @@ QVariant QFieldCloudProjectsModel::data( const QModelIndex &index, int role ) co
       return static_cast<int>( mCloudProjects.at( index.row() ).status );
     case DownloadProgressRole:
       return mCloudProjects.at( index.row() ).downloadProgress;
+    case UploadProgressRole:
+      return mCloudProjects.at( index.row() ).uploadProgress;
     case LocalPathRole:
       return mCloudProjects.at( index.row() ).localPath;
   }
