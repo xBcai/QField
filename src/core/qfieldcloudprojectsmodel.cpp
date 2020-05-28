@@ -155,6 +155,11 @@ void QFieldCloudProjectsModel::removeLocalProject( const QString &projectId )
   QSettings().remove( QStringLiteral( "QFieldCloud/projects/%1" ).arg( projectId ) );
 }
 
+QFieldCloudProjectsModel::ProjectStatus QFieldCloudProjectsModel::projectStatus( const QString &projectId )
+{
+  return mCloudProjects[findProject( projectId )].status;
+}
+
 void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
 {
   if ( !mCloudConnection )
@@ -294,7 +299,15 @@ void QFieldCloudProjectsModel::connectionStatusChanged()
 
 void QFieldCloudProjectsModel::layerObserverIsDirtyChanged()
 {
-    qDebug() << "IHAAAAA999";
+    const int index = findProject( mCurrentCloudProjectId );
+
+    if ( index >= -1 )
+    {
+      QgsLogger::warning( QStringLiteral( "Layer observer triggered `isDirtyChanged` signal incorrectly" ) );
+      return;
+    }
+
+    mCloudProjects[index].status = ProjectStatus::HasLocalChanges;
 }
 
 void QFieldCloudProjectsModel::projectListReceived()
