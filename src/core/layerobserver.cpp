@@ -29,8 +29,9 @@
 LayerObserver::LayerObserver( const QgsProject *project )
   : mProject( project )
 {
-  mCurrentDeltaFileWrapper.reset( new DeltaFileWrapper( mProject, generateDeltaFileName( true ) ) );
-  mCommittedDeltaFileWrapper.reset( new DeltaFileWrapper( mProject, generateDeltaFileName( false ) ) );
+  // ! TODO possible memory leak here, shouldn't it be unique ptr? If yes, then why it fails, it used to be :(
+  mCurrentDeltaFileWrapper = new DeltaFileWrapper( mProject, generateDeltaFileName( true ) );
+  mCommittedDeltaFileWrapper = new DeltaFileWrapper( mProject, generateDeltaFileName( false ) );
 
   connect( mProject, &QgsProject::homePathChanged, this, &LayerObserver::onHomePathChanged );
   connect( mProject, &QgsProject::layersAdded, this, &LayerObserver::onLayersAdded );
@@ -67,7 +68,7 @@ bool LayerObserver::commit()
     return true;
 
   // Try to append the contents of the current delta file to the committed one. Very unlikely to break there.
-  if ( ! mCommittedDeltaFileWrapper->append( mCurrentDeltaFileWrapper.get() ) )
+  if ( ! mCommittedDeltaFileWrapper->append( mCurrentDeltaFileWrapper) )
   {
     QgsLogger::warning( QStringLiteral( "Unable to append delta file wrapper contents!" ) );
     return false;
@@ -109,27 +110,30 @@ bool LayerObserver::isDirty() const
 
 DeltaFileWrapper *LayerObserver::currentDeltaFileWrapper() const
 {
-  return mCurrentDeltaFileWrapper.get();
+  return mCurrentDeltaFileWrapper;
 }
 
 
 DeltaFileWrapper *LayerObserver::committedDeltaFileWrapper() const
 {
-  return mCommittedDeltaFileWrapper.get();
+  return mCommittedDeltaFileWrapper;
 }
 
 
 void LayerObserver::onHomePathChanged()
 {
-  Q_ASSERT( ! mCurrentDeltaFileWrapper->isDirty() );
-  Q_ASSERT( ! mCommittedDeltaFileWrapper->isDirty() );
+  if ( mProject->homePath().isNull() )
+    return;
+
+  Q_ASSERT( mCurrentDeltaFileWrapper->hasError() || ! mCurrentDeltaFileWrapper->isDirty() );
+  Q_ASSERT( mCommittedDeltaFileWrapper->hasError() || ! mCommittedDeltaFileWrapper->isDirty() );
 
   // we should make deltas only on cloud projects
   if ( QFieldCloudUtils::getProjectId( mProject ).isEmpty() )
     return;
 
-  mCurrentDeltaFileWrapper.reset( new DeltaFileWrapper( mProject, generateDeltaFileName( true ) ) );
-  mCommittedDeltaFileWrapper.reset( new DeltaFileWrapper( mProject, generateDeltaFileName( false ) ) );
+  mCurrentDeltaFileWrapper = new DeltaFileWrapper( mProject, generateDeltaFileName( true ) );
+  mCommittedDeltaFileWrapper = new DeltaFileWrapper( mProject, generateDeltaFileName( false ) );
 }
 
 
