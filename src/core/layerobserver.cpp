@@ -155,6 +155,7 @@ void LayerObserver::onLayersAdded( const QList<QgsMapLayer *> layers )
           // we just make sure that a committed `offline` layer mark the project as dirty
           // TODO use the future "afterCommitChanges" signal
           connect( vl, &QgsVectorLayer::editingStopped, this, &LayerObserver::onEditingStopped );
+          break;
         case QFieldCloudProjectsModel::LayerAction::Cloud:
           // for `cloud` projects, we keep track of any change that has occurred
           connect( vl, &QgsVectorLayer::beforeCommitChanges, this, &LayerObserver::onBeforeCommitChanges );
@@ -164,8 +165,9 @@ void LayerObserver::onLayersAdded( const QList<QgsMapLayer *> layers )
           connect( vl, &QgsVectorLayer::committedGeometriesChanges, this, &LayerObserver::onCommittedGeometriesChanges );
           // TODO use the future "afterCommitChanges" signal
           connect( vl, &QgsVectorLayer::editingStopped, this, &LayerObserver::onEditingStopped );
+          break;
         default:
-          Q_ASSERT( 0 );
+          continue;
       }
     }
   }
