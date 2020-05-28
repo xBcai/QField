@@ -36,7 +36,7 @@ const QString QFieldCloudUtils::localProjectFilePath( const QString &projectId )
   return QString();
 }
 
-const QFieldCloudProjectsModel::LayerAction QFieldCloudUtils::layerAction( const QgsMapLayer *layer )
+QFieldCloudProjectsModel::LayerAction QFieldCloudUtils::layerAction( const QgsMapLayer *layer )
 {
   Q_ASSERT( layer );
 
