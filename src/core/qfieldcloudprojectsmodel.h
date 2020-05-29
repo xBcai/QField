@@ -114,12 +114,15 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     Q_INVOKABLE void reload( const QJsonArray &remoteProjects );
 
+    Q_INVOKABLE ProjectModifications projectModification( const QString &projectId ) const;
+
 signals:
     void cloudConnectionChanged();
     void layerObserverChanged();
     void currentCloudProjectIdChanged();
     void warning( const QString &message );
-    void projectDownloaded( const QString &projectId, const QString &projectName, const bool failed = false );
+    void projectDownloaded( const QString projectId, const QString projectName, const bool failed = false );
+    void projectStatusChanged( const QString projectId, const ProjectStatus projectStatus );
 
   private slots:
     void connectionStatusChanged();

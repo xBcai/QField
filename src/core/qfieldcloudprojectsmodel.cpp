@@ -243,7 +243,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
   if ( index == -1 )
     return;
 
-  if ( mCloudProjects[index].status != ProjectStatus::HasLocalChanges )
+  if ( ! ( mCloudProjects[index].modification & ProjectModification::Local ) )
     return;
 
   mCloudProjects[index].filesFailed = 0;
@@ -291,7 +291,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     else
     {
       if ( index > -1 )
-        mCloudProjects[index].status = ProjectStatus::HasLocalChanges;
+        mCloudProjects[index].modification |= ProjectModification::Local;
 
       emit warning( QStringLiteral( "Error uploading project: %1" ).arg( deltasReply->errorString() ) );
     }
@@ -305,15 +305,16 @@ void QFieldCloudProjectsModel::connectionStatusChanged()
 
 void QFieldCloudProjectsModel::layerObserverIsDirtyChanged()
 {
-    const int index = findProject( mCurrentCloudProjectId );
+  const int index = findProject( mCurrentCloudProjectId );
 
-    if ( index >= -1 )
-    {
-      QgsLogger::warning( QStringLiteral( "Layer observer triggered `isDirtyChanged` signal incorrectly" ) );
-      return;
-    }
+  if ( index == -1 || index >= mCloudProjects.size() )
+  {
+    QgsLogger::warning( QStringLiteral( "Layer observer triggered `isDirtyChanged` signal incorrectly" ) );
+    return;
+  }
 
-    mCloudProjects[index].status = ProjectStatus::HasLocalChanges;
+  if ( layerObserver()->isDirty() )
+    mCloudProjects[index].modification |= ProjectModification::Local;
 }
 
 void QFieldCloudProjectsModel::projectListReceived()
