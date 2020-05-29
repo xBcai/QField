@@ -242,7 +242,31 @@ Page {
                       Image {
                           id: type
                           anchors.verticalCenter: inner.verticalCenter
-                          source: connection.status != QFieldCloudConnection.LoggedIn ? Theme.getThemeIcon('ic_cloud_project_offline_48dp') : Status === QFieldCloudProjectsModel.ProjectStatus.LocalOnly ? Theme.getThemeIcon('ic_cloud_project_localonly_48dp') : LocalPath != '' ? Theme.getThemeIcon('ic_cloud_project_48dp') : Theme.getThemeIcon('ic_cloud_project_download_48dp')
+                          source: {
+                            if ( connection.status !== QFieldCloudConnection.LoggedIn ) {
+                              return Theme.getThemeIcon('ic_cloud_project_offline_48dp')
+                            } else {
+                              var status = ''
+
+                              switch (Status) {
+                                case QFieldCloudProjectsModel.ProjectStatus.Downloading:
+                                  return Theme.getThemeIcon('ic_cloud_project_download_48dp')
+                                case QFieldCloudProjectsModel.ProjectStatus.Uploading:
+                                  return Theme.getThemeIcon('ic_cloud_project_download_48dp')
+                                default:
+                                  break
+                              }
+
+                              switch (Checkout) {
+                                case QFieldCloudProjectsModel.ProjectCheckout.Local:
+                                  return Theme.getThemeIcon('ic_cloud_project_localonly_48dp')
+                                default:
+                                  break
+                              }
+
+                              return Theme.getThemeIcon('ic_cloud_project_48dp')
+                            }
+                          }
                           sourceSize.width: 80 * dp
                           sourceSize.height: 80 * dp
                           width: 40 * dp
@@ -266,17 +290,48 @@ Page {
                           Text {
                               id: projectNote
                               leftPadding: 3 * dp
-                              text: connection.status != QFieldCloudConnection.LoggedIn 
-                                ? qsTr( '(Available locally)' ) 
-                                : Description + ' ' + ( 
-                                  LocalPath == '' 
-                                    ? Status === QFieldCloudProjectsModel.ProjectStatus.Downloading 
-                                      ? qsTr( '(Downloading...)' ) 
-                                      : '' 
-                                    : Status === QFieldCloudProjectsModel.ProjectStatus.LocalOnly 
-                                      ? qsTr( '(Available locally, missing on cloud)' ) 
-                                      : qsTr( '(Available locally)' ) 
-                                  )
+                              text: {
+                                if ( connection.status !== QFieldCloudConnection.LoggedIn ) {
+                                  return qsTr( '(Available locally)' )
+                                } else {
+                                  var status = ''
+
+                                  // TODO I think these should be shown as UI badges
+                                  switch (Status) {
+                                    case QFieldCloudProjectsModel.ProjectStatus.Idle:
+                                      break
+                                    case QFieldCloudProjectsModel.ProjectStatus.Downloading:
+                                      status = qsTr( 'Downloading...' )
+                                      break
+                                    case QFieldCloudProjectsModel.ProjectStatus.Uploading:
+                                      status = qsTr( 'Uploading...' )
+                                      break
+                                    case QFieldCloudProjectsModel.ProjectStatus.Error:
+                                      status = qsTr( 'Error!' )
+                                      break
+                                    default:
+                                      break
+                                  }
+
+                                  if ( ! status ) {
+                                    switch (Checkout) {
+                                      case QFieldCloudProjectsModel.ProjectCheckout.Local:
+                                        status = qsTr( 'Available locally, missing on the cloud' ).arg(Description)
+                                        break
+                                      case QFieldCloudProjectsModel.ProjectCheckout.Remote:
+                                        status = qsTr( 'Available on the cloud, missing locally' ).arg(Description)
+                                        break
+                                      case QFieldCloudProjectsModel.ProjectCheckout.LocalFromRemote:
+                                        status = qsTr( 'Available locally' ).arg(Description)
+                                        break
+                                      default:
+                                        break
+                                    }
+                                  }
+
+                                  return '%1 (%2)'.arg(Description).arg(status)
+                                }
+                              }
                               visible: text != ""
                               font.pointSize: Theme.tipFont.pointSize - 2
                               font.italic: true

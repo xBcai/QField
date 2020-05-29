@@ -61,7 +61,7 @@ void QFieldCloudProjectsModel::refreshProjectsList()
   }
 }
 
-int QFieldCloudProjectsModel::findProject( const QString &projectId )
+int QFieldCloudProjectsModel::findProject( const QString &projectId ) const
 {
   const QList<CloudProject> cloudProjects = mCloudProjects;
   int index = -1;
@@ -85,7 +85,7 @@ void QFieldCloudProjectsModel::removeLocalProject( const QString &projectId )
     int index = findProject( projectId );
     if ( index > -1 )
     {
-      if ( mCloudProjects.at( index ).status == ProjectStatus::Available )
+      if ( mCloudProjects.at( index ).status == ProjectStatus::Idle && mCloudProjects.at( index ).checkout & ProjectCheckout::Local )
       {
         mCloudProjects[index].localPath = QString();
         QModelIndex idx = createIndex( index, 0 );
@@ -119,6 +119,7 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
     mCloudProjects[index].downloadedSize = 0;
     mCloudProjects[index].downloadProgress = 0.0;
     mCloudProjects[index].status = ProjectStatus::Downloading;
+    mCloudProjects[index].modification = ProjectModification::None;
     QModelIndex idx = createIndex( index, 0 );
     emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
   }
@@ -147,7 +148,7 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
     else
     {
       if ( index > -1 )
-        mCloudProjects[index].status = ProjectStatus::Available;
+        mCloudProjects[index].status = ProjectStatus::Idle;
       emit warning( QStringLiteral( "Error fetching project: %1" ).arg( filesReply->errorString() ) );
     }
 
@@ -223,7 +224,7 @@ void QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QSt
 
       if ( mCloudProjects[index].downloadedSize >= mCloudProjects[index].filesSize )
       {
-        mCloudProjects[index].status = ProjectStatus::Available;
+        mCloudProjects[index].status = ProjectStatus::Idle;
         mCloudProjects[index].localPath = QFieldCloudUtils::localProjectFilePath( projectId );
         changes << StatusRole << LocalPathRole;
         emit projectDownloaded( projectId, mCloudProjects[index].name, mCloudProjects[index].filesFailed > 0 );
@@ -245,6 +246,8 @@ QHash<int, QByteArray> QFieldCloudProjectsModel::roleNames() const
   roles[OwnerRole] = "Owner";
   roles[NameRole] = "Name";
   roles[DescriptionRole] = "Description";
+  roles[ModificationRole] = "Modification";
+  roles[CheckoutRole] = "Checkout";
   roles[StatusRole] = "Status";
   roles[DownloadProgressRole] = "DownloadProgress";
   roles[LocalPathRole] = "LocalPath";
@@ -263,7 +266,8 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
                           projectDetails.value( "owner" ).toString(),
                           projectDetails.value( "name" ).toString(),
                           projectDetails.value( "description" ).toString(),
-                          ProjectStatus::Available );
+                          ProjectCheckout::Remote,
+                          ProjectStatus::Idle );
 
     const QString projectPrefix = QStringLiteral( "QFieldCloud/projects/%1" ).arg( cloudProject.id );
     QSettings().setValue( QStringLiteral( "%1/owner" ).arg( projectPrefix ), cloudProject.owner );
@@ -272,7 +276,10 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
 
     QDir localPath( QStringLiteral( "%1/%2" ).arg( QFieldCloudUtils::localCloudDirectory(), cloudProject.id ) );
     if( localPath.exists()  )
+    {
+      cloudProject.checkout = ProjectCheckout::LocalFromRemote;
       cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.id );
+    }
 
     mCloudProjects << cloudProject;
   }
@@ -293,7 +300,7 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
     const QString name = QSettings().value( QStringLiteral( "%1/name" ).arg( projectPrefix ) ).toString();
     const QString description = QSettings().value( QStringLiteral( "%1/description" ).arg( projectPrefix ) ).toString();
 
-    CloudProject cloudProject( projectId, owner, name, description, ProjectStatus::LocalOnly );
+    CloudProject cloudProject( projectId, owner, name, description, ProjectCheckout::Local, ProjectStatus::Idle );
     cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.id );
     mCloudProjects << cloudProject;
 
@@ -326,6 +333,10 @@ QVariant QFieldCloudProjectsModel::data( const QModelIndex &index, int role ) co
       return mCloudProjects.at( index.row() ).name;
     case DescriptionRole:
       return mCloudProjects.at( index.row() ).description;
+    case ModificationRole:
+      return static_cast<int>( mCloudProjects.at( index.row() ).modification );
+    case CheckoutRole:
+      return static_cast<int>( mCloudProjects.at( index.row() ).checkout );
     case StatusRole:
       return static_cast<int>( mCloudProjects.at( index.row() ).status );
     case DownloadProgressRole:
