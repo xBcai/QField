@@ -16,6 +16,8 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       OwnerRole,
       NameRole,
       DescriptionRole,
+      ModificationRole,
+      CheckoutRole,
       StatusRole,
       DownloadProgressRole,
       LocalPathRole
@@ -25,16 +27,45 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     enum class ProjectStatus
     {
-      Available,
+      Idle,
       Downloading,
       Uploading,
-      Synchronized,
-      HasLocalChanges,
-      HasRemoteChanges,
-      LocalOnly
+      Error
     };
 
     Q_ENUM( ProjectStatus )
+
+    enum class ProjectCheckout
+    {
+      Remote = 2 << 0,
+      Local = 2 << 1,
+      LocalFromRemote = Remote | Local
+    };
+
+    Q_ENUM( ProjectCheckout )
+    Q_DECLARE_FLAGS( ProjectCheckouts, ProjectCheckout )
+
+    enum class ProjectModification
+    {
+      None = 0,
+      Local = 2 << 0,
+      Remote = 2 << 1,
+      BothSides = Remote | Local
+    };
+
+    Q_ENUM( ProjectModification )
+    Q_DECLARE_FLAGS( ProjectModifications, ProjectModification )
+
+    enum class LayerAction
+    {
+      Offline,
+      NoAction,
+      Remove,
+      Cloud,
+      Unknown
+    };
+
+    Q_ENUM( LayerAction )
 
     QFieldCloudProjectsModel();
 
@@ -65,17 +96,18 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     void downloadFile( const QString &projectId, const QString &fileName );
 
-    int findProject( const QString &projectId );
+    int findProject( const QString &projectId ) const;
 
   private:
     struct CloudProject
     {
-      CloudProject( const QString &id, const QString &owner, const QString &name, const QString &description, const ProjectStatus &status  )
+      CloudProject( const QString &id, const QString &owner, const QString &name, const QString &description, const ProjectCheckouts &checkout, const ProjectStatus &status  )
         : id( id )
         , owner( owner )
         , name( name )
         , description( description )
         , status( status )
+        , checkout( checkout)
       {}
 
       CloudProject() = default;
@@ -85,6 +117,8 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       QString name;
       QString description;
       ProjectStatus status;
+      ProjectCheckouts checkout;
+      ProjectModifications modification = ProjectModification::None;
       QString localPath;
       QMap<QString, int> files;
       int filesSize = 0;
@@ -99,5 +133,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 };
 
 Q_DECLARE_METATYPE( QFieldCloudProjectsModel::ProjectStatus )
+Q_DECLARE_METATYPE( QFieldCloudProjectsModel::ProjectCheckout )
+Q_DECLARE_METATYPE( QFieldCloudProjectsModel::ProjectModification )
 
 #endif // QFIELDCLOUDPROJECTSMODEL_H
