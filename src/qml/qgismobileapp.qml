@@ -1122,31 +1122,24 @@ ApplicationWindow {
     }
 
     MenuItem {
-      id: cloudSyncMenuItem
+      id: cloudUploadMenuItem
 
       font: Theme.defaultFont
       width: parent.width
       height: 48
       leftPadding: 10
 
-      text: qsTr( "Syncronize" )
-//      TODO
-//      enabled: cloudProjectsModel.projectStatus(cloudProjectsModel.currentProject)
-      onTriggered: cloudProjectsModel.uploadProject(cloudProjectsModel.currentProject)
+      text: qsTr( "Upload" )
+      onTriggered: cloudProjectsModel.uploadProject(cloudProjectsModel.currentCloudProjectId)
     }
 
-    MenuItem {
-      id: cloudSyncSlowMenuItem
-
-      font: Theme.defaultFont
-      width: parent.width
-      height: 48
-      leftPadding: 10
-
-      text: qsTr( "Syncronize (slow)" )
-//      TODO
-//      enabled: cloudProjectsModel.projectStatus(cloudProjectsModel.currentProject)
-      onTriggered: cloudProjectsModel.uploadProject(cloudProjectsModel.currentProject)
+    Connections {
+      target: cloudProjectsModel
+      onModelReset: {
+        console.log(1111, cloudProjectsModel.currentCloudProjectId)
+        cloudUploadMenuItem.enabled = cloudProjectsModel.currentCloudProjectId
+            && cloudProjectsModel.projectModification(cloudProjectsModel.currentCloudProjectId) & QFieldCloudProjectsModel.ProjectModifcation.Local
+      }
     }
   }
 

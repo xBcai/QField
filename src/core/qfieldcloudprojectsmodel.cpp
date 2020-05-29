@@ -68,7 +68,7 @@ void QFieldCloudProjectsModel::setLayerObserver( LayerObserver *layerObserver )
     return;
 
   if ( layerObserver )
-    connect( layerObserver, &LayerObserver::isDirtyChanged, this, &QFieldCloudProjectsModel::layerObserverIsDirtyChanged );
+    connect( layerObserver, &LayerObserver::layerEdited, this, &QFieldCloudProjectsModel::layerObserverLayerEdited );
 
   mLayerObserver = layerObserver;
 
@@ -303,8 +303,10 @@ void QFieldCloudProjectsModel::connectionStatusChanged()
   refreshProjectsList();
 }
 
-void QFieldCloudProjectsModel::layerObserverIsDirtyChanged()
+void QFieldCloudProjectsModel::layerObserverLayerEdited( const QString &layerId )
 {
+  Q_UNUSED( layerId );
+
   const int index = findProject( mCurrentCloudProjectId );
 
   if ( index == -1 || index >= mCloudProjects.size() )
@@ -313,8 +315,14 @@ void QFieldCloudProjectsModel::layerObserverIsDirtyChanged()
     return;
   }
 
+  beginResetModel();
+
   if ( layerObserver()->isDirty() )
     mCloudProjects[index].modification |= ProjectModification::Local;
+  else
+    mCloudProjects[index].modification ^= ProjectModification::Local;
+
+  endResetModel();
 }
 
 void QFieldCloudProjectsModel::projectListReceived()

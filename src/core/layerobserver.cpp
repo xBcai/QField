@@ -122,6 +122,8 @@ DeltaFileWrapper *LayerObserver::committedDeltaFileWrapper() const
 
 void LayerObserver::onHomePathChanged()
 {
+  mEditedOfflineLayers.clear();
+
   if ( mProject->homePath().isNull() )
     return;
 
@@ -294,18 +296,20 @@ void LayerObserver::onCommittedGeometriesChanges( const QString &layerId, const 
 void LayerObserver::onEditingStopped( )
 {
   const QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( sender() );
+  const QString layerId = vl->id();
 
   switch ( QFieldCloudUtils::layerAction( vl ) )
   {
     case QFieldCloudProjectsModel::LayerAction::Offline:
       mIsDirty = true;
-      emit isDirtyChanged();
+      mEditedOfflineLayers.append( layerId );
+      emit layerEdited( layerId );
       break;
     case QFieldCloudProjectsModel::LayerAction::Cloud:
       mIsDirty = true;
-      emit isDirtyChanged();
-      mPatchedFids.take( vl->id() );
-      mChangedFeatures.take( vl->id() );
+      emit layerEdited( layerId );
+      mPatchedFids.take( layerId );
+      mChangedFeatures.take( layerId );
 
       if ( ! mCurrentDeltaFileWrapper->toFile() )
       {

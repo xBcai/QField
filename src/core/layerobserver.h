@@ -101,7 +101,7 @@ class LayerObserver : public QObject
 
 
 signals:
-    void isDirtyChanged();
+    void layerEdited( const QString &layerId );
 
 
 private slots:
@@ -208,6 +208,12 @@ private slots:
      * Store whether the cloud layers have changed.
      */
     bool mIsDirty = false;
+
+
+    /**
+     * Ids of the layers that are marked with `offline` action.
+     */
+    QStringList mEditedOfflineLayers;
 };
 
 #endif // LAYEROBSERVER_H
