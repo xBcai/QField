@@ -301,10 +301,10 @@ Page {
                                     case QFieldCloudProjectsModel.ProjectStatus.Idle:
                                       break
                                     case QFieldCloudProjectsModel.ProjectStatus.Downloading:
-                                      status = qsTr( 'Downloading...' )
+                                      status = qsTr( 'Downloading…' )
                                       break
                                     case QFieldCloudProjectsModel.ProjectStatus.Uploading:
-                                      status = qsTr( 'Uploading...' )
+                                      status = qsTr( 'Uploading…' )
                                       break
                                     case QFieldCloudProjectsModel.ProjectStatus.Error:
                                       status = qsTr( 'Error!' )
@@ -316,13 +316,13 @@ Page {
                                   if ( ! status ) {
                                     switch (Checkout) {
                                       case QFieldCloudProjectsModel.ProjectCheckout.Local:
-                                        status = qsTr( 'Available locally, missing on the cloud' ).arg(Description)
+                                        status = qsTr( 'Available locally, missing on the cloud' )
                                         break
                                       case QFieldCloudProjectsModel.ProjectCheckout.Remote:
-                                        status = qsTr( 'Available on the cloud, missing locally' ).arg(Description)
+                                        status = qsTr( 'Available on the cloud, missing locally' )
                                         break
                                       case QFieldCloudProjectsModel.ProjectCheckout.LocalFromRemote:
-                                        status = qsTr( 'Available locally' ).arg(Description)
+                                        status = qsTr( 'Available locally' )
                                         break
                                       default:
                                         break
