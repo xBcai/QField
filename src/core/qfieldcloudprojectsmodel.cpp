@@ -173,6 +173,7 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
     mCloudProjects[index].filesFailed = 0;
     mCloudProjects[index].downloadedSize = 0;
     mCloudProjects[index].downloadProgress = 0.0;
+    mCloudProjects[index].checkout = ProjectCheckout::LocalFromRemote;
     mCloudProjects[index].status = ProjectStatus::Downloading;
     mCloudProjects[index].modification = NoModification;
     QModelIndex idx = createIndex( index, 0 );

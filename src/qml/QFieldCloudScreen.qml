@@ -260,7 +260,6 @@ Page {
                               }
 
                               switch (Checkout) {
-                                case QFieldCloudProjectsModel.LocalCheckout:
                                   return Theme.getThemeIcon('ic_cloud_project_localonly_48dp')
                                 default:
                                   break
