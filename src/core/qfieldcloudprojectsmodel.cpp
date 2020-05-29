@@ -157,7 +157,12 @@ void QFieldCloudProjectsModel::removeLocalProject( const QString &projectId )
 
 QFieldCloudProjectsModel::ProjectStatus QFieldCloudProjectsModel::projectStatus( const QString &projectId )
 {
-  return mCloudProjects[findProject( projectId )].status;
+  const int index = findProject( projectId );
+
+  if ( index == -1 || index >= mCloudProjects.size() )
+    return QFieldCloudProjectsModel::ProjectStatus::Error;
+
+  return mCloudProjects[index].status;
 }
 
 void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
