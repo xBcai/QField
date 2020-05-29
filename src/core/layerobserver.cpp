@@ -294,7 +294,6 @@ void LayerObserver::onCommittedGeometriesChanges( const QString &layerId, const 
 void LayerObserver::onEditingStopped( )
 {
   const QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( sender() );
-  const QFieldCloudProjectsModel::LayerAction layerAction = QFieldCloudUtils::layerAction( vl );
 
   switch ( QFieldCloudUtils::layerAction( vl ) )
   {
