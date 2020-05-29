@@ -133,7 +133,7 @@ signals:
 
     int findProject( const QString &projectId ) const;
 
-    void layerObserverIsDirtyChanged();
+    void layerObserverLayerEdited( const QString &layerId );
 private:
     struct CloudProject
     {
