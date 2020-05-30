@@ -317,7 +317,11 @@ void QFieldCloudProjectsModel::layerObserverLayerEdited( const QString &layerId 
 
   beginResetModel();
 
-  if ( layerObserver()->isDirty() )
+  const DeltaFileWrapper *committedDeltaFileWrapper = mLayerObserver->committedDeltaFileWrapper();
+
+  Q_ASSERT( committedDeltaFileWrapper );
+
+  if ( committedDeltaFileWrapper->count() > 0 || committedDeltaFileWrapper->offlineLayerIds().size() > 0 )
     mCloudProjects[index].modification |= ProjectModification::Local;
   else
     mCloudProjects[index].modification ^= ProjectModification::Local;
