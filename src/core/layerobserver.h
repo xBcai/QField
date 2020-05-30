@@ -36,6 +36,9 @@ class LayerObserver : public QObject
 {
   Q_OBJECT
 
+  Q_PROPERTY( DeltaFileWrapper *currentDeltaFileWrapper READ currentDeltaFileWrapper NOTIFY currentDeltaFileWrapperChanged )
+  Q_PROPERTY( DeltaFileWrapper *committedDeltaFileWrapper READ committedDeltaFileWrapper NOTIFY committedDeltaFileWrapperChanged )
+
   public:
     /**
      * Construct a new Layer Observer object
@@ -89,7 +92,7 @@ class LayerObserver : public QObject
      *
      * @return current delta file
      */
-    Q_INVOKABLE DeltaFileWrapper *currentDeltaFileWrapper() const;
+    DeltaFileWrapper *currentDeltaFileWrapper() const;
 
 
     /**
@@ -97,11 +100,13 @@ class LayerObserver : public QObject
      *
      * @return committed delta file
      */
-    Q_INVOKABLE DeltaFileWrapper *committedDeltaFileWrapper() const;
+    DeltaFileWrapper *committedDeltaFileWrapper() const;
 
 
 signals:
     void layerEdited( const QString &layerId );
+    void currentDeltaFileWrapperChanged();
+    void committedDeltaFileWrapperChanged();
 
 
 private slots:
@@ -208,12 +213,6 @@ private slots:
      * Store whether the cloud layers have changed.
      */
     bool mIsDirty = false;
-
-
-    /**
-     * Ids of the layers that are marked with `offline` action.
-     */
-    QStringList mEditedOfflineLayers;
 };
 
 #endif // LAYEROBSERVER_H

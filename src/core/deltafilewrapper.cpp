@@ -81,6 +81,9 @@ DeltaFileWrapper::DeltaFileWrapper( const QgsProject *project, const QString &fi
     if ( mErrorType == DeltaFileWrapper::NoError && ! mJsonRoot.value( QStringLiteral( "deltas" ) ).isArray() )
       mErrorType = DeltaFileWrapper::JsonFormatDeltasError;
 
+    if ( mErrorType == DeltaFileWrapper::NoError && ! mJsonRoot.value( QStringLiteral( "offlineLayers" ) ).isArray() )
+      mErrorType = DeltaFileWrapper::JsonFormatOfflineLayersError;
+
     if ( mErrorType == DeltaFileWrapper::NoError && ( ! mJsonRoot.value( QStringLiteral( "version" ) ).isString() || mJsonRoot.value( QStringLiteral( "version" ) ).toString().isEmpty() ) )
       mErrorType = DeltaFileWrapper::JsonFormatVersionError;
 
@@ -103,6 +106,19 @@ DeltaFileWrapper::DeltaFileWrapper( const QgsProject *project, const QString &fi
 
         mDeltas.append( v );
       }
+
+      const QJsonArray offlineLayersJsonArray = mJsonRoot.value( QStringLiteral( "offlineLayers" ) ).toArray();
+
+      for ( const QJsonValue &v : offlineLayersJsonArray )
+      {
+        if ( ! v.isString() )
+        {
+          mErrorType = DeltaFileWrapper::JsonFormatOfflineLayersItemError;
+          break;
+        }
+
+        mOfflineLayerIds.append( v.toString() );
+      }
     }
   }
   else if ( mErrorType == DeltaFileWrapper::NoError )
@@ -110,6 +126,7 @@ DeltaFileWrapper::DeltaFileWrapper( const QgsProject *project, const QString &fi
     mJsonRoot = QJsonObject( {{"version", DeltaFileWrapper::FormatVersion},
                               {"id", QUuid::createUuid().toString( QUuid::WithoutBraces )},
                               {"projectId", mCloudProjectId},
+                              {"offlineLayers", QJsonArray::fromStringList( mOfflineLayerIds )},
                               {"deltas", mDeltas}} );
 
     if ( ! deltaFile.open( QIODevice::ReadWrite ) )
@@ -161,6 +178,10 @@ void DeltaFileWrapper::reset( bool isHardReset )
 
   mIsDirty = true;
   mDeltas = QJsonArray();
+  mOfflineLayerIds.clear();
+
+  emit countChanged();
+  emit offlineLayerIdsChanged();
 
   if ( ! isHardReset )
     return;
@@ -225,6 +246,7 @@ QByteArray DeltaFileWrapper::toJson( QJsonDocument::JsonFormat jsonFormat ) cons
 {
   QJsonObject jsonRoot (mJsonRoot);
   jsonRoot.insert( QStringLiteral( "deltas" ), mDeltas );
+  jsonRoot.insert( QStringLiteral( "offlineLayers" ), QJsonArray::fromStringList( mOfflineLayerIds ) );
 
   return QJsonDocument( jsonRoot ).toJson( jsonFormat );
 }
@@ -276,6 +298,21 @@ bool DeltaFileWrapper::append( const DeltaFileWrapper *deltaFileWrapper )
     return false;
 
   mDeltas.append( deltaFileWrapper->deltas() );
+
+  const int offlineLayerIdsOldSize = mOfflineLayerIds.size();
+
+  for ( const QString &projectId : deltaFileWrapper->offlineLayerIds() )
+  {
+    if ( mOfflineLayerIds.contains( projectId ) )
+      continue;
+
+    mOfflineLayerIds.append( projectId );
+  }
+
+  emit countChanged();
+
+  if ( offlineLayerIdsOldSize != mOfflineLayerIds.size() )
+    emit offlineLayerIdsChanged();
 
   return true;
 }
@@ -505,6 +542,8 @@ void DeltaFileWrapper::addPatch( const QString &layerId, const QgsFeature &oldFe
 
   mDeltas.append( delta );
   mIsDirty = true;
+
+  emit countChanged();
 }
 
 
@@ -553,6 +592,8 @@ void DeltaFileWrapper::addDelete( const QString &layerId, const QgsFeature &oldF
 
   mDeltas.append( delta );
   mIsDirty = true;
+
+  emit countChanged();
 }
 
 
@@ -601,6 +642,8 @@ void DeltaFileWrapper::addCreate( const QString &layerId, const QgsFeature &newF
 
   mDeltas.append( delta );
   mIsDirty = true;
+
+  emit countChanged();
 }
 
 
@@ -610,4 +653,22 @@ QJsonValue DeltaFileWrapper::geometryToJsonValue( const QgsGeometry &geom ) cons
     return QJsonValue::Null;
 
   return QJsonValue( geom.asWkt() );
+}
+
+
+QStringList DeltaFileWrapper::offlineLayerIds() const
+{
+  return mOfflineLayerIds;
+}
+
+
+void DeltaFileWrapper::addOfflineLayerId( const QString &offlineLayerId )
+{
+  if ( mOfflineLayerIds.contains( offlineLayerId ) )
+    return;
+
+  mOfflineLayerIds.append( offlineLayerId );
+  mIsDirty = true;
+
+  emit offlineLayerIdsChanged();
 }
