@@ -106,6 +106,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     Q_INVOKABLE void uploadProject( const QString &projectId );
     Q_INVOKABLE void removeLocalProject( const QString &projectId );
     Q_INVOKABLE ProjectStatus projectStatus( const QString &projectId );
+    Q_INVOKABLE ProjectModifications projectModification( const QString &projectId ) const;
 
     QHash<int, QByteArray> roleNames() const;
 
@@ -113,8 +114,6 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     QVariant data( const QModelIndex &index, int role ) const override;
 
     Q_INVOKABLE void reload( const QJsonArray &remoteProjects );
-
-    Q_INVOKABLE ProjectModifications projectModification( const QString &projectId ) const;
 
 signals:
     void cloudConnectionChanged();

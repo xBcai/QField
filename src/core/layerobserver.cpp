@@ -102,12 +102,6 @@ void LayerObserver::reset( bool isHardReset ) const
 }
 
 
-bool LayerObserver::isDirty() const
-{
-  return mIsDirty;
-}
-
-
 DeltaFileWrapper *LayerObserver::currentDeltaFileWrapper() const
 {
   return mCurrentDeltaFileWrapper;
@@ -302,12 +296,10 @@ void LayerObserver::onEditingStopped( )
   switch ( QFieldCloudUtils::layerAction( vl ) )
   {
     case QFieldCloudProjectsModel::LayerAction::Offline:
-      mIsDirty = true;
       mCurrentDeltaFileWrapper->addOfflineLayerId( layerId );
       emit layerEdited( layerId );
       break;
     case QFieldCloudProjectsModel::LayerAction::Cloud:
-      mIsDirty = true;
       emit layerEdited( layerId );
       mPatchedFids.take( layerId );
       mChangedFeatures.take( layerId );
