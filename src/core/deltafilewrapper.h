@@ -34,6 +34,9 @@ class DeltaFileWrapper : public QObject
 {
   Q_OBJECT
 
+  Q_PROPERTY( int count READ count NOTIFY countChanged )
+  Q_PROPERTY( const QStringList offlineLayerIds READ offlineLayerIds NOTIFY offlineLayerIdsChanged )
+
   public:
     /**
      * Error types
@@ -50,6 +53,8 @@ class DeltaFileWrapper : public QObject
       JsonFormatVersionError,
       JsonFormatDeltasError,
       JsonFormatDeltaItemError,
+      JsonFormatOfflineLayersError,
+      JsonFormatOfflineLayersItemError,
       JsonIncompatibleVersionError
     };
 
@@ -145,7 +150,7 @@ class DeltaFileWrapper : public QObject
      *
      * @return int number of delta elements
      */
-    Q_INVOKABLE int count() const;
+    int count() const;
 
 
     /**
@@ -237,10 +242,44 @@ class DeltaFileWrapper : public QObject
      */
     void addPatch( const QString &layerId, const QgsFeature &oldFeature, const QgsFeature &newFeature );
 
-  private:
 
     /**
-     * Converts geometry to QJsonValue string in WKT format. 
+     * Returns the list of offline layers to be synchronized.
+     * @return list of layers
+     * @todo TEST
+     */
+    QStringList offlineLayerIds() const;
+
+
+    /**
+     * Adds a new offline layer id to be syncronized.
+     *
+     * @param offlineLayerId target layer id
+     * @todo TEST
+     */
+    void addOfflineLayerId( const QString &offlineLayerId );
+
+
+signals:
+    /**
+     * Emitted when the `deltas` list has changed.
+     *
+     * @todo TEST
+     */
+    void countChanged();
+
+
+    /**
+     * Emitted when the `offlineLayerIds` has changed.
+     *
+     * @todo TEST
+     */
+    void offlineLayerIdsChanged();
+
+private:
+
+    /**
+     * Converts geometry to QJsonValue string in WKT format.
      * Returns null if the geometry is null, or WKT string of the geometry
      * 
      */
@@ -269,6 +308,12 @@ class DeltaFileWrapper : public QObject
      * The list of JSON deltas.
      */
     QJsonArray mDeltas;
+
+
+    /**
+     * The list offline layer ids to be synchronized.
+     */
+    QStringList mOfflineLayerIds;
 
 
     /**

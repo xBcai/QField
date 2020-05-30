@@ -122,8 +122,6 @@ DeltaFileWrapper *LayerObserver::committedDeltaFileWrapper() const
 
 void LayerObserver::onHomePathChanged()
 {
-  mEditedOfflineLayers.clear();
-
   if ( mProject->homePath().isNull() )
     return;
 
@@ -136,6 +134,9 @@ void LayerObserver::onHomePathChanged()
 
   mCurrentDeltaFileWrapper = new DeltaFileWrapper( mProject, generateDeltaFileName( true ) );
   mCommittedDeltaFileWrapper = new DeltaFileWrapper( mProject, generateDeltaFileName( false ) );
+
+  emit currentDeltaFileWrapperChanged();
+  emit committedDeltaFileWrapperChanged();
 }
 
 
@@ -302,7 +303,7 @@ void LayerObserver::onEditingStopped( )
   {
     case QFieldCloudProjectsModel::LayerAction::Offline:
       mIsDirty = true;
-      mEditedOfflineLayers.append( layerId );
+      mCurrentDeltaFileWrapper->addOfflineLayerId( layerId );
       emit layerEdited( layerId );
       break;
     case QFieldCloudProjectsModel::LayerAction::Cloud:
