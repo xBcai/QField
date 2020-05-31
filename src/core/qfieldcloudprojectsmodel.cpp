@@ -254,31 +254,40 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
   QModelIndex idx = createIndex( index, 0 );
   emit dataChanged( idx, idx,  QVector<int>() << StatusRole << UploadProgressRole );
 
-  DeltaFileWrapper deltaFile( QgsProject::instance(), QStringLiteral( "%1/deltafile_commited.json" ).arg( QgsProject::instance()->homePath() ) );
+  const DeltaFileWrapper *deltaFile = mLayerObserver->committedDeltaFileWrapper();
+  const QStringList offlineLayerIds = deltaFile->offlineLayerIds();
+  const QStringList attachmentFileNames = deltaFile->attachmentFileNames().keys();
 
-  if ( deltaFile.hasError() )
+  if ( deltaFile->hasError() )
   {
-    QgsLogger::warning( QStringLiteral( "The delta file has an error: %1" ).arg( deltaFile.errorString() ) );
+    QgsLogger::warning( QStringLiteral( "The delta file has an error: %1" ).arg( deltaFile->errorString() ) );
     return;
   }
 
   QNetworkReply *deltasReply = mCloudConnection->post( QStringLiteral( "/api/v1/deltas/%1/" ).arg( projectId ), QVariantMap({
-    {"data", deltaFile.toJson()}
+    {"data", deltaFile->toJson()}
   }) );
 
   if ( ! deltasReply )
     return;
 
-  connect( deltasReply, &QNetworkReply::finished, this, [deltasReply, this, projectId]()
+  connect( deltasReply, &QNetworkReply::finished, this, [deltasReply, this, projectId, offlineLayerIds, attachmentFileNames]()
   {
-    DeltaFileWrapper deltaFile( QgsProject::instance(), QStringLiteral( "%1/deltafile_commited.json" ).arg( QgsProject::instance()->homePath() ) );
     int index = findProject( projectId );
     
     if ( deltasReply->error() == QNetworkReply::NoError )
     {
-      const QStringList fileNames = deltaFile.attachmentFileNames().keys();
+      for ( const QString &layerId : offlineLayerIds )
+      {
+        const QgsVectorLayer *vl = static_cast<QgsVectorLayer *>( QgsProject::instance()->mapLayer( layerId ) );
 
-      for ( const QString &fileName : fileNames )
+        Q_ASSERT( vl );
+
+        uploadFile( projectId, fileName );
+      }
+
+
+      for ( const QString &fileName : attachmentFileNames )
       {
         const QFileInfo fi( fileName );
 
