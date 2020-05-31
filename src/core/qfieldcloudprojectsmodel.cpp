@@ -85,7 +85,7 @@ void QFieldCloudProjectsModel::removeLocalProject( const QString &projectId )
     int index = findProject( projectId );
     if ( index > -1 )
     {
-      if ( mCloudProjects.at( index ).status == ProjectStatus::Idle && mCloudProjects.at( index ).checkout & ProjectCheckout::Local )
+      if ( mCloudProjects.at( index ).status == ProjectStatus::Idle && mCloudProjects.at( index ).checkout & LocalCheckout )
       {
         mCloudProjects[index].localPath = QString();
         QModelIndex idx = createIndex( index, 0 );
@@ -119,7 +119,7 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
     mCloudProjects[index].downloadedSize = 0;
     mCloudProjects[index].downloadProgress = 0.0;
     mCloudProjects[index].status = ProjectStatus::Downloading;
-    mCloudProjects[index].modification = ProjectModification::None;
+    mCloudProjects[index].modification = NoModification;
     QModelIndex idx = createIndex( index, 0 );
     emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
   }
@@ -266,7 +266,7 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
                           projectDetails.value( "owner" ).toString(),
                           projectDetails.value( "name" ).toString(),
                           projectDetails.value( "description" ).toString(),
-                          ProjectCheckout::Remote,
+                          RemoteCheckout,
                           ProjectStatus::Idle );
 
     const QString projectPrefix = QStringLiteral( "QFieldCloud/projects/%1" ).arg( cloudProject.id );
@@ -277,7 +277,7 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
     QDir localPath( QStringLiteral( "%1/%2" ).arg( QFieldCloudUtils::localCloudDirectory(), cloudProject.id ) );
     if( localPath.exists()  )
     {
-      cloudProject.checkout = ProjectCheckout::LocalFromRemote;
+      cloudProject.checkout = LocalFromRemoteCheckout;
       cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.id );
     }
 
@@ -300,7 +300,7 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
     const QString name = QSettings().value( QStringLiteral( "%1/name" ).arg( projectPrefix ) ).toString();
     const QString description = QSettings().value( QStringLiteral( "%1/description" ).arg( projectPrefix ) ).toString();
 
-    CloudProject cloudProject( projectId, owner, name, description, ProjectCheckout::Local, ProjectStatus::Idle );
+    CloudProject cloudProject( projectId, owner, name, description, LocalCheckout, ProjectStatus::Idle );
     cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.id );
     mCloudProjects << cloudProject;
 

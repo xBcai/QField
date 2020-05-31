@@ -258,7 +258,7 @@ Page {
                               }
 
                               switch (Checkout) {
-                                case QFieldCloudProjectsModel.ProjectCheckout.Local:
+                                case QFieldCloudProjectsModel.LocalCheckout:
                                   return Theme.getThemeIcon('ic_cloud_project_localonly_48dp')
                                 default:
                                   break
@@ -315,13 +315,13 @@ Page {
 
                                   if ( ! status ) {
                                     switch (Checkout) {
-                                      case QFieldCloudProjectsModel.ProjectCheckout.Local:
+                                      case QFieldCloudProjectsModel.LocalCheckout:
                                         status = qsTr( 'Available locally, missing on the cloud' )
                                         break
-                                      case QFieldCloudProjectsModel.ProjectCheckout.Remote:
+                                      case QFieldCloudProjectsModel.RemoteCheckout:
                                         status = qsTr( 'Available on the cloud, missing locally' )
                                         break
-                                      case QFieldCloudProjectsModel.ProjectCheckout.LocalFromRemote:
+                                      case QFieldCloudProjectsModel.LocalFromRemoteCheckout:
                                         status = qsTr( 'Available locally' )
                                         break
                                       default:
