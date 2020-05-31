@@ -35,22 +35,22 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     Q_ENUM( ProjectStatus )
 
-    enum class ProjectCheckout
+    enum ProjectCheckout
     {
-      Remote = 2 << 0,
-      Local = 2 << 1,
-      LocalFromRemote = Remote | Local
+      RemoteCheckout = 2 << 0,
+      LocalCheckout = 2 << 1,
+      LocalFromRemoteCheckout = RemoteCheckout | LocalCheckout
     };
 
     Q_ENUM( ProjectCheckout )
     Q_DECLARE_FLAGS( ProjectCheckouts, ProjectCheckout )
 
-    enum class ProjectModification
+    enum ProjectModification
     {
-      None = 0,
-      Local = 2 << 0,
-      Remote = 2 << 1,
-      BothSides = Remote | Local
+      NoModification = 0,
+      LocalModification = 2 << 0,
+      RemoteModification = 2 << 1,
+      LocalAndRemoteModification = RemoteModification | LocalModification
     };
 
     Q_ENUM( ProjectModification )
@@ -118,7 +118,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       QString description;
       ProjectStatus status;
       ProjectCheckouts checkout;
-      ProjectModifications modification = ProjectModification::None;
+      ProjectModifications modification = ProjectModification::NoModification;
       QString localPath;
       QMap<QString, int> files;
       int filesSize = 0;
