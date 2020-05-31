@@ -73,6 +73,9 @@ Drawer {
           iconSource: Theme.getThemeIcon( 'ic_alert_black_24dp' )
           enabled: cloudProjectsModel.currentCloudProjectId.length > 0
           bgcolor: 'transparent'
+          enabled: !!cloudProjectsModel.currentCloudProjectId
+          opacity: cloudProjectsModel.currentCloudProjectId ? 0.3 : 1
+
           onClicked: showCloudMenu()
         }
       }
