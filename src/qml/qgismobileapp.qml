@@ -1100,7 +1100,7 @@ ApplicationWindow {
     id: cloudMenu
     title: qsTr( "Cloud Menu" )
 
-    width: Math.max(200, mainWindow.width/4)
+    width: Math.max(250, mainWindow.width/4)
 
     MenuItem {
       id: cloudCommitMenuItem
@@ -1110,8 +1110,9 @@ ApplicationWindow {
       height: 48
       leftPadding: 10
 
-      text: qsTr( "Commit changes" )
-      enabled: layerObserver.currentDeltaFileWrapper().count() > 0
+      text: qsTr( "Commit %1 changes" ).arg( layerObserver.currentDeltaFileWrapper.count )
+      enabled: layerObserver.currentDeltaFileWrapper.count > 0
+               || layerObserver.currentDeltaFileWrapper.offlineLayerIds.length > 0
       onTriggered: {
         if ( layerObserver.commit() ) {
           displayToast( qsTr( "Successfully committed!" ) )
@@ -1128,7 +1129,8 @@ ApplicationWindow {
       width: parent.width
       height: 48
       leftPadding: 10
-
+      enabled: cloudProjectsModel.currentCloudProjectId
+                 && ( cloudProjectsModel.projectModification(cloudProjectsModel.currentCloudProjectId) & QFieldCloudProjectsModel.ProjectModification.Local )
       text: qsTr( "Upload" )
       onTriggered: cloudProjectsModel.uploadProject(cloudProjectsModel.currentCloudProjectId)
     }
@@ -1136,9 +1138,8 @@ ApplicationWindow {
     Connections {
       target: cloudProjectsModel
       onModelReset: {
-        console.log(1111, cloudProjectsModel.currentCloudProjectId)
         cloudUploadMenuItem.enabled = cloudProjectsModel.currentCloudProjectId
-            && cloudProjectsModel.projectModification(cloudProjectsModel.currentCloudProjectId) & QFieldCloudProjectsModel.ProjectModifcation.Local
+            && cloudProjectsModel.projectModification(cloudProjectsModel.currentCloudProjectId) & QFieldCloudProjectsModel.ProjectModification.Local
       }
     }
   }
