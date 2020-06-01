@@ -95,8 +95,8 @@ void QFieldCloudProjectsModel::refreshProjectsList()
   {
     case QFieldCloudConnection::ConnectionStatus::LoggedIn:
     {
-      QNetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/projects/" ) );
-      connect( reply, &QNetworkReply::finished, this, &QFieldCloudProjectsModel::projectListReceived );
+      CloudReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/projects/" ) );
+      connect( reply, &CloudReply::finished, this, &QFieldCloudProjectsModel::projectListReceived );
       break;
     }
     case QFieldCloudConnection::ConnectionStatus::Disconnected:
@@ -115,7 +115,7 @@ int QFieldCloudProjectsModel::findProject( const QString &projectId ) const
 {
   const QList<CloudProject> cloudProjects = mCloudProjects;
   int index = -1;
-  for ( int i = 0; i < cloudProjects.count(); i++ )
+  for( int i = 0; i < cloudProjects.count(); i++ )
   {
     if ( cloudProjects.at( i ).id == projectId )
     {
@@ -185,14 +185,14 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
     emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
   }
 
-  QNetworkReply *filesReply = mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/" ).arg( projectId ) );
+  CloudReply *filesReply = mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/" ).arg( projectId ) );
 
-  connect( filesReply, &QNetworkReply::finished, this, [filesReply, this, projectId]()
+  connect( filesReply, &CloudReply::finished, this, [filesReply, this, projectId]()
   {
     int index = findProject( projectId );
-    if ( filesReply->error() == QNetworkReply::NoError )
+    if ( filesReply->reply()->error() == QNetworkReply::NoError )
     {
-      const QJsonArray files = QJsonDocument::fromJson( filesReply->readAll() ).array();
+      const QJsonArray files = QJsonDocument::fromJson( filesReply->reply()->readAll() ).array();
       for ( const auto file : files )
       {
         QJsonObject fileObject = file.toObject();
@@ -225,7 +225,7 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
         QModelIndex idx = createIndex( index, 0 );
         emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
       }
-      emit warning( QStringLiteral( "Error fetching project: %1" ).arg( filesReply->errorString() ) );
+      emit warning( QStringLiteral( "Error fetching project: %1" ).arg( filesReply->reply()->errorString() ) );
     }
 
     filesReply->deleteLater();
@@ -264,18 +264,18 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     return;
   }
 
-  QNetworkReply *deltasReply = mCloudConnection->post( QStringLiteral( "/api/v1/deltas/%1/" ).arg( projectId ), QVariantMap({
+  CloudReply *deltasReply = mCloudConnection->post( QStringLiteral( "/api/v1/deltas/%1/" ).arg( projectId ), QVariantMap({
     {"data", deltaFile->toJson()}
   }) );
 
   if ( ! deltasReply )
     return;
 
-  connect( deltasReply, &QNetworkReply::finished, this, [deltasReply, this, projectId, offlineLayerIds, attachmentFileNames]()
+  connect( deltasReply, &CloudReply::finished, this, [deltasReply, this, projectId, offlineLayerIds, attachmentFileNames]()
   {
     int index = findProject( projectId );
     
-    if ( deltasReply->error() == QNetworkReply::NoError )
+    if ( deltasReply->reply()->error() == QNetworkReply::NoError )
     {
       for ( const QString &layerId : offlineLayerIds )
       {
@@ -283,7 +283,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
 
         Q_ASSERT( vl );
 
-        uploadFile( projectId, fileName );
+//        uploadFile( projectId, fileName );
       }
 
 
@@ -302,7 +302,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
       if ( index > -1 )
         mCloudProjects[index].modification |= ProjectModification::Local;
 
-      emit warning( QStringLiteral( "Error uploading project: %1" ).arg( deltasReply->errorString() ) );
+      emit warning( QStringLiteral( "Error uploading project: %1" ).arg( deltasReply->reply()->errorString() ) );
     }
   } );
 }
@@ -340,7 +340,9 @@ void QFieldCloudProjectsModel::layerObserverLayerEdited( const QString &layerId 
 
 void QFieldCloudProjectsModel::projectListReceived()
 {
-  QNetworkReply *reply = qobject_cast<QNetworkReply *>( sender() );
+  CloudReply *cloudReply = qobject_cast<CloudReply *>( sender() );
+  QNetworkReply *reply = cloudReply->reply();
+
   Q_ASSERT( reply );
 
   if ( reply->error() != QNetworkReply::NoError )
@@ -355,24 +357,31 @@ void QFieldCloudProjectsModel::projectListReceived()
 
 void QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QString &fileName )
 {
-  QNetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/%2/" ).arg( projectId, fileName ) );
+  CloudReply *cloudReply = mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/%2/" ).arg( projectId, fileName ) );
 
   QTemporaryFile *file = new QTemporaryFile();
-  file->open();
 
-  connect( reply, &QNetworkReply::readyRead, this, [reply, file, projectId, fileName]()
-  {
-    if ( reply->error() == QNetworkReply::NoError )
-    {
-      file->write( reply->readAll() );
-    }
-  } );
+  Q_ASSERT( file->open() );
 
-  connect( reply, &QNetworkReply::finished, this, [ = ]()
+//  TODO revive this
+//  connect( cloudReply, &cloudReply::readyRead, this, [cloudReply, file, projectId, fileName]()
+//  {
+//    if ( cloudReply->error() == QNetworkReply::NoError )
+//    {
+//      file->write( reply->readAll() );
+//    }
+//  } );
+
+  connect( cloudReply, &CloudReply::finished, this, [=]()
   {
+    QNetworkReply *reply = cloudReply->reply();
+
     bool failure = false;
     if ( reply->error() == QNetworkReply::NoError )
     {
+//      TODO use `readyRead` as a nicer solution later
+      file->write( reply->readAll() );
+
       QDir dir( QStringLiteral( "%1/%2/" ).arg( QFieldCloudUtils::localCloudDirectory(), projectId ) );
 
       if ( !dir.exists() )
@@ -393,7 +402,7 @@ void QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QSt
       QVector<int> changes;
 
       mCloudProjects[index].downloadedSize += mCloudProjects[index].files[fileName];
-      mCloudProjects[index].downloadProgress = static_cast< double >( mCloudProjects[index].downloadedSize ) / mCloudProjects[index].filesSize;
+      mCloudProjects[index].downloadProgress = static_cast< double >( mCloudProjects[index].downloadedSize) / mCloudProjects[index].filesSize;
       changes << DownloadProgressRole;
 
       if ( failure )
@@ -453,11 +462,11 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
   {
     QVariantHash projectDetails = project.toObject().toVariantHash();
     CloudProject cloudProject( projectDetails.value( "id" ).toString(),
-                               projectDetails.value( "owner" ).toString(),
-                               projectDetails.value( "name" ).toString(),
-                               projectDetails.value( "description" ).toString(),
-                               RemoteCheckout,
-                               ProjectStatus::Idle );
+                          projectDetails.value( "owner" ).toString(),
+                          projectDetails.value( "name" ).toString(),
+                          projectDetails.value( "description" ).toString(),
+                          RemoteCheckout,
+                          ProjectStatus::Idle );
 
     const QString projectPrefix = QStringLiteral( "QFieldCloud/projects/%1" ).arg( cloudProject.id );
     QSettings().setValue( QStringLiteral( "%1/owner" ).arg( projectPrefix ), cloudProject.owner );
@@ -465,7 +474,7 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
     QSettings().setValue( QStringLiteral( "%1/description" ).arg( projectPrefix ), cloudProject.description );
 
     QDir localPath( QStringLiteral( "%1/%2" ).arg( QFieldCloudUtils::localCloudDirectory(), cloudProject.id ) );
-    if ( localPath.exists() )
+    if( localPath.exists()  )
     {
       cloudProject.checkout = LocalFromRemoteCheckout;
       cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.id );
@@ -475,10 +484,10 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
   }
 
   QDirIterator projectDirs( QFieldCloudUtils::localCloudDirectory(), QDir::Dirs | QDir::NoDotAndDotDot );
-  while ( projectDirs.hasNext() )
+  while( projectDirs.hasNext() )
   {
     projectDirs.next();
-
+    
     const QString projectId = projectDirs.fileName();
     int index = findProject( projectId );
     if ( index != -1 )
