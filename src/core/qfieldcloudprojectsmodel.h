@@ -16,16 +16,26 @@
 #ifndef QFIELDCLOUDPROJECTSMODEL_H
 #define QFIELDCLOUDPROJECTSMODEL_H
 
-#include <QAbstractListModel>
+#include "qgsnetworkaccessmanager.h"
 
+#include <QAbstractListModel>
+#include <QNetworkReply>
+#include <QTimer>
+#include <QRandomGenerator>
+
+class QNetworkRequest;
 class QFieldCloudConnection;
+class CloudReply;
 class LayerObserver;
+class QgsMapLayer;
+
 
 class QFieldCloudProjectsModel : public QAbstractListModel
 {
     Q_OBJECT
 
   public:
+
     enum ColumnRole
     {
       IdRole = Qt::UserRole + 1,
@@ -128,7 +138,7 @@ signals:
     void projectListReceived();
 
     void downloadFile( const QString &projectId, const QString &fileName );
-    void uploadFile( const QString &projectId, const QString &fileName );
+    CloudReply *uploadFile( const QString &projectId, const QString &fileName );
 
     int findProject( const QString &projectId ) const;
 
@@ -163,6 +173,8 @@ private:
       int uploadedSize = 0;
       double uploadProgress = 0.0; // range from 0.0 to 1.0
     };
+
+    inline QString layerFilePath( const QgsMapLayer *layer ) const;
 
     QList<CloudProject> mCloudProjects;
     QFieldCloudConnection *mCloudConnection = nullptr;

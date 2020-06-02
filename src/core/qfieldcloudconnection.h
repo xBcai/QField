@@ -273,6 +273,7 @@ private:
   void onFinished();
 };
 
+Q_DECLARE_METATYPE( CloudReply * );
 
 class QFieldCloudConnection : public QObject
 {
