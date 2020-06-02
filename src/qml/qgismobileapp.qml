@@ -1111,8 +1111,12 @@ ApplicationWindow {
       leftPadding: 10
 
       text: qsTr( "Commit %1 changes" ).arg( layerObserver.currentDeltaFileWrapper.count )
-      enabled: layerObserver.currentDeltaFileWrapper.count > 0
-               || layerObserver.currentDeltaFileWrapper.offlineLayerIds.length > 0
+      enabled: cloudProjectsModel.currentCloudProjectId
+               && cloudProjectsModel.projectStatus( cloudProjectsModel.currentCloudProjectId ) === QFieldCloudProjectsModel.ProjectStatus.Idle
+               && (
+                 layerObserver.currentDeltaFileWrapper.count > 0
+                 || layerObserver.currentDeltaFileWrapper.offlineLayerIds.length > 0
+               )
       onTriggered: {
         if ( layerObserver.commit() ) {
           displayToast( qsTr( "Successfully committed!" ) )
@@ -1130,6 +1134,7 @@ ApplicationWindow {
       height: 48
       leftPadding: 10
       enabled: cloudProjectsModel.currentCloudProjectId
+                 && cloudProjectsModel.projectStatus( cloudProjectsModel.currentCloudProjectId ) === QFieldCloudProjectsModel.ProjectStatus.Idle
                  && ( cloudProjectsModel.projectModification(cloudProjectsModel.currentCloudProjectId) & QFieldCloudProjectsModel.ProjectModification.Local )
       text: qsTr( "Upload" )
       onTriggered: cloudProjectsModel.uploadProject(cloudProjectsModel.currentCloudProjectId)
