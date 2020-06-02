@@ -117,6 +117,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     Q_INVOKABLE void removeLocalProject( const QString &projectId );
     Q_INVOKABLE ProjectStatus projectStatus( const QString &projectId );
     Q_INVOKABLE ProjectModifications projectModification( const QString &projectId ) const;
+    void projectCancelProjectUpload( const QString &projectId, bool shouldCancelAtServer );
 
     QHash<int, QByteArray> roleNames() const;
 
@@ -170,16 +171,27 @@ private:
       int filesFailed = 0;
       int downloadedSize = 0;
       double downloadProgress = 0.0; // range from 0.0 to 1.0
+
+      // TODO it would be nice to have some `UploadFile` structure in the future, instead of QVariantMap
+      QMap<QString, QVariantMap> uploadOfflineLayer;
+      QMap<QString, QVariantMap> uploadAttachments;
+      int uploadOfflineLayersFinished = 0;
+      int uploadOfflineLayersFailed = 0;
+      int uploadAttachmentsFinished = 0;
+      int uploadAttachmentsFailed = 0;
+      int uploadFileSize = 0;
       int uploadedSize = 0;
       double uploadProgress = 0.0; // range from 0.0 to 1.0
     };
 
-    inline QString layerFilePath( const QgsMapLayer *layer ) const;
+    inline QString layerFileName( const QgsMapLayer *layer ) const;
 
     QList<CloudProject> mCloudProjects;
     QFieldCloudConnection *mCloudConnection = nullptr;
     QString mCurrentCloudProjectId;
     LayerObserver *mLayerObserver = nullptr;
+    QMap<QString, QList<CloudReply *>> mOfflineLayerReplies;
+    void abortCloudReplies( const QList<CloudReply *> cloudReplies );
 
 };
 
