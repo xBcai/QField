@@ -61,6 +61,8 @@ SET(QFIELD_CORE_SRCS
   qfieldcloudutils.cpp
   deltafilewrapper.cpp
   layerobserver.cpp
+  qfnetworkreply.cpp
+  qfnetworkmanager.cpp
 )
 
 SET(QFIELD_CORE_HDRS
@@ -127,6 +129,8 @@ SET(QFIELD_CORE_HDRS
   qfieldcloudutils.h
   deltafilewrapper.h
   layerobserver.h
+  qfnetworkreply.h
+  qfnetworkmanager.h
 )
 
 IF (ANDROID)

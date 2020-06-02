@@ -186,11 +186,10 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
     emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
   }
 
-  CloudReply *filesReply = mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/" ).arg( projectId ) );
+  QfNetworkReply *filesReply = mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/" ).arg( projectId ) );
 
-  connect( filesReply, &CloudReply::finished, this, [filesReply, this, projectId]()
+  connect( filesReply, &QfNetworkReply::finished, this, [this, index, projectId, filesReply]()
   {
-    int index = findProject( projectId );
     if ( filesReply->reply()->error() == QNetworkReply::NoError )
     {
       const QJsonArray files = QJsonDocument::fromJson( filesReply->reply()->readAll() ).array();
@@ -198,12 +197,11 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
       {
         QJsonObject fileObject = file.toObject();
         QString fileName = fileObject.value( QStringLiteral( "name" ) ).toString();
-        if ( index > -1 )
-        {
-          int fileSize = fileObject.value( QStringLiteral( "size" ) ).toInt();
-          mCloudProjects[index].files.insert( fileName, fileSize );
-          mCloudProjects[index].filesSize += fileSize;
-        }
+        int fileSize = fileObject.value( QStringLiteral( "size" ) ).toInt();
+
+        mCloudProjects[index].files.insert( fileName, fileSize );
+        mCloudProjects[index].filesSize += fileSize;
+
         downloadFile( projectId, fileName );
       }
 
@@ -482,15 +480,15 @@ void QFieldCloudProjectsModel::layerObserverLayerEdited( const QString &layerId 
 
 void QFieldCloudProjectsModel::projectListReceived()
 {
-  CloudReply *cloudReply = qobject_cast<CloudReply *>( sender() );
-  QNetworkReply *reply = cloudReply->reply();
+  QfNetworkReply *reply = qobject_cast<QfNetworkReply *>( sender() );
+  QNetworkReply *rawReply = reply->reply();
 
-  Q_ASSERT( reply );
+  Q_ASSERT( rawReply );
 
-  if ( reply->error() != QNetworkReply::NoError )
+  if ( rawReply->error() != QNetworkReply::NoError )
     return;
 
-  QByteArray response = reply->readAll();
+  QByteArray response = rawReply->readAll();
 
   QJsonDocument doc = QJsonDocument::fromJson( response );
   QJsonArray projects = doc.array();
@@ -499,8 +497,7 @@ void QFieldCloudProjectsModel::projectListReceived()
 
 void QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QString &fileName )
 {
-  CloudReply *cloudReply = mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/%2/" ).arg( projectId, fileName ) );
-
+  QfNetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/%2/" ).arg( projectId, fileName ) );
   QTemporaryFile *file = new QTemporaryFile();
 
   Q_ASSERT( file->open() );
@@ -514,15 +511,15 @@ void QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QSt
 //    }
 //  } );
 
-  connect( cloudReply, &CloudReply::finished, this, [=]()
+  connect( reply, &QfNetworkReply::finished, this, [=]()
   {
-    QNetworkReply *reply = cloudReply->reply();
+    QNetworkReply *rawReply = reply->reply();
 
     bool failure = false;
-    if ( reply->error() == QNetworkReply::NoError )
+    if ( rawReply->error() == QNetworkReply::NoError )
     {
 //      TODO use `readyRead` as a nicer solution later
-      file->write( reply->readAll() );
+      file->write( rawReply->readAll() );
 
       QDir dir( QStringLiteral( "%1/%2/" ).arg( QFieldCloudUtils::localCloudDirectory(), projectId ) );
 
@@ -563,7 +560,7 @@ void QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QSt
     }
 
     file->deleteLater();
-    reply->deleteLater();
+    rawReply->deleteLater();
   } );
 }
 
