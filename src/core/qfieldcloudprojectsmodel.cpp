@@ -242,6 +242,9 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
   if ( index == -1 )
     return;
 
+  if ( ! ( mCloudProjects[index].status == ProjectStatus::Idle ) )
+    return;
+
   if ( ! ( mCloudProjects[index].modification & ProjectModification::Local ) )
     return;
 
@@ -256,13 +259,22 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     return;
   }
 
-  mCloudProjects[index].filesFailed = 0;
-  mCloudProjects[index].uploadOfflineLayer.empty();
   mCloudProjects[index].status = ProjectStatus::Uploading;
+  mCloudProjects[index].deltaFileId = deltaFile->id();
 
+  mCloudProjects[index].offlineLayers.empty();
+  mCloudProjects[index].offlineLayersFinished = 0;
+  mCloudProjects[index].offlineLayersFailed = 0;
+
+  mCloudProjects[index].attachments.empty();
+  mCloudProjects[index].attachmentsFinished = 0;
+  mCloudProjects[index].attachmentsFailed = 0;
+
+
+  // //////////
+  // prepare offline layer files to be uploaded
+  // //////////
   const QStringList offlineLayerIds = deltaFile->offlineLayerIds();
-
-  // layer files to be uploaded
   for ( const QString &layerId : offlineLayerIds )
   {
     const QgsVectorLayer *vl = static_cast<QgsVectorLayer *>( QgsProject::instance()->mapLayer( layerId ) );
@@ -277,27 +289,35 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
 
     // TODO make sure that the layers are not editable and the user cannot interact with the project!!! Otherwise, we can upload half-commited data!!!
 
-    if ( mCloudProjects[index].uploadOfflineLayer.contains( fileName ) )
-    {
-      QStringList layerIds = mCloudProjects[index].uploadOfflineLayer[fileName].value( QStringLiteral( "layer_ids" ) ).toStringList();
-      mCloudProjects[index].uploadOfflineLayer[fileName][ QStringLiteral( "layer_ids" ) ] = layerIds;
-    }
-
-    mCloudProjects[index].uploadOfflineLayer.insert( fileName, QVariantMap({
-                                                                      {"file_size", fileSize},
-                                                                      {"bytes_sent", 0},
-                                                                      {"layer_ids", {layerId}},
-                                                                      {"cloud_reply", QVariant::fromValue( nullptr )}
-                                                                    }) );
+    mCloudProjects[index].offlineLayers.insert( fileName, FileTransfer( fileName, fileSize ) );
+    mCloudProjects[index].offlineLayers[fileName].layerIds.append( layerId );
   }
 
-  CloudReply *deltasCloudReply = mCloudConnection->post( QStringLiteral( "/api/v1/deltas/%1/" ).arg( projectId ), QVariantMap({
+
+  // //////////
+  // prepare attachment files to be uploaded
+  // //////////
+  const QStringList attachmentFileNames = deltaFile->attachmentFileNames().keys();
+  for ( const QString &fileName : attachmentFileNames )
+  {
+    const int fileSize = QFileInfo( fileName ).size();
+
+    Q_ASSERT( ! fileName.isEmpty() );
+    Q_ASSERT( fileSize > 0 );
+
+    mCloudProjects[index].attachments.insert( fileName, FileTransfer( fileName, fileSize ) );
+  }
+
+  // //////////
+  // send delta file
+  // //////////
+  QfNetworkReply *deltasCloudReply = mCloudConnection->post( QStringLiteral( "/api/v1/deltas/%1/" ).arg( projectId ), QVariantMap({
     {"data", deltaFile->toJson()}
   }) );
 
   Q_ASSERT( deltasCloudReply );
 
-  connect( deltasCloudReply, &CloudReply::finished, this, [this, index, projectId, deltasCloudReply]()
+  connect( deltasCloudReply, &QfNetworkReply::finished, this, [this, index, projectId, deltasCloudReply]()
   {
     QNetworkReply *deltasReply = deltasCloudReply->reply();
 
@@ -317,90 +337,150 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
       return;
     }
 
+    projectUploadOfflineLayers( index );
 
-    // start uploading the offline layers
-    const QStringList offlineLayerFileNames = mCloudProjects[index].uploadOfflineLayer.keys();
-    for ( const QString &offlineLayerFileName : offlineLayerFileNames )
-    {
-      CloudReply *offlineLayerCloudReply = uploadFile( projectId, offlineLayerFileName );
-
-      mCloudProjects[index].uploadOfflineLayer[offlineLayerFileName][ QStringLiteral( "cloud_reply" ) ] = QVariant::fromValue( offlineLayerCloudReply );
-
-      connect( offlineLayerCloudReply, &CloudReply::uploadProgress, this, [this, index, offlineLayerFileName](int bytesSent, int bytesTotal)
-      {
-        Q_UNUSED( bytesTotal );
-        mCloudProjects[index].uploadOfflineLayer[offlineLayerFileName][ QStringLiteral( "bytes_sent" ) ] = bytesSent;
-      });
-
-      connect( offlineLayerCloudReply, &CloudReply::finished, this, [this, index, projectId, offlineLayerCloudReply, offlineLayerFileName]()
-      {
-        QNetworkReply *offlineLayerReply = offlineLayerCloudReply->reply();
-
-        Q_ASSERT( offlineLayerCloudReply->isFinished() );
-        Q_ASSERT( offlineLayerReply );
-
-        mCloudProjects[index].uploadOfflineLayersFinished++;
-
-        // if offline layer upload fails, the whole transaction should be considered as failed
-        if ( offlineLayerReply->error() != QNetworkReply::NoError )
-        {
-          QgsLogger::warning( QStringLiteral( "Failed to upload offline layer stored at \"%1\", reason:\n%2" )
-                              .arg( offlineLayerFileName )
-                              .arg( offlineLayerReply->errorString() ) );
-
-          mCloudProjects[index].uploadOfflineLayersFailed++;
-          projectCancelUpload( projectId, true );
-
-          return;
-        }
-      } );
-    }
-
-    // start uploading the attachments
-    const QStringList attachmentFileNames;
-    for ( const QString &attachmentFileName : attachmentFileNames )
-    {
-      CloudReply *attachmentCloudReply = uploadFile( projectId, attachmentFileName );
-
-      mCloudProjects[index].uploadAttachments[attachmentFileName][ QStringLiteral( "cloud_reply" ) ] = QVariant::fromValue( attachmentCloudReply );
-
-      connect( attachmentCloudReply, &CloudReply::uploadProgress, this, [this, index, attachmentFileName](int bytesSent, int bytesTotal)
-      {
-        Q_UNUSED( bytesTotal );
-        mCloudProjects[index].uploadAttachments[attachmentFileName][ QStringLiteral( "bytes_sent" ) ] = bytesSent;
-      });
-
-      connect( attachmentCloudReply, &CloudReply::finished, this, [this, index, projectId, attachmentCloudReply, attachmentFileName]()
-      {
-        QNetworkReply *attachmentReply = attachmentCloudReply->reply();
-
-        Q_ASSERT( attachmentCloudReply->isFinished() );
-        Q_ASSERT( attachmentReply );
-
-        mCloudProjects[index].uploadAttachmentsFinished++;
-
-        // if there is an error, don't panic, we continue uploading. The files may be later manually synced.
-        if ( attachmentReply->error() != QNetworkReply::NoError )
-        {
-          mCloudProjects[index].uploadAttachmentsFailed++;
-          QgsLogger::warning( QStringLiteral( "Failed to upload attachment stored at \"%1\", reason:\n%2" )
-                              .arg( attachmentFileName )
-                              .arg( attachmentReply->errorString() ) );
-        }
-      } );
-    }
+    QfNetworkReply *deltaStatusReply = mCloudConnection->get( QStringLiteral( "/api/v1/deltas/%1/status" ).arg( mCloudProjects[index].deltaFileId ) );
 
 
-    // TODO check delta status
+
+
+//    connect( deltaStatusReply, &QfNetworkReply::finished, this, [this, index, deltaStatusReply]()
+//    {
+//      QNetworkReply *rawReply = deltaStatusReply->reply();
+
+//      Q_ASSERT( deltaStatusReply->isFinished() );
+//      Q_ASSERT( rawReply );
+
+//      if ( rawReply->error() != QNetworkReply::NoError )
+//      {
+//        projectGetDeltaStatus( mCloudProjects[index].id );
+//        return;
+//      }
+
+//      const QJsonDocument doc = QJsonDocument::fromJson( rawReply->readAll() );
+
+//      Q_ASSERT( doc.isObject() );
+
+//      const QString status = doc.object().value( QStringLiteral( "status" ) ).toString().toUpper();
+
+
+//      if ( status == QStringLiteral( "APPLIED" ) )
+//      {
+
+//      }
+//      else if ( status == QStringLiteral( "APPLIED_WITH_CONFLICTS" ) )
+//      {
+
+//      }
+//      else if ( status == QStringLiteral( "PENDING" ) )
+//      {
+
+//      }
+//      else if ( status == QStringLiteral( "SYNCING" ) )
+//      {
+//        QTimer::singleShot( 1000, this, []()
+//        {
+//          projectGetDeltaStatus( mCloudProjects[index].id );
+//        });
+//      }
+//      else
+//      {
+//        QgsLogger::warning( QStringLiteral( "Unknown status \"%1\"" ).arg( status ) );
+//        Q_ASSERT( 0 );
+//      }
+//    });
+
+    projectUploadAttachments( index );
 
     // TODO download synced files
 
-    // TODO reload the project
 
+
+    // TODO reload the
+    // reloads only the data layers
+    // Qgs::instance()->reloadAllLayers();
 
   } );
 }
 
+void QFieldCloudProjectsModel::projectUploadOfflineLayers( const int index )
+{
+  const QString projectId = mCloudProjects[index].id;
+  const QStringList offlineLayerFileNames = mCloudProjects[index].offlineLayers.keys();
+
+  for ( const QString &offlineLayerFileName : offlineLayerFileNames )
+  {
+    QfNetworkReply *offlineLayerCloudReply = uploadFile( mCloudProjects[index].id, offlineLayerFileName );
+
+    mCloudProjects[index].offlineLayers[offlineLayerFileName].networkReply = offlineLayerCloudReply;
+
+    connect( offlineLayerCloudReply, &QfNetworkReply::uploadProgress, this, [this, index, offlineLayerFileName](int bytesSent, int bytesTotal)
+    {
+      Q_UNUSED( bytesTotal );
+      mCloudProjects[index].offlineLayers[offlineLayerFileName].bytesTransferred = bytesSent;
+    });
+
+    connect( offlineLayerCloudReply, &QfNetworkReply::finished, this, [this, index, offlineLayerCloudReply, offlineLayerFileName]()
+    {
+      QNetworkReply *offlineLayerReply = offlineLayerCloudReply->reply();
+
+      Q_ASSERT( offlineLayerCloudReply->isFinished() );
+      Q_ASSERT( offlineLayerReply );
+
+      mCloudProjects[index].offlineLayersFinished++;
+
+      // if offline layer upload fails, the whole transaction should be considered as failed
+      if ( offlineLayerReply->error() != QNetworkReply::NoError )
+      {
+        QgsLogger::warning( QStringLiteral( "Failed to upload offline layer stored at \"%1\", reason:\n%2" )
+                            .arg( offlineLayerFileName )
+                            .arg( offlineLayerReply->errorString() ) );
+
+        mCloudProjects[index].offlineLayersFailed++;
+        projectCancelUpload( mCloudProjects[index].id, true );
+
+        return;
+      }
+    } );
+  }
+}
+
+void QFieldCloudProjectsModel::projectUploadAttachments( const int index )
+{
+  // start uploading the attachments
+  const QStringList attachmentFileNames;
+  for ( const QString &fileName : attachmentFileNames )
+  {
+    QfNetworkReply *attachmentCloudReply = uploadFile( mCloudProjects[index].id, fileName );
+
+    mCloudProjects[index].attachments[fileName].networkReply = attachmentCloudReply;
+
+    connect( attachmentCloudReply, &QfNetworkReply::uploadProgress, this, [this, index, fileName](int bytesSent, int bytesTotal)
+    {
+      Q_UNUSED( bytesTotal );
+      mCloudProjects[index].attachments[fileName].bytesTransferred = bytesSent;
+    });
+
+    connect( attachmentCloudReply, &QfNetworkReply::finished, this, [this, index, fileName, attachmentCloudReply]()
+    {
+      QNetworkReply *attachmentReply = attachmentCloudReply->reply();
+
+      Q_ASSERT( attachmentCloudReply->isFinished() );
+      Q_ASSERT( attachmentReply );
+
+      mCloudProjects[index].uploadAttachmentsFinished++;
+
+      // if there is an error, don't panic, we continue uploading. The files may be later manually synced.
+      if ( attachmentReply->error() != QNetworkReply::NoError )
+      {
+        mCloudProjects[index].uploadAttachmentsFailed++;
+        QgsLogger::warning( QStringLiteral( "Failed to upload attachment stored at \"%1\", reason:\n%2" )
+                            .arg( fileName )
+                            .arg( attachmentReply->errorString() ) );
+      }
+    } );
+  }
+}
 
 void QFieldCloudProjectsModel::projectCancelUpload( const QString &projectId, bool shouldCancelAtServer )
 {
@@ -414,9 +494,9 @@ void QFieldCloudProjectsModel::projectCancelUpload( const QString &projectId, bo
 
   mCloudProjects[index].status = ProjectStatus::Idle;
 
-  for ( const QString &offlineLayerFileName : mCloudProjects[index].uploadOfflineLayer.keys() )
+  for ( const QString &offlineLayerFileName : mCloudProjects[index].offlineLayers.keys() )
   {
-    CloudReply *offlineLayerReply = mCloudProjects[index].uploadOfflineLayer[offlineLayerFileName][ QStringLiteral( "cloud_reply" ) ].value<CloudReply *>();
+    QfNetworkReply *offlineLayerReply = mCloudProjects[index].offlineLayers[offlineLayerFileName][ QStringLiteral( "cloud_reply" ) ].value<QfNetworkReply *>();
 
     Q_ASSERT( offlineLayerReply );
 
@@ -428,7 +508,7 @@ void QFieldCloudProjectsModel::projectCancelUpload( const QString &projectId, bo
 
   for ( const QString &attachmentFileName : mCloudProjects[index].uploadAttachments.keys() )
   {
-    CloudReply *attachmentReply = mCloudProjects[index].uploadAttachments[attachmentFileName][ QStringLiteral( "cloud_reply" ) ].value<CloudReply *>();
+    QfNetworkReply *attachmentReply = mCloudProjects[index].uploadAttachments[attachmentFileName][ QStringLiteral( "cloud_reply" ) ].value<QfNetworkReply *>();
 
     Q_ASSERT( attachmentReply );
 
@@ -564,7 +644,7 @@ void QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QSt
   } );
 }
 
-CloudReply *QFieldCloudProjectsModel::uploadFile( const QString &projectId, const QString &fileName )
+QfNetworkReply *QFieldCloudProjectsModel::uploadFile( const QString &projectId, const QString &fileName )
 {
   return mCloudConnection->post( QStringLiteral( "/api/v1/files/%1/%2/" ).arg( projectId, fileName ), QVariantMap(), QStringList({fileName}) );
 }
