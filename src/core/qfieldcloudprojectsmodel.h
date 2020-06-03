@@ -25,7 +25,7 @@
 
 class QNetworkRequest;
 class QFieldCloudConnection;
-class CloudReply;
+class QfNetworkReply;
 class LayerObserver;
 class QgsMapLayer;
 
@@ -139,12 +139,35 @@ signals:
     void projectListReceived();
 
     void downloadFile( const QString &projectId, const QString &fileName );
-    CloudReply *uploadFile( const QString &projectId, const QString &fileName );
+    QfNetworkReply *uploadFile( const QString &projectId, const QString &fileName );
 
     int findProject( const QString &projectId ) const;
 
     void layerObserverLayerEdited( const QString &layerId );
 private:
+    struct FileTransfer
+    {
+      FileTransfer(
+          const QString &fileName,
+          const int bytesTotal,
+          QfNetworkReply *networkReply = nullptr,
+          const QStringList &layerIds = QStringList()
+          )
+        : fileName( fileName ),
+          bytesTotal( bytesTotal ),
+          networkReply( networkReply ),
+          layerIds( layerIds )
+      {};
+
+      QString fileName;
+      int bytesTotal;
+      int bytesTransferred = 0;
+      bool isFinished = false;
+      QfNetworkReply *networkReply;
+      QNetworkReply::NetworkError error = QNetworkReply::NoError;
+      QStringList layerIds;
+    };
+
     struct CloudProject
     {
       CloudProject( const QString &id, const QString &owner, const QString &name, const QString &description, const ProjectCheckouts &checkout, const ProjectStatus &status )
@@ -166,6 +189,7 @@ private:
       ProjectCheckouts checkout;
       ProjectModifications modification = ProjectModification::NoModification;
       QString localPath;
+      QString deltaFileId;
       QMap<QString, int> files;
       int filesSize = 0;
       int filesFailed = 0;
@@ -173,15 +197,19 @@ private:
       double downloadProgress = 0.0; // range from 0.0 to 1.0
 
       // TODO it would be nice to have some `UploadFile` structure in the future, instead of QVariantMap
-      QMap<QString, QVariantMap> uploadOfflineLayer;
+      QMap<QString, FileTransfer> offlineLayers;
       QMap<QString, QVariantMap> uploadAttachments;
-      int uploadOfflineLayersFinished = 0;
-      int uploadOfflineLayersFailed = 0;
+      int offlineLayersFinished = 0;
+      int offlineLayersFailed = 0;
       int uploadAttachmentsFinished = 0;
       int uploadAttachmentsFailed = 0;
       int uploadFileSize = 0;
       int uploadedSize = 0;
       double uploadProgress = 0.0; // range from 0.0 to 1.0
+
+      QMap<QString, FileTransfer> attachments;
+      int attachmentsFinished = 0;
+      int attachmentsFailed = 0;
     };
 
     inline QString layerFileName( const QgsMapLayer *layer ) const;
@@ -190,9 +218,10 @@ private:
     QFieldCloudConnection *mCloudConnection = nullptr;
     QString mCurrentCloudProjectId;
     LayerObserver *mLayerObserver = nullptr;
-    QMap<QString, QList<CloudReply *>> mOfflineLayerReplies;
-    void abortCloudReplies( const QList<CloudReply *> cloudReplies );
 
+    void projectCancelUpload( const QString &projectId, bool shouldCancelAtServer );
+    void projectUploadOfflineLayers( const int index );
+    void projectUploadAttachments( const int index );
 };
 
 Q_DECLARE_METATYPE( QFieldCloudProjectsModel::ProjectStatus )
