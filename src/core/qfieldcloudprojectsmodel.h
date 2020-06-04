@@ -122,7 +122,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     Q_PROPERTY( QString currentCloudProjectId READ currentCloudProjectId WRITE setCurrentCloudProjectId NOTIFY currentCloudProjectIdChanged )
 
     QString currentCloudProjectId() const;
-    void setCurrentCloudProjectId(const QString &currentCloudProjectId);
+    void setCurrentCloudProjectId( const QString &currentCloudProjectId );
 
     Q_INVOKABLE void refreshProjectsList();
     Q_INVOKABLE void downloadProject( const QString &projectId );
@@ -139,7 +139,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     Q_INVOKABLE void reload( const QJsonArray &remoteProjects );
 
-signals:
+  signals:
     void cloudConnectionChanged();
     void layerObserverChanged();
     void currentCloudProjectIdChanged();
@@ -165,17 +165,17 @@ signals:
     int findProject( const QString &projectId ) const;
 
     void layerObserverLayerEdited( const QString &layerId );
-private:
+  private:
     static const int sDelayBeforeDeltaStatusRetry = 1000;
 
     struct FileTransfer
     {
       FileTransfer(
-          const QString &fileName,
-          const int bytesTotal,
-          QfNetworkReply *networkReply = nullptr,
-          const QStringList &layerIds = QStringList()
-          )
+        const QString &fileName,
+        const int bytesTotal,
+        QfNetworkReply *networkReply = nullptr,
+        const QStringList &layerIds = QStringList()
+      )
         : fileName( fileName ),
           bytesTotal( bytesTotal ),
           networkReply( networkReply ),
