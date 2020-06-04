@@ -94,6 +94,19 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     Q_ENUM( LayerAction )
 
+    enum class DeltaFileStatus
+    {
+      Error,
+      Local,
+      Pending,
+      Waiting,
+      Busy,
+      Applied,
+      AppliedWithConflicts
+    };
+
+    Q_ENUM( DeltaFileStatus )
+
     QFieldCloudProjectsModel();
 
     Q_PROPERTY( QFieldCloudConnection *cloudConnection READ cloudConnection WRITE setCloudConnection NOTIFY cloudConnectionChanged )
@@ -134,6 +147,14 @@ signals:
     void projectDownloaded( const QString projectId, const QString projectName, const bool failed = false );
     void projectStatusChanged( const QString projectId, const ProjectStatus projectStatus );
 
+    //
+    void networkDeltaUploaded( const QString &projectId );
+    void networkOfflineLayersUploaded( const QString &projectId );
+    void networkDeltaStatusChecked( const QString &projectId );
+    void networkAttachmentsUploaded( const QString &projectId );
+    void networkLayerDownloaded( const QString &projectId );
+    void syncFailed( const QString &projectId, const QString &reason );
+
   private slots:
     void connectionStatusChanged();
     void projectListReceived();
@@ -145,6 +166,8 @@ signals:
 
     void layerObserverLayerEdited( const QString &layerId );
 private:
+    static const int sDelayBeforeDeltaStatusRetry = 1000;
+
     struct FileTransfer
     {
       FileTransfer(
@@ -158,6 +181,8 @@ private:
           networkReply( networkReply ),
           layerIds( layerIds )
       {};
+
+      FileTransfer() = default;
 
       QString fileName;
       int bytesTotal;
@@ -189,7 +214,14 @@ private:
       ProjectCheckouts checkout;
       ProjectModifications modification = ProjectModification::NoModification;
       QString localPath;
+
       QString deltaFileId;
+      DeltaFileStatus deltaFileStatus = DeltaFileStatus::Local;
+      QStringList deltaLayersToDownload;
+
+      int layersDownloadedFinished = 0;
+      int layersDownloadedFailed = 0;
+
       QMap<QString, int> files;
       int filesSize = 0;
       int filesFailed = 0;
@@ -198,18 +230,17 @@ private:
 
       // TODO it would be nice to have some `UploadFile` structure in the future, instead of QVariantMap
       QMap<QString, FileTransfer> offlineLayers;
-      QMap<QString, QVariantMap> uploadAttachments;
       int offlineLayersFinished = 0;
       int offlineLayersFailed = 0;
-      int uploadAttachmentsFinished = 0;
-      int uploadAttachmentsFailed = 0;
-      int uploadFileSize = 0;
-      int uploadedSize = 0;
-      double uploadProgress = 0.0; // range from 0.0 to 1.0
 
       QMap<QString, FileTransfer> attachments;
       int attachmentsFinished = 0;
       int attachmentsFailed = 0;
+
+      int uploadFileSize = 0;
+      int uploadedSize = 0;
+      double uploadProgress = 0.0; // range from 0.0 to 1.0
+
     };
 
     inline QString layerFileName( const QgsMapLayer *layer ) const;
@@ -220,8 +251,10 @@ private:
     LayerObserver *mLayerObserver = nullptr;
 
     void projectCancelUpload( const QString &projectId, bool shouldCancelAtServer );
-    void projectUploadOfflineLayers( const int index );
-    void projectUploadAttachments( const int index );
+    void projectUploadOfflineLayers( const QString &projectId );
+    void projectUploadAttachments( const QString &projectId );
+    void projectGetDeltaStatus( const QString &projectId );
+    void projectDownloadLayers( const QString &projectId );
 };
 
 Q_DECLARE_METATYPE( QFieldCloudProjectsModel::ProjectStatus )

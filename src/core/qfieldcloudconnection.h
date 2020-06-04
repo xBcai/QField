@@ -25,8 +25,6 @@
 
 class QNetworkRequest;
 
-Q_DECLARE_METATYPE( CloudReply * );
-
 class QFieldCloudConnection : public QObject
 {
     Q_OBJECT
