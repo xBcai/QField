@@ -1004,6 +1004,7 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
     QSettings().setValue( QStringLiteral( "%1/owner" ).arg( projectPrefix ), cloudProject.owner );
     QSettings().setValue( QStringLiteral( "%1/name" ).arg( projectPrefix ), cloudProject.name );
     QSettings().setValue( QStringLiteral( "%1/description" ).arg( projectPrefix ), cloudProject.description );
+    QSettings().setValue( QStringLiteral( "%1/updatedAt" ).arg( projectPrefix ), cloudProject.updatedAt );
 
     QDir localPath( QStringLiteral( "%1/%2" ).arg( QFieldCloudUtils::localCloudDirectory(), cloudProject.id ) );
     if( localPath.exists()  )
@@ -1032,6 +1033,7 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
     const QString owner = QSettings().value( QStringLiteral( "%1/owner" ).arg( projectPrefix ) ).toString();
     const QString name = QSettings().value( QStringLiteral( "%1/name" ).arg( projectPrefix ) ).toString();
     const QString description = QSettings().value( QStringLiteral( "%1/description" ).arg( projectPrefix ) ).toString();
+    const QString updatedAt = QSettings().value( QStringLiteral( "%1/updatedAt" ).arg( projectPrefix ) ).toString();
 
     CloudProject cloudProject( projectId, owner, name, description, LocalCheckout, ProjectStatus::Idle );
     cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.id );

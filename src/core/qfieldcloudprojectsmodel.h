@@ -197,11 +197,12 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     struct CloudProject
     {
-      CloudProject( const QString &id, const QString &owner, const QString &name, const QString &description, const ProjectCheckouts &checkout, const ProjectStatus &status )
+      CloudProject( const QString &id, const QString &owner, const QString &name, const QString &description, const QString &updatedAt, const ProjectCheckouts &checkout, const ProjectStatus &status )
         : id( id )
         , owner( owner )
         , name( name )
         , description( description )
+        , updatedAt( updatedAt )
         , status( status )
         , checkout( checkout )
       {}
@@ -212,6 +213,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       QString owner;
       QString name;
       QString description;
+      QString updatedAt;
       ProjectStatus status;
       ProjectCheckouts checkout;
       ProjectModifications modification = ProjectModification::NoModification;
