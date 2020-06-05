@@ -283,61 +283,54 @@ void QFieldCloudProjectsModel::projectDownloadFiles( const QString &projectId )
 
       mCloudProjects[index].downloadProjectFilesFinished++;
 
-      if ( rawReply->error() != QNetworkReply::NoError )
+      bool hasError = false;
+
+      if ( ! hasError && rawReply->error() != QNetworkReply::NoError )
       {
+        hasError = true;
         QgsLogger::warning( QStringLiteral( "Failed to download project file stored at \"%1\", reason:\n%2" ).arg( fileName, rawReply->errorString() ) );
-
-        mCloudProjects[index].downloadProjectFilesFailed++;
-
-        emit projectDownloaded( projectId, mCloudProjects[index].name, true );
-
-        return;
       }
 
-      if ( ! file->write( rawReply->readAll() ) )
+      if ( ! hasError && ! file->write( rawReply->readAll() ) )
       {
+        hasError = true;
         QgsLogger::warning( QStringLiteral( "Failed to write downloaded file stored at \"%1\", reason:\n%2" ).arg( fileName ).arg( file->errorString() ) );
-
-        emit projectDownloaded( projectId, mCloudProjects[index].name, true );
-
-        return;
       }
 
       QFileInfo fileInfo( fileName );
       QDir dir( QStringLiteral( "%1/%2/%3" ).arg( QFieldCloudUtils::localCloudDirectory(), projectId, fileInfo.path() ) );
 
-      if ( ! dir.exists() && ! dir.mkpath( QStringLiteral( "." ) ) )
+      if ( ! hasError && ! dir.exists() && ! dir.mkpath( QStringLiteral( "." ) ) )
       {
+        hasError = true;
         QgsLogger::warning( QStringLiteral( "Failed to create directory at \"%1\"" ).arg( dir.path() ) );
-
-        emit projectDownloaded( projectId, mCloudProjects[index].name, true );
-
-        return;
       }
 
       const QString destinationFileName( dir.filePath( fileInfo.fileName() ) );
 
       // if the file already exists, we need to delete it first, as QT does not support overwriting
       // NOTE: it is possible that someone creates the file in the meantime between this and the next if statement
-      if ( QFile::exists( destinationFileName ) && ! file->remove( destinationFileName ) )
+      if ( ! hasError && QFile::exists( destinationFileName ) && ! file->remove( destinationFileName ) )
       {
+        hasError = true;
         QgsLogger::warning( QStringLiteral( "Failed to remove file before overwriting stored at \"%1\", reason:\n%2" ).arg( fileName ).arg( file->errorString() ) );
-
-        emit projectDownloaded( projectId, mCloudProjects[index].name, true );
-
-        return;
       }
 
-      if ( ! file->copy( destinationFileName ) )
+      if ( ! hasError && ! file->copy( destinationFileName ) )
       {
+        hasError = true;
         QgsLogger::warning( QStringLiteral( "Failed to write downloaded file stored at \"%1\", reason:\n%2" ).arg( fileName ).arg( file->errorString() ) );
 
         if ( ! QFile::remove( dir.filePath( fileName ) ) )
           QgsLogger::warning( QStringLiteral( "Failed to remove partly overwritten file stored at \"%1\"" ).arg( fileName ) );
+      }
+
+      if ( hasError )
+      {
+        mCloudProjects[index].downloadProjectFilesFailed++;
+        mCloudProjects[index].status = ProjectStatus::Error;
 
         emit projectDownloaded( projectId, mCloudProjects[index].name, true );
-
-        return;
       }
 
       if ( mCloudProjects[index].downloadProjectFilesFinished == fileNames.count() )
