@@ -149,10 +149,13 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     //
     void networkDeltaUploaded( const QString &projectId );
-    void networkOfflineLayersUploaded( const QString &projectId );
+    void networkOfflineLayerUploaded( const QString &projectId );
+    void networkAllOfflineLayersUploaded( const QString &projectId );
     void networkDeltaStatusChecked( const QString &projectId );
     void networkAttachmentsUploaded( const QString &projectId );
+    void networkAllAttachmentsUploaded( const QString &projectId );
     void networkLayerDownloaded( const QString &projectId );
+    void networkAllLayersDownloaded( const QString &projectId );
     void syncFailed( const QString &projectId, const QString &reason );
 
   private slots:
@@ -216,7 +219,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       QString localPath;
 
       QString deltaFileId;
-      DeltaFileStatus deltaFileStatus = DeltaFileStatus::Local;
+      DeltaFileStatus deltaFileUploadStatus = DeltaFileStatus::Local;
       QStringList deltaLayersToDownload;
 
       int layersDownloadedFinished = 0;
@@ -228,19 +231,20 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       int downloadedSize = 0;
       double downloadProgress = 0.0; // range from 0.0 to 1.0
 
-      // TODO it would be nice to have some `UploadFile` structure in the future, instead of QVariantMap
-      QMap<QString, FileTransfer> offlineLayers;
-      int offlineLayersFinished = 0;
-      int offlineLayersFailed = 0;
+      QMap<QString, FileTransfer> uploadOfflineLayers;
+      int uploadOfflineLayersFinished = 0;
+      int uploadOfflineLayersFailed = 0;
+      int uploadOfflineLayersSizeBytes = 0;
 
-      QMap<QString, FileTransfer> attachments;
-      int attachmentsFinished = 0;
-      int attachmentsFailed = 0;
+      QMap<QString, FileTransfer> uploadAttachments;
+      int uploadAttachmentsFinished = 0;
+      int uploadAttachmentsFailed = 0;
+      int uploadAttachmentsSizeBytes = 0;
 
-      int uploadFileSize = 0;
-      int uploadedSize = 0;
-      double uploadProgress = 0.0; // range from 0.0 to 1.0
-
+      QMap<QString, FileTransfer> downloadLayers;
+      int downloadLayersFinished = 0;
+      int downloadLayersFailed = 0;
+      int downloadLayersSizeBytes = 0;
     };
 
     inline QString layerFileName( const QgsMapLayer *layer ) const;
@@ -255,6 +259,8 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     void projectUploadAttachments( const QString &projectId );
     void projectGetDeltaStatus( const QString &projectId );
     void projectDownloadLayers( const QString &projectId );
+
+    NetworkReply *downloadFile2( const QString &projectId, const QString &fileName );
 };
 
 Q_DECLARE_METATYPE( QFieldCloudProjectsModel::ProjectStatus )
