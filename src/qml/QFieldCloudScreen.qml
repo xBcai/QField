@@ -189,6 +189,16 @@ Page {
           Layout.fillHeight: true
           height: 15
       }
+
+
+      Connections {
+        target: connection
+
+        onStatusChanged: {
+          if ( connection.status === QFieldCloudConnection.LoggedIn )
+            prepareCloudLogin()
+        }
+      }
     }
 
     ColumnLayout {
