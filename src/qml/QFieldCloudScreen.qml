@@ -140,6 +140,8 @@ Page {
               height: usernameField.activeFocus ? 2 : 1
               color: usernameField.activeFocus ? "#4CAF50" : "#C8E6C9"
           }
+
+          Keys.onReturnPressed: loginFormSumbitHandler()
       }
 
       Text {
