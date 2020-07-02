@@ -71,23 +71,24 @@ Drawer {
           id: cloudButton
           anchors.verticalCenter: parent.verticalCenter
           iconSource: Theme.getThemeIcon( 'ic_alert_black_24dp' )
-          bgcolor: {
-            if (cloudProjectsModel.currentCloudProjectId) {
-              switch (cloudProjectsModel.projectStatus(cloudProjectsModel.currentCloudProjectId)) {
-                case QFieldCloudProjectsModel.ProjectStatus.Idle:
-                  return 'white'
-//                  return 'transparent'
-                case QFieldCloudProjectsModel.ProjectStatus.Downloading:
-                  return 'green'
-                case QFieldCloudProjectsModel.ProjectStatus.Uploading:
-                  return 'blue'
-                case QFieldCloudProjectsModel.ProjectStatus.Error:
-                  return 'red'
-                default:
-                  return 'red'
-              }
-            }
-          }
+//          bgcolor: {
+//            if (cloudProjectsModel.currentCloudProjectId) {
+//
+//              // TODO check why QFieldCloudProjectsModel is not available in this file...
+//              switch (cloudProjectsModel.projectStatus(cloudProjectsModel.currentCloudProjectId)) {
+//                case QFieldCloudProjectsModel.ProjectStatus.Idle:
+//                  return 'white'
+//                case QFieldCloudProjectsModel.ProjectStatus.Downloading:
+//                  return 'green'
+//                case QFieldCloudProjectsModel.ProjectStatus.Uploading:
+//                  return 'blue'
+//                case QFieldCloudProjectsModel.ProjectStatus.Error:
+//                  return 'red'
+//                default:
+//                  return 'red'
+//              }
+//            }
+//          }
           enabled: !!cloudProjectsModel.currentCloudProjectId
           opacity: cloudProjectsModel.currentCloudProjectId ? 0.3 : 1
 
