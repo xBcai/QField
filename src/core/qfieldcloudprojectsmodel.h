@@ -101,13 +101,13 @@ class QFieldCloudProjectsModel : public QAbstractListModel
   private:
     struct CloudProject
     {
-      CloudProject( const QString &id, const QString &owner, const QString &name, const QString &description, const ProjectCheckouts &checkout, const ProjectStatus &status  )
+      CloudProject( const QString &id, const QString &owner, const QString &name, const QString &description, const ProjectCheckouts &checkout, const ProjectStatus &status )
         : id( id )
         , owner( owner )
         , name( name )
         , description( description )
         , status( status )
-        , checkout( checkout)
+        , checkout( checkout )
       {}
 
       CloudProject() = default;
