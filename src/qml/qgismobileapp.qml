@@ -1563,7 +1563,7 @@ ApplicationWindow {
           usernameField.text = connection.username
         }
     }
-    onLoginFailed: displayToast( qsTr( "Login failed" ) )
+    onLoginFailed: function(reason) { displayToast( reason ) }
   }
 
   QFieldCloudProjectsModel {
