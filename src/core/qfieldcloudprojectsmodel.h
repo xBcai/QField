@@ -132,6 +132,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     Q_INVOKABLE void removeLocalProject( const QString &projectId );
     Q_INVOKABLE ProjectStatus projectStatus( const QString &projectId );
     Q_INVOKABLE ProjectModifications projectModification( const QString &projectId ) const;
+    Q_INVOKABLE void refreshProjectModification( const QString &projectId );
     void projectCancelProjectUpload( const QString &projectId, bool shouldCancelAtServer );
 
     QHash<int, QByteArray> roleNames() const;
