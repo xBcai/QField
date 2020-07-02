@@ -1133,9 +1133,7 @@ ApplicationWindow {
       width: parent.width
       height: 48
       leftPadding: 10
-      enabled: cloudProjectsModel.currentCloudProjectId
-                 && cloudProjectsModel.projectStatus( cloudProjectsModel.currentCloudProjectId ) === QFieldCloudProjectsModel.ProjectStatus.Idle
-                 && ( cloudProjectsModel.projectModification(cloudProjectsModel.currentCloudProjectId) & QFieldCloudProjectsModel.LocalModification )
+      enabled: isCloudUploadMenuItemEnabled()
       text: qsTr( "Upload" )
       onTriggered: cloudProjectsModel.uploadProject(cloudProjectsModel.currentCloudProjectId)
     }
@@ -1143,8 +1141,7 @@ ApplicationWindow {
     Connections {
       target: cloudProjectsModel
       onModelReset: {
-        cloudUploadMenuItem.enabled = cloudProjectsModel.currentCloudProjectId
-            && cloudProjectsModel.projectModification(cloudProjectsModel.currentCloudProjectId) & QFieldCloudProjectsModel.LocalModification
+        cloudUploadMenuItem.enabled = isCloudUploadMenuItemEnabled()
       }
     }
   }
@@ -1370,6 +1367,8 @@ ApplicationWindow {
         busyMessage.visible = false
         mapCanvasBackground.color = mapCanvas.mapSettings.backgroundColor
         cloudProjectsModel.currentCloudProjectId = QFieldCloudUtils.getProjectId(qgisProject)
+        cloudProjectsModel.refreshProjectModification( cloudProjectsModel.currentCloudProjectId )
+        cloudUploadMenuItem.enabled = isCloudUploadMenuItemEnabled()
       }
     }
   }
@@ -1830,6 +1829,12 @@ ApplicationWindow {
       currentPoint: coordinateLocator.currentCoordinate
       mapSettings: mapCanvas.mapSettings
       isHovering: hoverHandler.hovered
+  }
+
+  function isCloudUploadMenuItemEnabled() {
+    return cloudProjectsModel.currentCloudProjectId
+        && cloudProjectsModel.projectStatus( cloudProjectsModel.currentCloudProjectId ) === QFieldCloudProjectsModel.ProjectStatus.Idle
+        && cloudProjectsModel.projectModification(cloudProjectsModel.currentCloudProjectId) & QFieldCloudProjectsModel.LocalModification
   }
 }
 
