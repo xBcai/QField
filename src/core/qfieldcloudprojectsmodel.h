@@ -71,6 +71,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     Q_ENUM( ProjectCheckout )
     Q_DECLARE_FLAGS( ProjectCheckouts, ProjectCheckout )
+    Q_FLAG( ProjectCheckouts )
 
     enum ProjectModification
     {
@@ -82,6 +83,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     Q_ENUM( ProjectModification )
     Q_DECLARE_FLAGS( ProjectModifications, ProjectModification )
+    Q_FLAG( ProjectModifications )
 
     enum class LayerAction
     {
@@ -268,6 +270,11 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
 Q_DECLARE_METATYPE( QFieldCloudProjectsModel::ProjectStatus )
 Q_DECLARE_METATYPE( QFieldCloudProjectsModel::ProjectCheckout )
+Q_DECLARE_METATYPE( QFieldCloudProjectsModel::ProjectCheckouts )
+Q_DECLARE_OPERATORS_FOR_FLAGS( QFieldCloudProjectsModel::ProjectCheckouts )
 Q_DECLARE_METATYPE( QFieldCloudProjectsModel::ProjectModification )
+Q_DECLARE_METATYPE( QFieldCloudProjectsModel::ProjectModifications )
+Q_DECLARE_OPERATORS_FOR_FLAGS( QFieldCloudProjectsModel::ProjectModifications )
+Q_DECLARE_METATYPE( QFieldCloudProjectsModel::LayerAction )
 
 #endif // QFIELDCLOUDPROJECTSMODEL_H

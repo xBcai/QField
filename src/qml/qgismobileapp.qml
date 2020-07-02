@@ -1135,7 +1135,7 @@ ApplicationWindow {
       leftPadding: 10
       enabled: cloudProjectsModel.currentCloudProjectId
                  && cloudProjectsModel.projectStatus( cloudProjectsModel.currentCloudProjectId ) === QFieldCloudProjectsModel.ProjectStatus.Idle
-                 && ( cloudProjectsModel.projectModification(cloudProjectsModel.currentCloudProjectId) & QFieldCloudProjectsModel.ProjectModification.Local )
+                 && ( cloudProjectsModel.projectModification(cloudProjectsModel.currentCloudProjectId) & QFieldCloudProjectsModel.LocalModification )
       text: qsTr( "Upload" )
       onTriggered: cloudProjectsModel.uploadProject(cloudProjectsModel.currentCloudProjectId)
     }
@@ -1144,7 +1144,7 @@ ApplicationWindow {
       target: cloudProjectsModel
       onModelReset: {
         cloudUploadMenuItem.enabled = cloudProjectsModel.currentCloudProjectId
-            && cloudProjectsModel.projectModification(cloudProjectsModel.currentCloudProjectId) & QFieldCloudProjectsModel.ProjectModification.Local
+            && cloudProjectsModel.projectModification(cloudProjectsModel.currentCloudProjectId) & QFieldCloudProjectsModel.LocalModification
       }
     }
   }
