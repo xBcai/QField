@@ -53,7 +53,7 @@ Page {
 
         Label {
             Layout.fillWidth: true
-            padding: 10 * dp
+            padding: 10
             opacity: projects.visible ? 1 : 0
             text: switch(connection.status) {
                     case 0: qsTr( 'Disconnected from the cloud.' ); break;
@@ -67,14 +67,14 @@ Page {
         ToolButton {
           Layout.alignment: Qt.AlignTop
 
-          height: 56 * dp
-          width: 56 * dp
+          height: 56
+          width: 56
           visible: true
 
           contentItem: Rectangle {
             anchors.fill: parent
-            height: 56 * dp
-            width: 56 * dp
+            height: 56
+            width: 56
             color: "transparent"
             Image {
               anchors.fill: parent
@@ -103,7 +103,7 @@ Page {
       id: connectionSettings
       Layout.fillWidth: true
       Layout.fillHeight: true
-      Layout.margins: 10 * dp
+      Layout.margins: 10
       Layout.topMargin: !connectionInformation.visible ? connectionInformation.height + parent.spacing : 0
       spacing: 2
 
@@ -119,7 +119,7 @@ Page {
       Text {
           id: usernamelabel
           Layout.alignment: Qt.AlignHCenter
-          Layout.topMargin: 20 * dp
+          Layout.topMargin: 20
           text: qsTr( "Username" )
           font: Theme.defaultFont
           color: 'gray'
@@ -130,13 +130,13 @@ Page {
           Layout.alignment: Qt.AlignHCenter
           Layout.preferredWidth: Math.max( parent.width / 2, usernamelabel.width )
           enabled: connection.status === QFieldCloudConnection.Disconnected
-          height: fontMetrics.height + 20 * dp
+          height: fontMetrics.height + 20
           font: Theme.defaultFont
 
           background: Rectangle {
               y: usernameField.height - height * 2 - usernameField.bottomPadding / 2
               implicitWidth: parent.width
-              height: usernameField.activeFocus ? 2 * dp : 1 * dp
+              height: usernameField.activeFocus ? 2 : 1
               color: usernameField.activeFocus ? "#4CAF50" : "#C8E6C9"
           }
       }
@@ -155,13 +155,13 @@ Page {
           Layout.alignment: Qt.AlignHCenter
           Layout.preferredWidth: Math.max( parent.width / 2, usernamelabel.width )
           enabled: connection.status === QFieldCloudConnection.Disconnected
-          height: fontMetrics.height + 20 * dp
+          height: fontMetrics.height + 20
           font: Theme.defaultFont
 
           background: Rectangle {
               y: passwordField.height - height * 2 - passwordField.bottomPadding / 2
               implicitWidth: parent.width
-              height: passwordField.activeFocus ? 2 * dp : 1 * dp
+              height: passwordField.activeFocus ? 2 : 1
               color: passwordField.activeFocus ? "#4CAF50" : "#C8E6C9"
           }
 
@@ -175,7 +175,7 @@ Page {
 
       QfButton {
           Layout.fillWidth: true
-          Layout.topMargin: 5 * dp
+          Layout.topMargin: 5
           text: connection.status == QFieldCloudConnection.LoggedIn ? qsTr( "Logout" ) : connection.status == QFieldCloudConnection.Connecting ? qsTr( "Logging in, please wait" ) : qsTr( "Login" )
           enabled: connection.status != QFieldCloudConnection.Connecting
 
@@ -184,7 +184,7 @@ Page {
 
       Item {
           Layout.fillHeight: true
-          height: 15 * dp
+          height: 15
       }
     }
 
@@ -192,7 +192,7 @@ Page {
       id: projects
       Layout.fillWidth: true
       Layout.fillHeight: true
-      Layout.margins: 10 * dp
+      Layout.margins: 10
       Layout.topMargin: 0
       spacing: 2
 
@@ -221,10 +221,10 @@ Page {
 
                   ProgressBar {
                       anchors.left: line.left
-                      anchors.leftMargin: 4 * dp
+                      anchors.leftMargin: 4
                       anchors.verticalCenter: line.verticalCenter
-                      width: type.width - 4 * dp
-                      height: 6 * dp
+                      width: type.width - 4
+                      height: 6
                       value: DownloadProgress
                       visible: Status === QFieldCloudProjectsModel.ProjectStatus.Downloading
                       z: 1
@@ -233,10 +233,10 @@ Page {
                   Row {
                       id: line
                       Layout.fillWidth: true
-                      leftPadding: 6 * dp
-                      rightPadding: 10 * dp
-                      topPadding: 9 * dp
-                      bottomPadding: 3 * dp
+                      leftPadding: 6
+                      rightPadding: 10
+                      topPadding: 9
+                      bottomPadding: 3
                       spacing: 0
 
                       Image {
@@ -267,19 +267,19 @@ Page {
                               return Theme.getThemeIcon('ic_cloud_project_48dp')
                             }
                           }
-                          sourceSize.width: 80 * dp
-                          sourceSize.height: 80 * dp
-                          width: 40 * dp
-                          height: 40 * dp
+                          sourceSize.width: 80
+                          sourceSize.height: 80
+                          width: 40
+                          height: 40
                           opacity: Status === QFieldCloudProjectsModel.ProjectStatus.Downloading ? 0.3 : 1
                       }
                       ColumnLayout {
                           id: inner
-                          width: rectangle.width - type.width - 10 * dp
+                          width: rectangle.width - type.width - 10
                           Text {
                               id: projectTitle
-                              topPadding: 5 * dp
-                              leftPadding: 3 * dp
+                              topPadding: 5
+                              leftPadding: 3
                               text: Name
                               font.pointSize: Theme.tipFont.pointSize
                               font.underline: true
@@ -289,7 +289,7 @@ Page {
                           }
                           Text {
                               id: projectNote
-                              leftPadding: 3 * dp
+                              leftPadding: 3
                               text: {
                                 if ( connection.status !== QFieldCloudConnection.LoggedIn ) {
                                   return qsTr( '(Available locally)' )
@@ -404,15 +404,15 @@ Page {
         property string projectLocalPath: ''
 
         title: 'Project Actions'
-        width: Math.max(320*dp, mainWindow.width/2)
+        width: Math.max(320, mainWindow.width/2)
 
         MenuItem {
           id: downloadProject
 
           font: Theme.defaultFont
           width: parent.width
-          height: visible ? 48 * dp : 0
-          leftPadding: 10 * dp
+          height: visible ? 48 : 0
+          leftPadding: 10
 
           text: qsTr( "Download Project" )
           onTriggered: {
@@ -425,8 +425,8 @@ Page {
 
           font: Theme.defaultFont
           width: parent.width
-          height: visible ? 48 * dp : 0
-          leftPadding: 10 * dp
+          height: visible ? 48 : 0
+          leftPadding: 10
 
           text: qsTr( "Open Project" )
           onTriggered: {
@@ -442,8 +442,8 @@ Page {
 
           font: Theme.defaultFont
           width: parent.width
-          height: visible ? 48 * dp : 0
-          leftPadding: 10 * dp
+          height: visible ? 48 : 0
+          leftPadding: 10
 
           text: qsTr( "Remove Stored Project" )
           onTriggered: {
@@ -456,8 +456,8 @@ Page {
           id: projectsTips
           Layout.alignment: Qt.AlignLeft
           Layout.fillWidth: true
-          Layout.topMargin: 5 * dp
-          Layout.bottomMargin: 5 * dp
+          Layout.topMargin: 5
+          Layout.bottomMargin: 5
           text: qsTr( "Press and hold over a cloud project for a menu of additional actions." )
           font: Theme.tipFont
           wrapMode: Text.WordWrap

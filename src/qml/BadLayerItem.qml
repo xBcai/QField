@@ -87,7 +87,7 @@ Page {
       Layout.fillHeight: true
       Layout.minimumHeight: contentHeight
       Layout.maximumHeight: contentHeight
-      Layout.topMargin: 5 * dp
+      Layout.topMargin: 5
     }
   }
 }
