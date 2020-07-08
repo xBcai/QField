@@ -52,7 +52,8 @@ QVariant ExpressionEvaluator::evaluate()
   expressionContext.setFeature( mFeature );
   expressionContext << QgsExpressionContextUtils::globalScope()
                     << QgsExpressionContextUtils::projectScope( QgsProject::instance() )
-                    << QgsExpressionContextUtils::layerScope( mLayer );
+                    << QgsExpressionContextUtils::layerScope( mLayer )
+                    << QgsExpressionContextUtils::formScope( mFeature );
 
   QVariant value = exp.evaluate( &expressionContext );
   return value.toString();
