@@ -1556,13 +1556,6 @@ ApplicationWindow {
   QFieldCloudConnection {
     id: cloudConnection
     url: "https://dev.qfield.cloud"
-    onStatusChanged: {
-        if ( status == QFieldCloudConnection.LoggedIn ) {
-          projects.visible = true
-          connectionSettings.visible = false
-          usernameField.text = connection.username
-        }
-    }
     onLoginFailed: function(reason) { displayToast( reason ) }
   }
 
