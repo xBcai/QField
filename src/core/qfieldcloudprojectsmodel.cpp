@@ -81,7 +81,7 @@ QString QFieldCloudProjectsModel::currentCloudProjectId() const
   return mCurrentCloudProjectId;
 }
 
-void QFieldCloudProjectsModel::setCurrentCloudProjectId(const QString &currentCloudProjectId)
+void QFieldCloudProjectsModel::setCurrentCloudProjectId( const QString &currentCloudProjectId )
 {
   if ( mCurrentCloudProjectId == currentCloudProjectId )
     return;
@@ -116,7 +116,7 @@ int QFieldCloudProjectsModel::findProject( const QString &projectId ) const
 {
   const QList<CloudProject> cloudProjects = mCloudProjects;
   int index = -1;
-  for( int i = 0; i < cloudProjects.count(); i++ )
+  for ( int i = 0; i < cloudProjects.count(); i++ )
   {
     if ( cloudProjects.at( i ).id == projectId )
     {
@@ -166,6 +166,31 @@ QFieldCloudProjectsModel::ProjectStatus QFieldCloudProjectsModel::projectStatus(
   return mCloudProjects[index].status;
 }
 
+QFieldCloudProjectsModel::ProjectModifications QFieldCloudProjectsModel::projectModification( const QString &projectId ) const
+{
+  const int index = findProject( projectId );
+
+  if ( index == -1 || index >= mCloudProjects.size() )
+    return NoModification;
+
+  return mCloudProjects[index].modification;
+}
+
+void QFieldCloudProjectsModel::refreshProjectModification( const QString &projectId )
+{
+  const int index = findProject( projectId );
+
+  if ( index == -1 || index >= mCloudProjects.size() )
+    return;
+
+  // TODO
+}
+
+QString QFieldCloudProjectsModel::layerFileName( const QgsMapLayer *layer ) const
+{
+  return layer->dataProvider()->dataSourceUri().split( '|' )[0];
+}
+
 void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
 {
   if ( !mCloudConnection )
@@ -181,7 +206,7 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
     mCloudProjects[index].downloadProjectFilesBytesReceived = 0;
     mCloudProjects[index].downloadProjectFilesProgress = 0;
 
-    mCloudProjects[index].checkout = ProjectCheckout::LocalFromRemote;
+    mCloudProjects[index].checkout = LocalFromRemoteCheckout;
     mCloudProjects[index].status = ProjectStatus::Downloading;
     mCloudProjects[index].modification = NoModification;
     QModelIndex idx = createIndex( index, 0 );
@@ -361,10 +386,10 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
   if ( index == -1 )
     return;
 
-  if ( ! ( mCloudProjects[index].status == ProjectStatus::Idle ) )
+  if ( !( mCloudProjects[index].status == ProjectStatus::Idle ) )
     return;
 
-  if ( ! ( mCloudProjects[index].modification & ProjectModification::Local ) )
+  if ( !( mCloudProjects[index].modification & LocalModification ) )
     return;
 
   QModelIndex idx = createIndex( index, 0 );
@@ -445,7 +470,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
                                      QVariantMap(
   {
     {"data", deltaFile->toJson()}
-  }) );
+  } ) );
 
   Q_ASSERT( deltasCloudReply );
 
@@ -471,7 +496,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
 
     mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::Pending;
     emit networkDeltaUploaded( projectId );
-  });
+  } );
 
 
   // //////////
@@ -489,13 +514,13 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     // attachments can be uploaded in the background.
     // ? what if an attachment fail to be uploaded?
     projectUploadAttachments( projectId );
-  });
+  } );
 
 
   // //////////
   // 3) offline layers successfully sent, then check delta status
   // //////////
-  connect( this, &QFieldCloudProjectsModel::networkOfflineLayersUploaded, this, [this, projectId, index]( const QString &uploadedProjectId )
+  connect( this, &QFieldCloudProjectsModel::networkAllOfflineLayersUploaded, this, [this, projectId, index]( const QString & uploadedProjectId )
   {
     if ( projectId != uploadedProjectId )
       return;
@@ -504,13 +529,13 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     Q_ASSERT( mCloudProjects[index].layersDownloadedFailed == 0 );
 
     projectGetDeltaStatus( projectId );
-  });
+  } );
 
 
   // //////////
   // 4) new delta status received. Never give up to get a successful status.
   // //////////
-  connect( this, &QFieldCloudProjectsModel::networkDeltaStatusChecked, this, [this, projectId, index]( const QString &uploadedProjectId )
+  connect( this, &QFieldCloudProjectsModel::networkDeltaStatusChecked, this, [this, projectId, index]( const QString & uploadedProjectId )
   {
     if ( projectId != uploadedProjectId )
       return;
@@ -529,7 +554,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
         QTimer::singleShot( sDelayBeforeDeltaStatusRetry, this, [ = ]()
         {
           projectGetDeltaStatus( projectId );
-        });
+        } );
         break;
       case DeltaFileStatus::Applied:
       case DeltaFileStatus::AppliedWithConflicts:
@@ -540,13 +565,13 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     }
 
     projectGetDeltaStatus( projectId );
-  });
+  } );
 
 
   // //////////
   // 5) layer downloaded, if all done, then reload the project and sync done!
   // //////////
-  connect( this, &QFieldCloudProjectsModel::networkLayerDownloaded, this, [this, projectId, index]( const QString &callerProjectId )
+  connect( this, &QFieldCloudProjectsModel::networkLayerDownloaded, this, [this, projectId, index]( const QString & callerProjectId )
   {
     if ( projectId != callerProjectId )
       return;
@@ -568,7 +593,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
 
     mCloudProjects[index].status = ProjectStatus::Idle;
     QgsProject::instance()->reloadAllLayers();
-  });
+  } );
 }
 
 void QFieldCloudProjectsModel::projectDownloadLayers( const QString &projectId )
@@ -586,7 +611,7 @@ void QFieldCloudProjectsModel::projectDownloadLayers( const QString &projectId )
     return;
   }
 
-  for ( const QString &layerFileName : layerFileNames  )
+  for ( const QString &layerFileName : layerFileNames )
   {
     NetworkReply *reply = downloadFile( mCloudProjects[index].id, layerFileName );
     QTemporaryFile *file = new QTemporaryFile( reply );
@@ -598,8 +623,8 @@ void QFieldCloudProjectsModel::projectDownloadLayers( const QString &projectId )
     connect( reply, &NetworkReply::downloadProgress, this, [ = ]( int bytesReceived, int bytesTotal )
     {
       Q_UNUSED( bytesTotal );
-      mCloudProjects[index].offlineLayers[layerFileName].bytesTransferred = bytesReceived;
-    });
+      mCloudProjects[index].uploadOfflineLayers[layerFileName].bytesTransferred = bytesReceived;
+    } );
 
     connect( reply, &NetworkReply::finished, this, [ = ]()
     {
@@ -654,40 +679,40 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
     QNetworkReply *rawReply = deltaStatusReply->reply();
     deltaStatusReply->deleteLater();
 
-      Q_ASSERT( deltaStatusReply->isFinished() );
-      Q_ASSERT( rawReply );
+    Q_ASSERT( deltaStatusReply->isFinished() );
+    Q_ASSERT( rawReply );
 
-      if ( rawReply->error() != QNetworkReply::NoError )
-      {
-        // never give up to get the status
-        mCloudProjects[index].deltaFileStatus = DeltaFileStatus::Error;
-        emit networkDeltaStatusChecked( projectId );
-        return;
-      }
+    if ( rawReply->error() != QNetworkReply::NoError )
+    {
+      // never give up to get the status
+      mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::Error;
+      emit networkDeltaStatusChecked( projectId );
+      return;
+    }
 
-      const QJsonDocument doc = QJsonDocument::fromJson( rawReply->readAll() );
+    const QJsonDocument doc = QJsonDocument::fromJson( rawReply->readAll() );
 
-      Q_ASSERT( doc.isObject() );
+    Q_ASSERT( doc.isObject() );
 
-      const QString status = doc.object().value( QStringLiteral( "status" ) ).toString().toUpper();
+    const QString status = doc.object().value( QStringLiteral( "status" ) ).toString().toUpper();
 
-      if ( status == QStringLiteral( "APPLIED" ) )
-        mCloudProjects[index].deltaFileStatus = DeltaFileStatus::Applied;
-      else if ( status == QStringLiteral( "APPLIED_WITH_CONFLICTS" ) )
-        mCloudProjects[index].deltaFileStatus = DeltaFileStatus::AppliedWithConflicts;
-      else if ( status == QStringLiteral( "PENDING" ) )
-        mCloudProjects[index].deltaFileStatus = DeltaFileStatus::Pending;
-      else if ( status == QStringLiteral( "WAITING" ) )
-        mCloudProjects[index].deltaFileStatus = DeltaFileStatus::Waiting;
-      else if ( status == QStringLiteral( "Busy" ) )
-        mCloudProjects[index].deltaFileStatus = DeltaFileStatus::Busy;
-      else
-      {
-        QgsLogger::warning( QStringLiteral( "Unknown status \"%1\"" ).arg( status ) );
-        mCloudProjects[index].deltaFileStatus = DeltaFileStatus::Error;
-        Q_ASSERT( 0 );
-      }
-  });
+    if ( status == QStringLiteral( "APPLIED" ) )
+      mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::Applied;
+    else if ( status == QStringLiteral( "APPLIED_WITH_CONFLICTS" ) )
+      mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::AppliedWithConflicts;
+    else if ( status == QStringLiteral( "PENDING" ) )
+      mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::Pending;
+    else if ( status == QStringLiteral( "WAITING" ) )
+      mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::Waiting;
+    else if ( status == QStringLiteral( "Busy" ) )
+      mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::Busy;
+    else
+    {
+      QgsLogger::warning( QStringLiteral( "Unknown status \"%1\"" ).arg( status ) );
+      mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::Error;
+      Q_ASSERT( 0 );
+    }
+  } );
 }
 
 void QFieldCloudProjectsModel::projectUploadOfflineLayers( const QString &projectId )
@@ -714,8 +739,8 @@ void QFieldCloudProjectsModel::projectUploadOfflineLayers( const QString &projec
     connect( offlineLayerCloudReply, &NetworkReply::uploadProgress, this, [this, index, offlineLayerFileName]( int bytesSent, int bytesTotal )
     {
       Q_UNUSED( bytesTotal );
-      mCloudProjects[index].offlineLayers[offlineLayerFileName].bytesTransferred = bytesSent;
-    });
+      mCloudProjects[index].uploadOfflineLayers[offlineLayerFileName].bytesTransferred = bytesSent;
+    } );
 
     connect( offlineLayerCloudReply, &NetworkReply::finished, this, [this, index, projectId, offlineLayerCloudReply, offlineLayerFileName]()
     {
@@ -765,8 +790,8 @@ void QFieldCloudProjectsModel::projectUploadAttachments( const QString &projectI
     connect( attachmentCloudReply, &NetworkReply::uploadProgress, this, [this, index, fileName]( int bytesSent, int bytesTotal )
     {
       Q_UNUSED( bytesTotal );
-      mCloudProjects[index].attachments[fileName].bytesTransferred = bytesSent;
-    });
+      mCloudProjects[index].uploadAttachments[fileName].bytesTransferred = bytesSent;
+    } );
 
     connect( attachmentCloudReply, &NetworkReply::finished, this, [this, index, fileName, attachmentCloudReply]()
     {
@@ -865,9 +890,9 @@ void QFieldCloudProjectsModel::layerObserverLayerEdited( const QString &layerId 
   Q_ASSERT( committedDeltaFileWrapper );
 
   if ( committedDeltaFileWrapper->count() > 0 || committedDeltaFileWrapper->offlineLayerIds().size() > 0 )
-    mCloudProjects[index].modification |= ProjectModification::Local;
+    mCloudProjects[index].modification |= LocalModification;
   else
-    mCloudProjects[index].modification ^= ProjectModification::Local;
+    mCloudProjects[index].modification ^= LocalModification;
 
   endResetModel();
 }
@@ -889,7 +914,7 @@ void QFieldCloudProjectsModel::projectListReceived()
   reload( projects );
 }
 
-void QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QString &fileName )
+NetworkReply *QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QString &fileName )
 {
   NetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/%2/" ).arg( projectId, fileName ) );
   QTemporaryFile *file = new QTemporaryFile();
@@ -904,70 +929,11 @@ void QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QSt
 //      file->write( reply->readAll() );
 //    }
 //  } );
-
-  connect( reply, &NetworkReply::finished, this, [ = ]()
-  {
-    QNetworkReply *rawReply = reply->reply();
-
-    bool failure = false;
-    if ( rawReply->error() == QNetworkReply::NoError )
-    {
-//      TODO use `readyRead` as a nicer solution later
-      file->write( rawReply->readAll() );
-
-      QDir dir( QStringLiteral( "%1/%2/" ).arg( QFieldCloudUtils::localCloudDirectory(), projectId ) );
-
-      if ( !dir.exists() )
-        dir.mkpath( QStringLiteral( "." ) );
-
-      if ( !file->copy( dir.filePath( fileName ) ) )
-        failure = true;
-      file->setAutoRemove( true );
-    }
-    else
-    {
-      failure = true;
-    }
-
-    int index = findProject( projectId );
-    if ( index > -1 )
-    {
-      QVector<int> changes;
-
-      mCloudProjects[index].downloadedSize += mCloudProjects[index].files[fileName];
-      mCloudProjects[index].downloadProgress = static_cast< double >( mCloudProjects[index].downloadedSize) / mCloudProjects[index].filesSize;
-      changes << DownloadProgressRole;
-
-      if ( failure )
-        mCloudProjects[index].filesFailed++;
-
-      if ( mCloudProjects[index].downloadedSize >= mCloudProjects[index].filesSize )
-      {
-        mCloudProjects[index].status = ProjectStatus::Idle;
-        mCloudProjects[index].localPath = QFieldCloudUtils::localProjectFilePath( projectId );
-        changes << StatusRole << LocalPathRole;
-        emit projectDownloaded( projectId, mCloudProjects[index].name, mCloudProjects[index].filesFailed > 0 );
-      }
-
-      QModelIndex idx = createIndex( index, 0 );
-      emit dataChanged( idx, idx,  changes );
-    }
-
-    file->deleteLater();
-    rawReply->deleteLater();
-  } );
 }
-
-
-NetworkReply * QFieldCloudProjectsModel::downloadFile2( const QString &projectId, const QString &fileName )
-{
-  return mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/%2/" ).arg( projectId, fileName ) );
-}
-
 
 NetworkReply *QFieldCloudProjectsModel::uploadFile( const QString &projectId, const QString &fileName )
 {
-  return mCloudConnection->post( QStringLiteral( "/api/v1/files/%1/%2/" ).arg( projectId, fileName ), QVariantMap(), QStringList({fileName}) );
+  return mCloudConnection->post( QStringLiteral( "/api/v1/files/%1/%2/" ).arg( projectId, fileName ), QVariantMap(), QStringList( {fileName} ) );
 }
 
 QHash<int, QByteArray> QFieldCloudProjectsModel::roleNames() const
@@ -994,11 +960,12 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
   {
     QVariantHash projectDetails = project.toObject().toVariantHash();
     CloudProject cloudProject( projectDetails.value( "id" ).toString(),
-                          projectDetails.value( "owner" ).toString(),
-                          projectDetails.value( "name" ).toString(),
-                          projectDetails.value( "description" ).toString(),
-                          RemoteCheckout,
-                          ProjectStatus::Idle );
+                               projectDetails.value( "owner" ).toString(),
+                               projectDetails.value( "name" ).toString(),
+                               projectDetails.value( "description" ).toString(),
+                               QString(),
+                               RemoteCheckout,
+                               ProjectStatus::Idle );
 
     const QString projectPrefix = QStringLiteral( "QFieldCloud/projects/%1" ).arg( cloudProject.id );
     QSettings().setValue( QStringLiteral( "%1/owner" ).arg( projectPrefix ), cloudProject.owner );
@@ -1007,7 +974,7 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
     QSettings().setValue( QStringLiteral( "%1/updatedAt" ).arg( projectPrefix ), cloudProject.updatedAt );
 
     QDir localPath( QStringLiteral( "%1/%2" ).arg( QFieldCloudUtils::localCloudDirectory(), cloudProject.id ) );
-    if( localPath.exists()  )
+    if ( localPath.exists() )
     {
       cloudProject.checkout = LocalFromRemoteCheckout;
       cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.id );
@@ -1017,10 +984,10 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
   }
 
   QDirIterator projectDirs( QFieldCloudUtils::localCloudDirectory(), QDir::Dirs | QDir::NoDotAndDotDot );
-  while( projectDirs.hasNext() )
+  while ( projectDirs.hasNext() )
   {
     projectDirs.next();
-    
+
     const QString projectId = projectDirs.fileName();
     int index = findProject( projectId );
     if ( index != -1 )
@@ -1035,7 +1002,7 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
     const QString description = QSettings().value( QStringLiteral( "%1/description" ).arg( projectPrefix ) ).toString();
     const QString updatedAt = QSettings().value( QStringLiteral( "%1/updatedAt" ).arg( projectPrefix ) ).toString();
 
-    CloudProject cloudProject( projectId, owner, name, description, LocalCheckout, ProjectStatus::Idle );
+    CloudProject cloudProject( projectId, owner, name, description, QString(), LocalCheckout, ProjectStatus::Idle );
     cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.id );
     mCloudProjects << cloudProject;
 
@@ -1076,28 +1043,13 @@ QVariant QFieldCloudProjectsModel::data( const QModelIndex &index, int role ) co
       return static_cast<int>( mCloudProjects.at( index.row() ).status );
     case DownloadProgressRole:
       return mCloudProjects.at( index.row() ).downloadProjectFilesProgress;
+    case UploadProgressRole:
+      // TODO
+      return 1;
     case LocalPathRole:
       return mCloudProjects.at( index.row() ).localPath;
   }
 
   return QVariant();
-}
-
-
-bool QFieldCloudProjectsModel::uploadDeltas( const QString &projectId )
-{
-  auto projectIt = std::find_if( mCloudProjects.cbegin(), mCloudProjects.cend(), [&projectId] (const CloudProject& project) {
-    return project.id == projectId;
-  } );
-
-  if ( projectIt == mCloudProjects.end() )
-    return false;
-
-  CloudProject project = mCloudProjects.at( projectIt - mCloudProjects.begin() );
-  
-  qDebug() << projectId << project.id;
-
-  QDirIterator deltaFilesDirIt( QFieldCloudUtils::localCloudDirectory(), QStringList({"datafile_*.json"}), QDir::Files | QDir::NoDotAndDotDot | QDir::Readable );
-
 }
 

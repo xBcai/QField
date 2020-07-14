@@ -205,7 +205,7 @@ void QgisMobileapp::initDeclarative()
 {
 
 #if defined(Q_OS_ANDROID) && QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-  QResource::registerResource(QStringLiteral("assets:/android_rcc_bundle.rcc"));
+  QResource::registerResource( QStringLiteral( "assets:/android_rcc_bundle.rcc" ) );
 #endif
   addImportPath( QStringLiteral( "qrc:/qml/imports" ) );
 
@@ -303,6 +303,7 @@ void QgisMobileapp::initDeclarative()
   REGISTER_SINGLETON( "org.qfield", FileUtils, "FileUtils" );
   REGISTER_SINGLETON( "org.qfield", StringUtils, "StringUtils" );
   REGISTER_SINGLETON( "org.qfield", UrlUtils, "UrlUtils" );
+  REGISTER_SINGLETON( "org.qfield", UrlUtils, "QFieldCloudUtils" );
 
 
   qmlRegisterUncreatableType<AppInterface>( "org.qgis", 1, 0, "QgisInterface", "QgisInterface is only provided by the environment and cannot be created ad-hoc" );
@@ -422,14 +423,14 @@ void QgisMobileapp::onReadProject( const QDomDocument &doc )
   {
     // Overwrite the title to match what is used in QField Cloud
     const QString projectId = fi.dir().dirName();
-    title = QSettings().value( QStringLiteral( "QFieldCloud/projects/%1/name").arg( projectId ), fi.fileName() ).toString();
+    title = QSettings().value( QStringLiteral( "QFieldCloud/projects/%1/name" ).arg( projectId ), fi.fileName() ).toString();
   }
   else
   {
     title = mProject->title().isEmpty() ? fi.completeBaseName() : mProject->title();
   }
 
-  QPair<QString, QString> project = qMakePair( title , mProject->fileName() );
+  QPair<QString, QString> project = qMakePair( title, mProject->fileName() );
   if ( projects.contains( project ) )
     projects.removeAt( projects.indexOf( project ) );
   projects.insert( 0, project );
