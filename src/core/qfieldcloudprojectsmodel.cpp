@@ -916,19 +916,7 @@ void QFieldCloudProjectsModel::projectListReceived()
 
 NetworkReply *QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QString &fileName )
 {
-  NetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/%2/" ).arg( projectId, fileName ) );
-  QTemporaryFile *file = new QTemporaryFile();
-
-  Q_ASSERT( file->open() );
-
-//  TODO revive this
-//  connect( cloudReply, &cloudReply::readyRead, this, [cloudReply, file, projectId, fileName]()
-//  {
-//    if ( cloudReply->error() == QNetworkReply::NoError )
-//    {
-//      file->write( reply->readAll() );
-//    }
-//  } );
+  return mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/%2/" ).arg( projectId, fileName ) );
 }
 
 NetworkReply *QFieldCloudProjectsModel::uploadFile( const QString &projectId, const QString &fileName )
