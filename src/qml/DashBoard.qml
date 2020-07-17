@@ -70,7 +70,8 @@ Drawer {
         QfToolButton {
           id: cloudButton
           anchors.verticalCenter: parent.verticalCenter
-          iconSource: Theme.getThemeIcon( 'ic_alert_black_24dp' )
+          iconSource: Theme.getThemeVectorIcon( 'ic_cloud_24dp' )
+          bgcolor: "transparent"
 //          bgcolor: {
 //            if (cloudProjectsModel.currentCloudProjectId) {
 //
