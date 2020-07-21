@@ -96,15 +96,15 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     Q_ENUM( LayerAction )
 
-    enum class DeltaFileStatus
+    enum DeltaFileStatus
     {
-      Error,
-      Local,
-      Pending,
-      Waiting,
-      Busy,
-      Applied,
-      AppliedWithConflicts
+      DeltaFileErrorStatus,
+      DeltaFileLocalStatus,
+      DeltaFilePendingStatus,
+      DeltaFileWaitingStatus,
+      DeltaFileBusyStatus,
+      DeltaFileAppliedStatus,
+      DeltaFileAppliedWithConflictsStatus
     };
 
     Q_ENUM( DeltaFileStatus )
@@ -223,7 +223,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       QString localPath;
 
       QString deltaFileId;
-      DeltaFileStatus deltaFileUploadStatus = DeltaFileStatus::Local;
+      DeltaFileStatus deltaFileUploadStatus = DeltaFileLocalStatus;
       QStringList deltaLayersToDownload;
 
       int layersDownloadedFinished = 0;
