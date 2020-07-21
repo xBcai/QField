@@ -405,7 +405,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
 
   mCloudProjects[index].status = ProjectStatus::Uploading;
   mCloudProjects[index].deltaFileId = deltaFile->id();
-  mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::Local;
+  mCloudProjects[index].deltaFileUploadStatus = DeltaFileLocalStatus;
 
   mCloudProjects[index].uploadOfflineLayers.empty();
   mCloudProjects[index].uploadOfflineLayersFinished = 0;
@@ -494,7 +494,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
       return;
     }
 
-    mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::Pending;
+    mCloudProjects[index].deltaFileUploadStatus = DeltaFilePendingStatus;
     emit networkDeltaUploaded( projectId );
   } );
 
@@ -542,22 +542,22 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
 
     switch ( mCloudProjects[index].deltaFileUploadStatus )
     {
-      case DeltaFileStatus::Local:
+      case DeltaFileLocalStatus:
         // delta file should be already sent!!!
         Q_ASSERT( 0 );
         break;
-      case DeltaFileStatus::Error:
-      case DeltaFileStatus::Pending:
-      case DeltaFileStatus::Waiting:
-      case DeltaFileStatus::Busy:
+      case DeltaFileErrorStatus:
+      case DeltaFilePendingStatus:
+      case DeltaFileWaitingStatus:
+      case DeltaFileBusyStatus:
         // infinite retry, there should be one day, when we can get the status!
         QTimer::singleShot( sDelayBeforeDeltaStatusRetry, this, [ = ]()
         {
           projectGetDeltaStatus( projectId );
         } );
         break;
-      case DeltaFileStatus::Applied:
-      case DeltaFileStatus::AppliedWithConflicts:
+      case DeltaFileAppliedStatus:
+      case DeltaFileAppliedWithConflictsStatus:
         projectDownloadLayers( projectId );
         break;
       default:
@@ -685,7 +685,7 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
     if ( rawReply->error() != QNetworkReply::NoError )
     {
       // never give up to get the status
-      mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::Error;
+      mCloudProjects[index].deltaFileUploadStatus = DeltaFileErrorStatus;
       emit networkDeltaStatusChecked( projectId );
       return;
     }
@@ -697,19 +697,19 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
     const QString status = doc.object().value( QStringLiteral( "status" ) ).toString().toUpper();
 
     if ( status == QStringLiteral( "APPLIED" ) )
-      mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::Applied;
+      mCloudProjects[index].deltaFileUploadStatus = DeltaFileAppliedStatus;
     else if ( status == QStringLiteral( "APPLIED_WITH_CONFLICTS" ) )
-      mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::AppliedWithConflicts;
+      mCloudProjects[index].deltaFileUploadStatus = DeltaFileAppliedWithConflictsStatus;
     else if ( status == QStringLiteral( "PENDING" ) )
-      mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::Pending;
+      mCloudProjects[index].deltaFileUploadStatus = DeltaFilePendingStatus;
     else if ( status == QStringLiteral( "WAITING" ) )
-      mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::Waiting;
+      mCloudProjects[index].deltaFileUploadStatus = DeltaFileWaitingStatus;
     else if ( status == QStringLiteral( "Busy" ) )
-      mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::Busy;
+      mCloudProjects[index].deltaFileUploadStatus = DeltaFileBusyStatus;
     else
     {
       QgsLogger::warning( QStringLiteral( "Unknown status \"%1\"" ).arg( status ) );
-      mCloudProjects[index].deltaFileUploadStatus = DeltaFileStatus::Error;
+      mCloudProjects[index].deltaFileUploadStatus = DeltaFileErrorStatus;
       Q_ASSERT( 0 );
     }
   } );
