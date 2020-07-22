@@ -23,8 +23,8 @@
 #include <QSettings>
 
 QFieldCloudConnection::QFieldCloudConnection()
+  : mToken( QSettings().value( "/QFieldCloud/token" ).toByteArray() )
 {
-  mToken = QSettings().value( "/QFieldCloud/token" ).toByteArray();
 }
 
 QString QFieldCloudConnection::url() const
