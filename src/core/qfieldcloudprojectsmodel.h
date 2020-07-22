@@ -103,7 +103,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
   signals:
     void cloudConnectionChanged();
     void warning( const QString &message );
-    void projectDownloaded( const QString projectId, const QString projectName, const bool failed = false );
+    void projectDownloaded( const QString &projectId, const QString &projectName, const bool failed = false );
 
   private slots:
     void connectionStatusChanged();
