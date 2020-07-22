@@ -80,7 +80,7 @@ int QFieldCloudProjectsModel::findProject( const QString &projectId ) const
 {
   const QList<CloudProject> cloudProjects = mCloudProjects;
   int index = -1;
-  for( int i = 0; i < cloudProjects.count(); i++ )
+  for ( int i = 0; i < cloudProjects.count(); i++ )
   {
     if ( cloudProjects.at( i ).id == projectId )
     {
@@ -206,7 +206,7 @@ void QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QSt
     }
   } );
 
-  connect( reply, &QNetworkReply::finished, this, [=]()
+  connect( reply, &QNetworkReply::finished, this, [ = ]()
   {
     bool failure = false;
     if ( reply->error() == QNetworkReply::NoError )
@@ -231,7 +231,7 @@ void QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QSt
       QVector<int> changes;
 
       mCloudProjects[index].downloadedSize += mCloudProjects[index].files[fileName];
-      mCloudProjects[index].downloadProgress = static_cast< double >( mCloudProjects[index].downloadedSize) / mCloudProjects[index].filesSize;
+      mCloudProjects[index].downloadProgress = static_cast< double >( mCloudProjects[index].downloadedSize ) / mCloudProjects[index].filesSize;
       changes << DownloadProgressRole;
 
       if ( failure )
@@ -278,11 +278,11 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
   {
     QVariantHash projectDetails = project.toObject().toVariantHash();
     CloudProject cloudProject( projectDetails.value( "id" ).toString(),
-                          projectDetails.value( "owner" ).toString(),
-                          projectDetails.value( "name" ).toString(),
-                          projectDetails.value( "description" ).toString(),
-                          RemoteCheckout,
-                          ProjectStatus::Idle );
+                               projectDetails.value( "owner" ).toString(),
+                               projectDetails.value( "name" ).toString(),
+                               projectDetails.value( "description" ).toString(),
+                               RemoteCheckout,
+                               ProjectStatus::Idle );
 
     const QString projectPrefix = QStringLiteral( "QFieldCloud/projects/%1" ).arg( cloudProject.id );
     QSettings().setValue( QStringLiteral( "%1/owner" ).arg( projectPrefix ), cloudProject.owner );
@@ -290,7 +290,7 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
     QSettings().setValue( QStringLiteral( "%1/description" ).arg( projectPrefix ), cloudProject.description );
 
     QDir localPath( QStringLiteral( "%1/%2" ).arg( QFieldCloudUtils::localCloudDirectory(), cloudProject.id ) );
-    if( localPath.exists()  )
+    if ( localPath.exists() )
     {
       cloudProject.checkout = LocalFromRemoteCheckout;
       cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.id );
@@ -300,10 +300,10 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
   }
 
   QDirIterator projectDirs( QFieldCloudUtils::localCloudDirectory(), QDir::Dirs | QDir::NoDotAndDotDot );
-  while( projectDirs.hasNext() )
+  while ( projectDirs.hasNext() )
   {
     projectDirs.next();
-    
+
     const QString projectId = projectDirs.fileName();
     int index = findProject( projectId );
 

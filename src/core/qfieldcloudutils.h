@@ -21,9 +21,9 @@ class QString;
 class QFieldCloudUtils
 {
   public:
-  
-  static const QString localCloudDirectory();
-  static const QString localProjectFilePath( const QString &projectId );
+
+    static const QString localCloudDirectory();
+    static const QString localProjectFilePath( const QString &projectId );
 };
 
 #endif // QFIELDCLOUDUTILS_H
