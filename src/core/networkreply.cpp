@@ -103,6 +103,15 @@ void NetworkReply::initiateRequest()
   connect( mReply, &QNetworkReply::encrypted, this, &NetworkReply::encrypted );
   connect( mReply, &QNetworkReply::downloadProgress, this, &NetworkReply::downloadProgress );
   connect( mReply, &QNetworkReply::uploadProgress, this, &NetworkReply::uploadProgress );
+
+  // TODO remove this!!! temporary SSL workaround
+  connect( mReply, &QNetworkReply::sslErrors, this, [ = ]( const QList<QSslError> &errors )
+  {
+    for ( const QSslError &error : errors )
+      qDebug() << "SSL: " << error;
+
+    mReply->ignoreSslErrors( errors );
+  } );
 }
 
 

@@ -104,6 +104,15 @@ void QFieldCloudConnection::login()
 
   setStatus( ConnectionStatus::Connecting );
 
+  // TODO remove this!!! temporary SSL workaround
+  connect( reply, &QNetworkReply::sslErrors, this, [ = ]( const QList<QSslError> &errors )
+  {
+    for ( const QSslError &error : errors )
+      qDebug() << "SSL: " << error;
+
+    reply->ignoreSslErrors( errors );
+  } );
+
   connect( reply, &QNetworkReply::finished, this, [this, reply]()
   {
     if ( reply->error() == QNetworkReply::NoError )
