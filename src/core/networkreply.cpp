@@ -172,7 +172,8 @@ void NetworkReply::onFinished()
   emit temporaryErrorOccurred( error );
 
   // wait random time before the retry is sent
-  QTimer::singleShot( mRNG.bounded( sMaxTimeoutBetweenRetriesMs ), this, [ = ]()
+//  QTimer::singleShot( mRNG.bounded( sMaxTimeoutBetweenRetriesMs ), this, [ = ]()
+  QTimer::singleShot( 100, this, [ = ]()
   {
     emit retry();
 

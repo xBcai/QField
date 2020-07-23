@@ -22,10 +22,7 @@
 #include <QObject>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
-#include <QRandomGenerator>
-
-
-class QRandomGenerator;
+//#include <QRandomGenerator>
 
 
 class NetworkReply : public QObject
@@ -180,7 +177,7 @@ class NetworkReply : public QObject
     /**
      * Random number generator instance. Used to create random delay bettween retries.
      */
-    QRandomGenerator mRNG;
+//    QRandomGenerator mRNG;
 
 
     /**
