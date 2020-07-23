@@ -159,37 +159,40 @@ NetworkReply *QFieldCloudConnection::post( const QString &endpoint, const QVaria
     return nullptr;
 
   QNetworkRequest request( mUrl + endpoint );
+  QByteArray requestBody = QJsonDocument( QJsonObject::fromVariantMap( params ) ).toJson();
   setAuthenticationToken( request );
 
   if ( fileNames.isEmpty() )
   {
     request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
 
-    QJsonDocument doc( QJsonObject::fromVariantMap( params ) );
-
-    QByteArray requestBody = doc.toJson();
-
     return NetworkManager::post( request, requestBody );
   }
 
   QHttpMultiPart *multiPart = new QHttpMultiPart( QHttpMultiPart::FormDataType );
-  QByteArray requestBody = QJsonDocument( QJsonObject::fromVariantMap( params ) ).toJson();
   QHttpPart textPart;
 
-  textPart.setHeader( QNetworkRequest::ContentDispositionHeader, QVariant( "application/json" ) );
+  QJsonDocument doc( QJsonObject::fromVariantMap( params ) );
+  textPart.setHeader( QNetworkRequest::ContentTypeHeader, QVariant( "application/json" ) );
+  textPart.setHeader( QNetworkRequest::ContentDispositionHeader, QVariant( "form-data; name=\"text\"" ) );
+  textPart.setBody( doc.toJson() );
+
+  multiPart->append( textPart );
 
   for ( const QString &fileName : fileNames )
   {
-    QHttpPart imagePart;
+    QHttpPart filePart;
     QFile *file = new QFile( fileName, multiPart );
 
     if ( ! file->open( QIODevice::ReadOnly ) )
       return nullptr;
 
     const QString header = QStringLiteral( "form-data; name=\"file\"; filename=\"%1\"" ).arg( fileName );
-    imagePart.setHeader( QNetworkRequest::ContentDispositionHeader, QVariant( fileName ) );
-    imagePart.setBodyDevice( file );
-    multiPart->append( imagePart );
+    filePart.setHeader( QNetworkRequest::ContentTypeHeader, QVariant( "application/json" ) );
+    filePart.setHeader( QNetworkRequest::ContentDispositionHeader, header );
+    filePart.setBodyDevice( file );
+
+    multiPart->append( filePart );
   }
 
   NetworkReply *reply = NetworkManager::post( request, multiPart );
