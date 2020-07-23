@@ -602,7 +602,6 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
         // delta file should be already sent!!!
         Q_ASSERT( 0 );
         break;
-      case DeltaFileErrorStatus:
       case DeltaFilePendingStatus:
       case DeltaFileWaitingStatus:
       case DeltaFileBusyStatus:
@@ -612,6 +611,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
           projectGetDeltaStatus( projectId );
         } );
         break;
+      case DeltaFileErrorStatus:
       case DeltaFileAppliedStatus:
       case DeltaFileAppliedWithConflictsStatus:
         projectDownloadLayers( projectId );
