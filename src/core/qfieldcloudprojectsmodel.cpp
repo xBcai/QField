@@ -227,6 +227,9 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
 
       emit warning( QStringLiteral( "Error fetching project: %1" ).arg( rawReply->errorString() ) );
 
+      qDebug() << "ERR: " << rawReply->error() << "|" << rawReply->errorString();
+      qDebug() << "ERRBODY:" << rawReply->readAll();
+
       return;
     }
 
