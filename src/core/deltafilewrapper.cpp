@@ -298,7 +298,10 @@ bool DeltaFileWrapper::append( const DeltaFileWrapper *deltaFileWrapper )
   if ( deltaFileWrapper->hasError() )
     return false;
 
-  mDeltas.append( deltaFileWrapper->deltas() );
+  const QJsonArray constDeltas = deltaFileWrapper->deltas();
+
+  for ( const QJsonValue &delta : constDeltas )
+    mDeltas.append( delta );
 
   const int offlineLayerIdsOldSize = mOfflineLayerIds.size();
 
