@@ -166,6 +166,38 @@ QFieldCloudProjectsModel::ProjectStatus QFieldCloudProjectsModel::projectStatus(
   return mCloudProjects[index].status;
 }
 
+bool QFieldCloudProjectsModel::canCommitCurrentProject()
+{
+  if ( mCurrentCloudProjectId.isEmpty() )
+    return false;
+
+  if ( projectStatus( mCurrentCloudProjectId ) == ProjectStatus::Idle )
+  {
+    DeltaFileWrapper *currentDeltaFileWrapper = mLayerObserver->currentDeltaFileWrapper();
+
+    if ( currentDeltaFileWrapper->count() > 0 || currentDeltaFileWrapper->offlineLayerIds().count() > 0 )
+      return true;
+  }
+
+  return false;
+}
+
+bool QFieldCloudProjectsModel::canSyncCurrentProject()
+{
+  if ( mCurrentCloudProjectId.isEmpty() )
+    return false;
+
+  if ( projectStatus( mCurrentCloudProjectId ) == ProjectStatus::Idle
+       && mLayerObserver->committedDeltaFileWrapper()->count() > 0 )
+    return true;
+
+  if ( projectStatus( mCurrentCloudProjectId ) == ProjectStatus::Idle
+       && projectModification( mCurrentCloudProjectId ) & RemoteModification )
+    return true;
+
+  return false;
+}
+
 QFieldCloudProjectsModel::ProjectModifications QFieldCloudProjectsModel::projectModification( const QString &projectId ) const
 {
   const int index = findProject( projectId );
@@ -184,6 +216,11 @@ void QFieldCloudProjectsModel::refreshProjectModification( const QString &projec
     return;
 
   // TODO
+  beginResetModel();
+
+
+
+  endResetModel();
 }
 
 QString QFieldCloudProjectsModel::layerFileName( const QgsMapLayer *layer ) const
@@ -405,6 +442,8 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     QgsLogger::warning( QStringLiteral( "The delta file has an error: %1" ).arg( deltaFile->errorString() ) );
     return;
   }
+
+  refreshProjectModification( projectId );
 
   mCloudProjects[index].status = ProjectStatus::Uploading;
   mCloudProjects[index].deltaFileId = deltaFile->id();
