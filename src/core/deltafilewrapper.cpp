@@ -75,7 +75,7 @@ DeltaFileWrapper::DeltaFileWrapper( const QgsProject *project, const QString &fi
     if ( mErrorType == DeltaFileWrapper::NoError && ( ! mJsonRoot.value( QStringLiteral( "id" ) ).isString() || mJsonRoot.value( QStringLiteral( "id" ) ).toString().isEmpty() ) )
       mErrorType = DeltaFileWrapper::JsonFormatIdError;
 
-    if ( mErrorType == DeltaFileWrapper::NoError && ( ! mJsonRoot.value( QStringLiteral( "projectId" ) ).isString() || mJsonRoot.value( QStringLiteral( "projectId" ) ).toString().isEmpty() ) )
+    if ( mErrorType == DeltaFileWrapper::NoError && ( ! mJsonRoot.value( QStringLiteral( "project" ) ).isString() || mJsonRoot.value( QStringLiteral( "project" ) ).toString().isEmpty() ) )
       mErrorType = DeltaFileWrapper::JsonFormatProjectIdError;
 
     if ( mErrorType == DeltaFileWrapper::NoError && ! mJsonRoot.value( QStringLiteral( "deltas" ) ).isArray() )
@@ -125,7 +125,7 @@ DeltaFileWrapper::DeltaFileWrapper( const QgsProject *project, const QString &fi
   {
     mJsonRoot = QJsonObject( {{"version", DeltaFileWrapper::FormatVersion},
       {"id", QUuid::createUuid().toString( QUuid::WithoutBraces )},
-      {"projectId", mCloudProjectId},
+      {"project", mCloudProjectId},
       {"offlineLayers", QJsonArray::fromStringList( mOfflineLayerIds )},
       {"deltas", mDeltas}} );
 
@@ -248,6 +248,7 @@ QByteArray DeltaFileWrapper::toJson( QJsonDocument::JsonFormat jsonFormat ) cons
   QJsonObject jsonRoot( mJsonRoot );
   jsonRoot.insert( QStringLiteral( "deltas" ), mDeltas );
   jsonRoot.insert( QStringLiteral( "offlineLayers" ), QJsonArray::fromStringList( mOfflineLayerIds ) );
+  jsonRoot.insert( QStringLiteral( "files" ), QJsonArray() );
 
   return QJsonDocument( jsonRoot ).toJson( jsonFormat );
 }
