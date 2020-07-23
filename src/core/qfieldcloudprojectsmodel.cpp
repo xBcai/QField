@@ -509,10 +509,8 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
   // //////////
   NetworkReply *deltasCloudReply = mCloudConnection->post(
                                      QStringLiteral( "/api/v1/deltas/%1/" ).arg( projectId ),
-                                     QVariantMap(
-  {
-    {"data", deltaFile->toJson()}
-  } ) );
+                                     QVariantMap(),
+                                     QStringList( {deltaFile->fileName()} ) );
 
   Q_ASSERT( deltasCloudReply );
 
@@ -523,6 +521,9 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
 
     Q_ASSERT( deltasCloudReply->isFinished() );
     Q_ASSERT( deltasReply );
+
+    qDebug() << "ERR: " << deltasReply->error() << deltasReply->errorString();
+    qDebug() << "ERRBODY: " << deltasReply->readAll();
 
     // if there is an error, cannot continue sync
     if ( deltasReply->error() != QNetworkReply::NoError )
