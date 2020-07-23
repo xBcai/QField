@@ -728,7 +728,7 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
 
   Q_ASSERT( index >= 0 && index < mCloudProjects.size() );
 
-  NetworkReply *deltaStatusReply = mCloudConnection->get( QStringLiteral( "/api/v1/deltas/%1/status" ).arg( mCloudProjects[index].deltaFileId ) );
+  NetworkReply *deltaStatusReply = mCloudConnection->get( QStringLiteral( "/api/v1/delta-status/%1" ).arg( mCloudProjects[index].deltaFileId ) );
 
   connect( deltaStatusReply, &NetworkReply::finished, this, [this, index, projectId, deltaStatusReply]()
   {
