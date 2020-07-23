@@ -1111,15 +1111,11 @@ ApplicationWindow {
       leftPadding: 10
 
       text: qsTr( "Commit %1 changes" ).arg( layerObserver.currentDeltaFileWrapper.count )
-      enabled: cloudProjectsModel.currentCloudProjectId
-               && cloudProjectsModel.projectStatus( cloudProjectsModel.currentCloudProjectId ) === QFieldCloudProjectsModel.ProjectStatus.Idle
-               && (
-                 layerObserver.currentDeltaFileWrapper.count > 0
-                 || layerObserver.currentDeltaFileWrapper.offlineLayerIds.length > 0
-               )
+      enabled: cloudProjectsModel.canCommitCurrentProject()
       onTriggered: {
         if ( layerObserver.commit() ) {
           displayToast( qsTr( "Successfully committed!" ) )
+          cloudProjectsModel.refreshProjectModification( cloudProjectsModel.currentCloudProjectId )
         } else {
           displayToast( qsTr( "Not committed!" ) )
         }
@@ -1133,7 +1129,7 @@ ApplicationWindow {
       width: parent.width
       height: 48
       leftPadding: 10
-      enabled: isCloudUploadMenuItemEnabled()
+      enabled: cloudProjectsModel.canSyncCurrentProject()
       text: qsTr( "Upload" )
       onTriggered: cloudProjectsModel.uploadProject(cloudProjectsModel.currentCloudProjectId)
     }
@@ -1141,7 +1137,8 @@ ApplicationWindow {
     Connections {
       target: cloudProjectsModel
       onModelReset: {
-        cloudUploadMenuItem.enabled = isCloudUploadMenuItemEnabled()
+        cloudCommitMenuItem.enabled = cloudProjectsModel.canCommitCurrentProject()
+        cloudUploadMenuItem.enabled = cloudProjectsModel.canSyncCurrentProject()
       }
     }
   }
@@ -1368,7 +1365,16 @@ ApplicationWindow {
         mapCanvasBackground.color = mapCanvas.mapSettings.backgroundColor
         cloudProjectsModel.currentCloudProjectId = QFieldCloudUtils.getProjectId(qgisProject)
         cloudProjectsModel.refreshProjectModification( cloudProjectsModel.currentCloudProjectId )
-        cloudUploadMenuItem.enabled = isCloudUploadMenuItemEnabled()
+        cloudCommitMenuItem.enabled = cloudProjectsModel.canCommitCurrentProject()
+        cloudUploadMenuItem.enabled = cloudProjectsModel.canSyncCurrentProject()
+      }  
+    }
+
+    Connections {
+      target: layerObserver
+      onCurrentDeltaFileWrapperChanged: () => {
+        console.log( 'MESSAGE ME' )
+        displayToast( "MESSAGE ME" )
       }
     }
   }
@@ -1822,12 +1828,6 @@ ApplicationWindow {
       currentPoint: coordinateLocator.currentCoordinate
       mapSettings: mapCanvas.mapSettings
       isHovering: hoverHandler.hovered
-  }
-
-  function isCloudUploadMenuItemEnabled() {
-    return cloudProjectsModel.currentCloudProjectId
-        && cloudProjectsModel.projectStatus( cloudProjectsModel.currentCloudProjectId ) === QFieldCloudProjectsModel.ProjectStatus.Idle
-        && cloudProjectsModel.projectModification(cloudProjectsModel.currentCloudProjectId) & QFieldCloudProjectsModel.LocalModification
   }
 }
 

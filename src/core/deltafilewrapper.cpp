@@ -462,6 +462,7 @@ void DeltaFileWrapper::addPatch( const QString &layerId, const QgsFeature &oldFe
   }
 
   // TODO types should be checked too, however QgsFields::operator== is checking instances, not values
+  // TODO be careful with calculated fields here!!! Needs a fix!
   Q_ASSERT( oldFeature.fields().names() == newFeature.fields().names() );
 
   QgsFields fields = newFeature.fields();

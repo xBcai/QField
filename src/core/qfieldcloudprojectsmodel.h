@@ -126,6 +126,9 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     QString currentCloudProjectId() const;
     void setCurrentCloudProjectId( const QString &currentCloudProjectId );
 
+    Q_INVOKABLE bool canSyncCurrentProject();
+    Q_INVOKABLE bool canCommitCurrentProject();
+
     Q_INVOKABLE void refreshProjectsList();
     Q_INVOKABLE void downloadProject( const QString &projectId );
     Q_INVOKABLE void uploadProject( const QString &projectId );
