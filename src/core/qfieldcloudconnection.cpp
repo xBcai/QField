@@ -22,7 +22,6 @@
 #include <QNetworkCookie>
 #include <QHttpMultiPart>
 #include <QSettings>
-#include <QRandomGenerator>
 #include <QTimer>
 #include <QUrlQuery>
 #include <QFile>
