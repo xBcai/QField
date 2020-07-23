@@ -305,12 +305,12 @@ bool DeltaFileWrapper::append( const DeltaFileWrapper *deltaFileWrapper )
 
   const int offlineLayerIdsOldSize = mOfflineLayerIds.size();
 
-  for ( const QString &projectId : deltaFileWrapper->offlineLayerIds() )
+  for ( const QString &layerId : deltaFileWrapper->offlineLayerIds() )
   {
-    if ( mOfflineLayerIds.contains( projectId ) )
+    if ( mOfflineLayerIds.contains( layerId ) )
       continue;
 
-    mOfflineLayerIds.append( projectId );
+    mOfflineLayerIds.append( layerId );
   }
 
   emit countChanged();
