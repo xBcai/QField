@@ -763,7 +763,6 @@ void QFieldCloudProjectsModel::projectUploadOfflineLayers( const QString &projec
   const int index = findProject( projectId );
 
   Q_ASSERT( index >= 0 && index < mCloudProjects.size() );
-  Q_ASSERT( mCloudProjects[index].uploadOfflineLayers.size() > 0 );
 
   if ( mCloudProjects[index].uploadOfflineLayers.size() == 0 )
   {
