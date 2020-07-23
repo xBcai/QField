@@ -43,7 +43,7 @@ QString LayerObserver::generateDeltaFileName( bool isCurrentDeltaFile )
   return ( isCurrentDeltaFile )
     ? QStringLiteral( "%1/deltafile.json" )
         .arg( mProject->homePath() )
-    : QStringLiteral( "%1/deltafile_commited.json" )
+    : QStringLiteral( "%1/deltafile_committed.json" )
         .arg( mProject->homePath() );
 }
 
