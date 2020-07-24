@@ -220,7 +220,8 @@ NetworkReply *QFieldCloudConnection::get( const QString &endpoint, const QVarian
   QMap<QString, QVariant>::const_iterator it = params.constBegin();
   QMap<QString, QVariant>::const_iterator itEnd = params.constEnd();
 
-  while ( it != itEnd ) {
+  while ( it != itEnd )
+  {
     urlQuery.addQueryItem( it.key(), it.value().toString() );
     ++it;
   }
