@@ -39,6 +39,19 @@ QFieldCloudProjectsModel::QFieldCloudProjectsModel()
 {
   QJsonArray projects;
   reload( projects );
+
+  connect( this, &QFieldCloudProjectsModel::currentCloudProjectIdChanged, this, [ = ]()
+  {
+    const int index = findProject( mCurrentCloudProjectId );
+
+    if ( index == -1 || index >= mCloudProjects.size() )
+      return;
+
+    if ( mLayerObserver->currentDeltaFileWrapper()->count() > 0 || mLayerObserver->committedDeltaFileWrapper()->offlineLayerIds().size() > 0 )
+      mCloudProjects[index].modification |= LocalModification;
+    else
+      mCloudProjects[index].modification ^= LocalModification;
+  } );
 }
 
 QFieldCloudConnection *QFieldCloudProjectsModel::cloudConnection() const
