@@ -488,7 +488,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     Q_ASSERT( ! fileName.isEmpty() );
     Q_ASSERT( fileSize > 0 );
 
-    // TODO make sure that the layers are not editable and the user cannot interact with the project!!! Otherwise, we can upload half-commited data!!!
+    // TODO make sure that the layers are not editable and the user cannot interact with the project!!! Otherwise, we can upload half-committed data!!!
 
     // there might be multiple layers comming out of a single file, but we need to upload layer only once
     if ( ! mCloudProjects[index].uploadOfflineLayers.contains( fileName ) )
@@ -641,7 +641,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     {
       mCloudProjects[index].status = ProjectStatus::Error;
       // TODO translate this message
-      const QString reason( "Failed to retrieve some of the updated layers, but changes are commited on the server. "
+      const QString reason( "Failed to retrieve some of the updated layers, but changes are committed on the server. "
                             "Try to reload the project from the cloud." );
       emit syncFailed( projectId, reason );
       return;
