@@ -753,6 +753,17 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
 
     const QJsonDocument doc = QJsonDocument::fromJson( rawReply->readAll() );
 
+    qDebug() << doc;
+
+    // TODO fake the results for now, I don't like it too!!!
+    if ( doc.isEmpty() )
+    {
+      qDebug() << "FAKE DOC";
+      mCloudProjects[index].deltaFileUploadStatus = DeltaFileAppliedStatus;
+      emit networkDeltaStatusChecked( projectId );
+      return;
+    }
+
     Q_ASSERT( doc.isObject() );
 
     const QString status = doc.object().value( QStringLiteral( "status" ) ).toString().toUpper();
