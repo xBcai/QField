@@ -615,7 +615,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
       case DeltaFileAppliedStatus:
       case DeltaFileAppliedWithConflictsStatus:
         projectDownloadLayers( projectId );
-        break;
+        return;
       default:
         Q_ASSERT( 0 );
     }
@@ -648,6 +648,11 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     }
 
     mCloudProjects[index].status = ProjectStatus::Idle;
+    mCloudProjects[index].modification ^= LocalModification;
+
+    mLayerObserver->committedDeltaFileWrapper()->reset( true );
+    mLayerObserver->committedDeltaFileWrapper()->toFile();
+
     QgsProject::instance()->reloadAllLayers();
   } );
 }
@@ -768,6 +773,8 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
       mCloudProjects[index].deltaFileUploadStatus = DeltaFileErrorStatus;
       Q_ASSERT( 0 );
     }
+
+    emit networkDeltaStatusChecked( projectId );
   } );
 }
 
