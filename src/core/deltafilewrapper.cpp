@@ -34,7 +34,7 @@ DeltaFileWrapper::DeltaFileWrapper( const QgsProject *project, const QString &fi
 {
   QFileInfo fileInfo = QFileInfo( fileName );
 
-  // we need to resolve all symbolic links are relative paths, so we produce a unique file path to the file. 
+  // we need to resolve all symbolic links are relative paths, so we produce a unique file path to the file.
   // Because the file may not exist yet, we cannot use QFileInfo::canonicalFilePath() as it returns an empty string if it fails to resolve.
   // However, we assume that the parent directory exists.
   mFileName = fileInfo.canonicalFilePath().isEmpty() ? fileInfo.absoluteFilePath() : fileInfo.canonicalFilePath();
@@ -124,10 +124,10 @@ DeltaFileWrapper::DeltaFileWrapper( const QgsProject *project, const QString &fi
   else if ( mErrorType == DeltaFileWrapper::NoError )
   {
     mJsonRoot = QJsonObject( {{"version", DeltaFileWrapper::FormatVersion},
-                              {"id", QUuid::createUuid().toString( QUuid::WithoutBraces )},
-                              {"projectId", mCloudProjectId},
-                              {"offlineLayers", QJsonArray::fromStringList( mOfflineLayerIds )},
-                              {"deltas", mDeltas}} );
+      {"id", QUuid::createUuid().toString( QUuid::WithoutBraces )},
+      {"projectId", mCloudProjectId},
+      {"offlineLayers", QJsonArray::fromStringList( mOfflineLayerIds )},
+      {"deltas", mDeltas}} );
 
     if ( ! deltaFile.open( QIODevice::ReadWrite ) )
     {
@@ -173,7 +173,7 @@ QString DeltaFileWrapper::projectId() const
 
 void DeltaFileWrapper::reset( bool isHardReset )
 {
-  if ( ! mIsDirty && mDeltas.size() == 0)
+  if ( ! mIsDirty && mDeltas.size() == 0 )
     return;
 
   mIsDirty = true;
@@ -185,7 +185,7 @@ void DeltaFileWrapper::reset( bool isHardReset )
 
   if ( ! isHardReset )
     return;
-  
+
   mJsonRoot.insert( QStringLiteral( "id" ), QUuid::createUuid().toString( QUuid::WithoutBraces ) );
 }
 
@@ -222,7 +222,8 @@ DeltaFileWrapper::ErrorTypes DeltaFileWrapper::errorType() const
 
 QString DeltaFileWrapper::errorString() const
 {
-  const QHash<DeltaFileWrapper::ErrorTypes, QString> errorMessages({
+  const QHash<DeltaFileWrapper::ErrorTypes, QString> errorMessages(
+  {
     {DeltaFileWrapper::NoError, QStringLiteral( "" )},
     {DeltaFileWrapper::LockError, QStringLiteral( "Delta file is already opened" )},
     {DeltaFileWrapper::NotCloudProjectError, QStringLiteral( "The current project is not a cloud project" ) },
@@ -234,7 +235,7 @@ QString DeltaFileWrapper::errorString() const
     {DeltaFileWrapper::JsonFormatDeltasError, QStringLiteral( "Delta file is missing a valid deltas" ) },
     {DeltaFileWrapper::JsonFormatDeltaItemError, QStringLiteral( "Delta file is missing a valid delta item" ) },
     {DeltaFileWrapper::JsonIncompatibleVersionError, QStringLiteral( "Delta file has incompatible version" ) }
-  });
+  } );
 
   Q_ASSERT( errorMessages.contains( mErrorType ) );
 
@@ -244,7 +245,7 @@ QString DeltaFileWrapper::errorString() const
 
 QByteArray DeltaFileWrapper::toJson( QJsonDocument::JsonFormat jsonFormat ) const
 {
-  QJsonObject jsonRoot (mJsonRoot);
+  QJsonObject jsonRoot( mJsonRoot );
   jsonRoot.insert( QStringLiteral( "deltas" ), mDeltas );
   jsonRoot.insert( QStringLiteral( "offlineLayers" ), QJsonArray::fromStringList( mOfflineLayerIds ) );
 
@@ -273,7 +274,7 @@ bool DeltaFileWrapper::toFile()
     return false;
   }
 
-  if ( deltaFile.write( toJson() )  == -1)
+  if ( deltaFile.write( toJson() )  == -1 )
   {
     mErrorType = DeltaFileWrapper::IOError;
     mErrorDetails = deltaFile.errorString();
@@ -293,7 +294,7 @@ bool DeltaFileWrapper::append( const DeltaFileWrapper *deltaFileWrapper )
 {
   if ( ! deltaFileWrapper )
     return false;
-    
+
   if ( deltaFileWrapper->hasError() )
     return false;
 
@@ -331,7 +332,7 @@ QStringList DeltaFileWrapper::attachmentFieldNames( const QgsProject *project, c
 
   const QgsFields fields = vl->fields();
 
-  for ( const QgsField &field : fields)
+  for ( const QgsField &field : fields )
   {
     if ( field.editorWidgetSetup().type() == QStringLiteral( "ExternalResource" ) )
       attachmentFieldNames.append( field.name() );
@@ -351,7 +352,7 @@ QMap<QString, QString> DeltaFileWrapper::attachmentFileNames() const
   QMap<QString, QString> fileNames;
   QMap<QString, QString> fileChecksums;
 
-  for ( const QJsonValue &deltaJson: qgis::as_const( mDeltas ) )
+  for ( const QJsonValue &deltaJson : qgis::as_const( mDeltas ) )
   {
     QVariantMap delta = deltaJson.toObject().toVariantMap();
     const QString layerId = delta.value( QStringLiteral( "layerId" ) ).toString();
@@ -365,7 +366,7 @@ QMap<QString, QString> DeltaFileWrapper::attachmentFileNames() const
 
       Q_ASSERT( ! oldData.isEmpty() );
     }
-    
+
     if ( method == QStringLiteral( "create" ) || method == QStringLiteral( "patch" ) )
     {
       const QVariantMap newData = delta.value( QStringLiteral( "new" ) ).toMap();
@@ -401,7 +402,7 @@ QMap<QString, QString> DeltaFileWrapper::attachmentFileNames() const
     else
     {
       QgsLogger::debug( QStringLiteral( "File `%1` contains unknown method `%2`" ).arg( mFileName, method ) );
-      Q_ASSERT(0);
+      Q_ASSERT( 0 );
     }
   }
 
@@ -419,23 +420,24 @@ QMap<QString, QString> DeltaFileWrapper::attachmentFileNames() const
 
 QByteArray DeltaFileWrapper::fileChecksum( const QString &fileName, const QCryptographicHash::Algorithm hashAlgorithm )
 {
-    QFile f(fileName);
+  QFile f( fileName );
 
-    if ( ! f.open(QFile::ReadOnly) )
-      return QByteArray();
-
-    QCryptographicHash hash(hashAlgorithm);
-
-    if ( hash.addData( &f ) )
-      return hash.result();
-
+  if ( ! f.open( QFile::ReadOnly ) )
     return QByteArray();
+
+  QCryptographicHash hash( hashAlgorithm );
+
+  if ( hash.addData( &f ) )
+    return hash.result();
+
+  return QByteArray();
 }
 
 
 void DeltaFileWrapper::addPatch( const QString &layerId, const QgsFeature &oldFeature, const QgsFeature &newFeature )
 {
-  QJsonObject delta( {
+  QJsonObject delta(
+  {
     {"fid", oldFeature.id()},
     {"layerId", layerId},
     {"method", "patch"}
@@ -500,7 +502,7 @@ void DeltaFileWrapper::addPatch( const QString &layerId, const QgsFeature &oldFe
           const QJsonValue newFileChecksumJson = newFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( newFileChecksum.toHex() ) );
           tmpNewFileChecksums.insert( newFullFileName, newFileChecksumJson );
         }
-        
+
         attachmentFieldsDiffed++;
       }
     }
@@ -550,11 +552,11 @@ void DeltaFileWrapper::addPatch( const QString &layerId, const QgsFeature &oldFe
 void DeltaFileWrapper::addDelete( const QString &layerId, const QgsFeature &oldFeature )
 {
   QJsonObject delta( {{"fid", oldFeature.id()},
-                      {"layerId", layerId},
-                      {"method", "delete"}} );
+    {"layerId", layerId},
+    {"method", "delete"}} );
   const QStringList attachmentFieldsList = attachmentFieldNames( mProject, layerId );
   const QgsAttributes oldAttrs = oldFeature.attributes();
-  QJsonObject oldData( {{"geometry", geometryToJsonValue( oldFeature.geometry() )}});
+  QJsonObject oldData( {{"geometry", geometryToJsonValue( oldFeature.geometry() )}} );
   QJsonObject tmpOldAttrs;
   QJsonObject tmpOldFileChecksums;
 
@@ -587,7 +589,7 @@ void DeltaFileWrapper::addDelete( const QString &layerId, const QgsFeature &oldF
   {
     Q_ASSERT( tmpOldFileChecksums.isEmpty() );
   }
-  
+
   delta.insert( QStringLiteral( "old" ), oldData );
 
   mDeltas.append( delta );
@@ -600,11 +602,11 @@ void DeltaFileWrapper::addDelete( const QString &layerId, const QgsFeature &oldF
 void DeltaFileWrapper::addCreate( const QString &layerId, const QgsFeature &newFeature )
 {
   QJsonObject delta( {{"fid", newFeature.id()},
-                      {"layerId", layerId},
-                      {"method", "create"}} );
+    {"layerId", layerId},
+    {"method", "create"}} );
   const QStringList attachmentFieldsList = attachmentFieldNames( mProject, layerId );
   const QgsAttributes newAttrs = newFeature.attributes();
-  QJsonObject newData( {{"geometry", geometryToJsonValue( newFeature.geometry() )}});
+  QJsonObject newData( {{"geometry", geometryToJsonValue( newFeature.geometry() )}} );
   QJsonObject tmpNewAttrs;
   QJsonObject tmpNewFileChecksums;
 
@@ -624,7 +626,7 @@ void DeltaFileWrapper::addCreate( const QString &layerId, const QgsFeature &newF
     }
   }
 
- if ( tmpNewAttrs.length() > 0 )
+  if ( tmpNewAttrs.length() > 0 )
   {
     newData.insert( QStringLiteral( "attributes" ), tmpNewAttrs );
 
@@ -637,7 +639,7 @@ void DeltaFileWrapper::addCreate( const QString &layerId, const QgsFeature &newF
   {
     Q_ASSERT( tmpNewFileChecksums.isEmpty() );
   }
-  
+
   delta.insert( QStringLiteral( "new" ), newData );
 
   mDeltas.append( delta );
