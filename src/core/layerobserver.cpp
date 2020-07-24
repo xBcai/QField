@@ -41,10 +41,8 @@ LayerObserver::LayerObserver( const QgsProject *project )
 QString LayerObserver::generateDeltaFileName( bool isCurrentDeltaFile )
 {
   return ( isCurrentDeltaFile )
-    ? QStringLiteral( "%1/deltafile.json" )
-        .arg( mProject->homePath() )
-    : QStringLiteral( "%1/deltafile_committed.json" )
-        .arg( mProject->homePath() );
+         ? QStringLiteral( "%1/deltafile.json" ).arg( mProject->homePath() )
+         : QStringLiteral( "%1/deltafile_committed.json" ).arg( mProject->homePath() );
 }
 
 
@@ -68,7 +66,7 @@ bool LayerObserver::commit()
     return true;
 
   // Try to append the contents of the current delta file to the committed one. Very unlikely to break there.
-  if ( ! mCommittedDeltaFileWrapper->append( mCurrentDeltaFileWrapper) )
+  if ( ! mCommittedDeltaFileWrapper->append( mCurrentDeltaFileWrapper ) )
   {
     QgsLogger::warning( QStringLiteral( "Unable to append delta file wrapper contents!" ) );
     return false;
@@ -275,7 +273,7 @@ void LayerObserver::onCommittedGeometriesChanges( const QString &layerId, const 
 
     Q_ASSERT( changedFeatures.contains( fid ) );
 
-    patchedFids.insert(fid);
+    patchedFids.insert( fid );
 
     QgsFeature oldFeature = changedFeatures.take( fid );
     QgsFeature newFeature = vl->getFeature( fid );
