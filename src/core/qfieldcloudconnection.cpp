@@ -83,6 +83,37 @@ void QFieldCloudConnection::login()
   QNetworkRequest request;
   request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
 
+//  QNetworkRequest request2;
+//  request2.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
+//  setAuthenticationToken( request2 );
+//  request2.setUrl( mUrl + "/api/v1/projects" );
+//  QNetworkReply *reply2 = nam->get( request2 );
+
+//  connect( reply2, &QNetworkReply::sslErrors, this, [ = ]( const QList<QSslError> &errors )
+//  {
+//    for ( const QSslError &error : errors )
+//      qDebug() << "SSL: " << error;
+
+//    reply2->ignoreSslErrors( errors );
+//  } );
+
+//  connect( reply2, &QNetworkReply::finished, this, [ = ]()
+//  {
+//    QNetworkReply *rawReply = qobject_cast<QNetworkReply *>( sender() );
+
+//    Q_ASSERT( rawReply );
+
+//    if ( rawReply->error() != QNetworkReply::NoError )
+//      return;
+
+//    QByteArray response = rawReply->readAll();
+
+//    qDebug() << "URL: " << rawReply->url();
+//    qDebug() << "HDR: " << rawReply->rawHeaderPairs();
+//    qDebug() << "ERR: " << rawReply->error() << rawReply->errorString();
+//    qDebug() << "RES: " << response;
+//  } );
+
   QNetworkReply *reply;
   if ( mPassword.isEmpty() )
   {

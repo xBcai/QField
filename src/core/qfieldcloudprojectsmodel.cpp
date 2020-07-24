@@ -743,6 +743,8 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
     Q_ASSERT( deltaStatusReply->isFinished() );
     Q_ASSERT( rawReply );
 
+    qDebug() << "rawHeaderPairs:" << rawReply->rawHeaderPairs();
+
     if ( rawReply->error() != QNetworkReply::NoError )
     {
       // never give up to get the status
