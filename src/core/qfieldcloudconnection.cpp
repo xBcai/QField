@@ -217,9 +217,15 @@ NetworkReply *QFieldCloudConnection::get( const QString &endpoint, const QVarian
   QUrl url( mUrl + endpoint );
   QUrlQuery urlQuery;
 
-  QMap<QString, QVariant>::const_iterator i = params.begin();
-  while ( i != params.end() )
-    urlQuery.addQueryItem( i.key(), i.value().toString() );
+  QMap<QString, QVariant>::const_iterator it = params.constBegin();
+  QMap<QString, QVariant>::const_iterator itEnd = params.constEnd();
+
+  while ( it != itEnd ) {
+    urlQuery.addQueryItem( it.key(), it.value().toString() );
+    ++it;
+  }
+
+  url.setQuery( urlQuery );
 
   request.setUrl( url );
   request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
