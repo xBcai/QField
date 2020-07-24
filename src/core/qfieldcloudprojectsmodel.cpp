@@ -576,7 +576,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
   // //////////
   // 3) offline layers successfully sent, then check delta status
   // //////////
-  connect( this, &QFieldCloudProjectsModel::networkAllOfflineLayersUploaded, this, [this, projectId, index]( const QString & uploadedProjectId )
+  connect( this, &QFieldCloudProjectsModel::networkAllOfflineLayersUploaded, this, [ = ]( const QString & uploadedProjectId )
   {
     if ( projectId != uploadedProjectId )
       return;
@@ -591,7 +591,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
   // //////////
   // 4) new delta status received. Never give up to get a successful status.
   // //////////
-  connect( this, &QFieldCloudProjectsModel::networkDeltaStatusChecked, this, [this, projectId, index]( const QString & uploadedProjectId )
+  connect( this, &QFieldCloudProjectsModel::networkDeltaStatusChecked, this, [ = ]( const QString & uploadedProjectId )
   {
     if ( projectId != uploadedProjectId )
       return;
@@ -627,7 +627,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
   // //////////
   // 5) layer downloaded, if all done, then reload the project and sync done!
   // //////////
-  connect( this, &QFieldCloudProjectsModel::networkLayerDownloaded, this, [this, projectId, index]( const QString & callerProjectId )
+  connect( this, &QFieldCloudProjectsModel::networkAllLayersDownloaded, this, [ = ]( const QString & callerProjectId )
   {
     if ( projectId != callerProjectId )
       return;
@@ -730,7 +730,7 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
 
   NetworkReply *deltaStatusReply = mCloudConnection->get( QStringLiteral( "/api/v1/delta-status/%1" ).arg( mCloudProjects[index].deltaFileId ) );
 
-  connect( deltaStatusReply, &NetworkReply::finished, this, [this, index, projectId, deltaStatusReply]()
+  connect( deltaStatusReply, &NetworkReply::finished, this, [ = ]()
   {
     QNetworkReply *rawReply = deltaStatusReply->reply();
     deltaStatusReply->deleteLater();
