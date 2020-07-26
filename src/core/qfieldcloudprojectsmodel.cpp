@@ -306,11 +306,13 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
 
     const QString projectId = projectDirs.fileName();
     int index = findProject( projectId );
-
     if ( index != -1 )
       continue;
 
     const QString projectPrefix = QStringLiteral( "QFieldCloud/projects/%1" ).arg( projectId );
+    if ( !QSettings().contains( QStringLiteral( "%1/name" ).arg( projectPrefix ) ) )
+      continue;
+
     const QString owner = QSettings().value( QStringLiteral( "%1/owner" ).arg( projectPrefix ) ).toString();
     const QString name = QSettings().value( QStringLiteral( "%1/name" ).arg( projectPrefix ) ).toString();
     const QString description = QSettings().value( QStringLiteral( "%1/description" ).arg( projectPrefix ) ).toString();
