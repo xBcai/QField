@@ -81,7 +81,7 @@ void QFieldCloudConnection::login()
   QNetworkReply *reply;
   if ( mPassword.isEmpty() )
   {
-    request.setUrl( mUrl + "/api/v1/users/user/" );
+    request.setUrl( mUrl + "/api/v1/auth/user/" );
     setAuthenticationToken( request );
     reply = nam->get( request );
   }
