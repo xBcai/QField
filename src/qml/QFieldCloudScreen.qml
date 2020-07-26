@@ -466,7 +466,7 @@ Page {
       QfButton {
           id: refreshProjectsListBtn
           Layout.fillWidth: true
-          text: "Refresh projects list"
+          text: qsTr( "Refresh projects list" )
           enabled: connection.status == QFieldCloudConnection.LoggedIn
 
           onClicked: projectsModel.refreshProjectsList()
