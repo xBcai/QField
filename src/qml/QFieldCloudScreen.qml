@@ -10,7 +10,7 @@ Page {
   signal finished
   property QFieldCloudConnection connection: QFieldCloudConnection
   {
-    url: "https://dev.qfield.cloud"
+    url: "http://dev.qfield.cloud"
     onStatusChanged: {
         if ( status == QFieldCloudConnection.LoggedIn ) {
           projects.visible = true
