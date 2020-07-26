@@ -60,7 +60,7 @@ void QFieldCloudProjectsModel::refreshProjectsList()
   {
     case QFieldCloudConnection::ConnectionStatus::LoggedIn:
     {
-      QNetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/projects/%1/" ).arg( mCloudConnection->username() ) );
+      QNetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/projects/" ) );
       connect( reply, &QNetworkReply::finished, this, &QFieldCloudProjectsModel::projectListReceived );
       break;
     }
