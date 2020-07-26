@@ -104,12 +104,10 @@ void QFieldCloudConnection::login()
     if ( reply->error() == QNetworkReply::NoError )
     {
       QByteArray response = reply->readAll();
-
       QByteArray token = QJsonDocument::fromJson( response ).object().toVariantMap().value( QStringLiteral( "token" ) ).toByteArray();
       if ( !token.isEmpty() )
       {
         setToken( token );
-        QSettings().setValue( "/QFieldCloud/token", token );
       }
 
       mUsername  = QJsonDocument::fromJson( response ).object().toVariantMap().value( QStringLiteral( "username" ) ).toString();
@@ -191,6 +189,8 @@ void QFieldCloudConnection::setToken( const QByteArray &token )
     return;
 
   mToken = token;
+  QSettings().setValue( "/QFieldCloud/token", token );
+
   emit tokenChanged();
 }
 
