@@ -1,5 +1,21 @@
-#ifndef QFNETWORKREPLY_H
-#define QFNETWORKREPLY_H
+/***************************************************************************
+    networkreply.h
+    ---------------------
+    begin                : June 2020
+    copyright            : (C) 2020 by Ivan Ivanov
+    email                : ivan at opengis dot ch
+ ***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
+
+#ifndef NETWORKREPLY_H
+#define NETWORKREPLY_H
 
 #include <qgsnetworkaccessmanager.h>
 
@@ -12,7 +28,7 @@
 class QRandomGenerator;
 
 
-class QfNetworkReply : public QObject
+class NetworkReply : public QObject
 {
 
     Q_OBJECT
@@ -27,7 +43,7 @@ class QfNetworkReply : public QObject
      * @param request the request to be performed
      * @param payload the request payload
      */
-    QfNetworkReply( const QNetworkAccessManager::Operation operation, const QNetworkRequest request, const QByteArray payloadByteArray );
+    NetworkReply( const QNetworkAccessManager::Operation operation, const QNetworkRequest &request, const QByteArray &payloadByteArray );
 
 
     /**
@@ -37,7 +53,7 @@ class QfNetworkReply : public QObject
      * @param request the request to be performed
      * @param payload the request payload
      */
-    QfNetworkReply( const QNetworkAccessManager::Operation operation, const QNetworkRequest request, QHttpMultiPart *payloadMultiPart );
+    NetworkReply( const QNetworkAccessManager::Operation operation, const QNetworkRequest &request, QHttpMultiPart *payloadMultiPart );
 
 
     /**
@@ -124,6 +140,13 @@ class QfNetworkReply : public QObject
 
   private:
 
+
+    /**
+     * Upper bound of the delay between retries in milliseconds.
+     */
+    static const int sMaxTimeoutBetweenRetriesMs = 2000;
+
+
     /**
      * The current HTTP method.
      */
@@ -146,12 +169,6 @@ class QfNetworkReply : public QObject
      * Number of retries left. Once the value reaches zero, the status of the last reply is the final status.
      */
     int mRetriesLeft = 5;
-
-
-    /**
-     * Upper bound of the delay between retries in milliseconds.
-     */
-    int mMaxTimeoutBetweenRetriesMs = 2000;
 
 
     /**
@@ -203,34 +220,10 @@ class QfNetworkReply : public QObject
 
 
     /**
-     * Reemits `QNetworkReply::downloadProgress` signal.
-     * @note Because download may fail mid request and then retried, the bytesSent may be reset back to 0.
-     * @param bytesReceived
-     * @param bytesTotal
-     */
-    void onDownloadProgress( int bytesReceived, int bytesTotal );
-
-
-    /**
-     * Reemits `QNetworkReply::uploadProgress` signal.
-     * @note Because upload may fail mid request and then retried, the bytesSent may be reset back to 0.
-     * @param bytesSent
-     * @param bytesTotal
-     */
-    void onUploadProgress( int bytesSent, int bytesTotal );
-
-
-    /**
-     * Reemits `QnetworkReply::encrypted` signal.
-     */
-    void onEncrypted();
-
-
-    /**
      * Called when a request attempt is finished. If needed, make a retry.
      */
     void onFinished();
 };
 
 
-#endif // QFNETWORKREPLY_H
+#endif // NETWORKREPLY_H

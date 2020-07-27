@@ -96,8 +96,8 @@ void QFieldCloudProjectsModel::refreshProjectsList()
   {
     case QFieldCloudConnection::ConnectionStatus::LoggedIn:
     {
-      CloudReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/projects/" ) );
-      connect( reply, &CloudReply::finished, this, &QFieldCloudProjectsModel::projectListReceived );
+      NetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/projects/" ) );
+      connect( reply, &NetworkReply::finished, this, &QFieldCloudProjectsModel::projectListReceived );
       break;
     }
     case QFieldCloudConnection::ConnectionStatus::Disconnected:
@@ -186,9 +186,9 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
     emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
   }
 
-  QfNetworkReply *filesReply = mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/" ).arg( projectId ) );
+  NetworkReply *filesReply = mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/" ).arg( projectId ) );
 
-  connect( filesReply, &QfNetworkReply::finished, this, [this, index, projectId, filesReply]()
+  connect( filesReply, &NetworkReply::finished, this, [this, index, projectId, filesReply]()
   {
     if ( filesReply->reply()->error() == QNetworkReply::NoError )
     {
@@ -312,13 +312,14 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
   // //////////
   // send delta file
   // //////////
-  QfNetworkReply *deltasCloudReply = mCloudConnection->post( QStringLiteral( "/api/v1/deltas/%1/" ).arg( projectId ), QVariantMap({
+  NetworkReply *deltasCloudReply = mCloudConnection->post( QStringLiteral( "/api/v1/deltas/%1/" ).arg( projectId ), QVariantMap(
+  {
     {"data", deltaFile->toJson()}
   }) );
 
   Q_ASSERT( deltasCloudReply );
 
-  connect( deltasCloudReply, &QfNetworkReply::finished, this, [this, index, projectId, deltasCloudReply]()
+  connect( deltasCloudReply, &NetworkReply::finished, this, [this, index, projectId, deltasCloudReply]()
   {
     QNetworkReply *deltasReply = deltasCloudReply->reply();
 
@@ -457,15 +458,15 @@ void QFieldCloudProjectsModel::projectDownloadLayers( const QString &projectId )
 
   for ( const QString &layerFileName : layerFileNames  )
   {
-    QfNetworkReply *downloadLayerCloudReply = uploadFile( mCloudProjects[index].id, layerFileName );
+    NetworkReply *downloadLayerCloudReply = uploadFile( mCloudProjects[index].id, layerFileName );
 
-    connect( downloadLayerCloudReply, &QfNetworkReply::downloadProgress, this, [this, index, layerFileName](int bytesReceived, int bytesTotal)
+    connect( downloadLayerCloudReply, &NetworkReply::downloadProgress, this, [this, index, layerFileName]( int bytesReceived, int bytesTotal )
     {
       Q_UNUSED( bytesTotal );
       mCloudProjects[index].offlineLayers[layerFileName].bytesTransferred = bytesReceived;
     });
 
-    connect( downloadLayerCloudReply, &QfNetworkReply::finished, this, [this, index, downloadLayerCloudReply, layerFileName]()
+    connect( downloadLayerCloudReply, &NetworkReply::finished, this, [this, index, downloadLayerCloudReply, layerFileName]()
     {
       QNetworkReply *offlineLayerReply = downloadLayerCloudReply->reply();
 
@@ -496,9 +497,9 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
 
   Q_ASSERT( index >= 0 );
 
-  QfNetworkReply *deltaStatusReply = mCloudConnection->get( QStringLiteral( "/api/v1/deltas/%1/status" ).arg( mCloudProjects[index].deltaFileId ) );
+  NetworkReply *deltaStatusReply = mCloudConnection->get( QStringLiteral( "/api/v1/deltas/%1/status" ).arg( mCloudProjects[index].deltaFileId ) );
 
-  connect( deltaStatusReply, &QfNetworkReply::finished, this, [this, index, projectId, deltaStatusReply]()
+  connect( deltaStatusReply, &NetworkReply::finished, this, [this, index, projectId, deltaStatusReply]()
   {
     QNetworkReply *rawReply = deltaStatusReply->reply();
 
@@ -548,17 +549,17 @@ void QFieldCloudProjectsModel::projectUploadOfflineLayers( const QString &projec
 
   for ( const QString &offlineLayerFileName : offlineLayerFileNames )
   {
-    QfNetworkReply *offlineLayerCloudReply = uploadFile( mCloudProjects[index].id, offlineLayerFileName );
+    NetworkReply *offlineLayerCloudReply = uploadFile( mCloudProjects[index].id, offlineLayerFileName );
 
     mCloudProjects[index].offlineLayers[offlineLayerFileName].networkReply = offlineLayerCloudReply;
 
-    connect( offlineLayerCloudReply, &QfNetworkReply::uploadProgress, this, [this, index, offlineLayerFileName](int bytesSent, int bytesTotal)
+    connect( offlineLayerCloudReply, &NetworkReply::uploadProgress, this, [this, index, offlineLayerFileName]( int bytesSent, int bytesTotal )
     {
       Q_UNUSED( bytesTotal );
       mCloudProjects[index].offlineLayers[offlineLayerFileName].bytesTransferred = bytesSent;
     });
 
-    connect( offlineLayerCloudReply, &QfNetworkReply::finished, this, [this, index, offlineLayerCloudReply, offlineLayerFileName]()
+    connect( offlineLayerCloudReply, &NetworkReply::finished, this, [this, index, offlineLayerCloudReply, offlineLayerFileName]()
     {
       QNetworkReply *offlineLayerReply = offlineLayerCloudReply->reply();
 
@@ -593,17 +594,17 @@ void QFieldCloudProjectsModel::projectUploadAttachments( const QString &projectI
   const QStringList attachmentFileNames;
   for ( const QString &fileName : attachmentFileNames )
   {
-    QfNetworkReply *attachmentCloudReply = uploadFile( mCloudProjects[index].id, fileName );
+    NetworkReply *attachmentCloudReply = uploadFile( mCloudProjects[index].id, fileName );
 
     mCloudProjects[index].attachments[fileName].networkReply = attachmentCloudReply;
 
-    connect( attachmentCloudReply, &QfNetworkReply::uploadProgress, this, [this, index, fileName](int bytesSent, int bytesTotal)
+    connect( attachmentCloudReply, &NetworkReply::uploadProgress, this, [this, index, fileName]( int bytesSent, int bytesTotal )
     {
       Q_UNUSED( bytesTotal );
       mCloudProjects[index].attachments[fileName].bytesTransferred = bytesSent;
     });
 
-    connect( attachmentCloudReply, &QfNetworkReply::finished, this, [this, index, fileName, attachmentCloudReply]()
+    connect( attachmentCloudReply, &NetworkReply::finished, this, [this, index, fileName, attachmentCloudReply]()
     {
       QNetworkReply *attachmentReply = attachmentCloudReply->reply();
 
@@ -639,7 +640,7 @@ void QFieldCloudProjectsModel::projectCancelUpload( const QString &projectId, bo
   const QStringList offlineLayerNames = mCloudProjects[index].offlineLayers.keys();
   for ( const QString &offlineLayerFileName : offlineLayerNames )
   {
-    QfNetworkReply *offlineLayerReply = mCloudProjects[index].offlineLayers[offlineLayerFileName].networkReply;
+    NetworkReply *offlineLayerReply = mCloudProjects[index].offlineLayers[offlineLayerFileName].networkReply;
 
     Q_ASSERT( offlineLayerReply );
 
@@ -652,7 +653,7 @@ void QFieldCloudProjectsModel::projectCancelUpload( const QString &projectId, bo
   const QStringList attachmentFileNames = mCloudProjects[index].offlineLayers.keys();
   for ( const QString &attachmentFileName : attachmentFileNames )
   {
-    QfNetworkReply *attachmentReply = mCloudProjects[index].attachments[attachmentFileName].networkReply;
+    NetworkReply *attachmentReply = mCloudProjects[index].attachments[attachmentFileName].networkReply;
 
     Q_ASSERT( attachmentReply );
 
@@ -665,7 +666,7 @@ void QFieldCloudProjectsModel::projectCancelUpload( const QString &projectId, bo
 
   if ( shouldCancelAtServer )
   {
-    // QfNetworkReply &reply = CloudReply::deleteResource( QStringLiteral( "/api/v1/deltas/%1" ) );
+    // NetworkReply &reply = CloudReply::deleteResource( QStringLiteral( "/api/v1/deltas/%1" ) );
   }
 
   return;
@@ -704,7 +705,7 @@ void QFieldCloudProjectsModel::layerObserverLayerEdited( const QString &layerId 
 
 void QFieldCloudProjectsModel::projectListReceived()
 {
-  QfNetworkReply *reply = qobject_cast<QfNetworkReply *>( sender() );
+  NetworkReply *reply = qobject_cast<NetworkReply *>( sender() );
   QNetworkReply *rawReply = reply->reply();
 
   Q_ASSERT( rawReply );
@@ -721,7 +722,7 @@ void QFieldCloudProjectsModel::projectListReceived()
 
 void QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QString &fileName )
 {
-  QfNetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/%2/" ).arg( projectId, fileName ) );
+  NetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/%2/" ).arg( projectId, fileName ) );
   QTemporaryFile *file = new QTemporaryFile();
 
   Q_ASSERT( file->open() );
@@ -735,7 +736,7 @@ void QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QSt
 //    }
 //  } );
 
-  connect( reply, &QfNetworkReply::finished, this, [=]()
+  connect( reply, &NetworkReply::finished, this, [ = ]()
   {
     QNetworkReply *rawReply = reply->reply();
 
@@ -788,7 +789,7 @@ void QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QSt
   } );
 }
 
-QfNetworkReply *QFieldCloudProjectsModel::uploadFile( const QString &projectId, const QString &fileName )
+NetworkReply *QFieldCloudProjectsModel::uploadFile( const QString &projectId, const QString &fileName )
 {
   return mCloudConnection->post( QStringLiteral( "/api/v1/files/%1/%2/" ).arg( projectId, fileName ), QVariantMap(), QStringList({fileName}) );
 }

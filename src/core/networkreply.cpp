@@ -1,38 +1,51 @@
-#include "qfnetworkreply.h"
+/***************************************************************************
+    networkreply.cpp
+    ---------------------
+    begin                : June 2020
+    copyright            : (C) 2020 by Ivan Ivanov
+    email                : ivan at opengis dot ch
+ ***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
+#include "networkreply.h"
 
 #include <QTimer>
 
 
-QfNetworkReply::QfNetworkReply( const QNetworkAccessManager::Operation operation, const QNetworkRequest request, const QByteArray payloadByteArray = QByteArray() ):
+NetworkReply::NetworkReply( const QNetworkAccessManager::Operation operation, const QNetworkRequest &request, const QByteArray &payloadByteArray = QByteArray() ):
   mOperation( operation ),
+  mIsMultiPartPayload( false ),
   mRequest( request ),
   mPayloadByteArray( payloadByteArray )
 {
-  mIsMultiPartPayload = false;
-
   initiateRequest();
 };
 
 
-QfNetworkReply::QfNetworkReply( const QNetworkAccessManager::Operation operation, const QNetworkRequest request, QHttpMultiPart *payloadMultiPart ):
+NetworkReply::NetworkReply( const QNetworkAccessManager::Operation operation, const QNetworkRequest &request, QHttpMultiPart *payloadMultiPart ):
   mOperation( operation ),
+  mIsMultiPartPayload( true ),
   mRequest( request ),
   mPayloadMultiPart( payloadMultiPart )
 {
-  mIsMultiPartPayload = true;
-
   initiateRequest();
 };
 
 
-void QfNetworkReply::abort()
+void NetworkReply::abort()
 {
   mIsFinished = true;
   mReply->abort();
 }
 
 
-QNetworkReply *QfNetworkReply::reply() const
+QNetworkReply *NetworkReply::reply() const
 {
   if ( mIsFinished )
     return mReply;
@@ -41,19 +54,19 @@ QNetworkReply *QfNetworkReply::reply() const
 }
 
 
-void QfNetworkReply::ignoreSslErrors( QList<QSslError> errors )
+void NetworkReply::ignoreSslErrors( QList<QSslError> errors )
 {
   mExpectedSslErrors = errors;
 }
 
 
-bool QfNetworkReply::isFinished() const
+bool NetworkReply::isFinished() const
 {
   return mIsFinished;
 }
 
 
-void QfNetworkReply::initiateRequest()
+void NetworkReply::initiateRequest()
 {
   switch ( mOperation )
   {
@@ -86,32 +99,14 @@ void QfNetworkReply::initiateRequest()
 
   mReply->ignoreSslErrors( mExpectedSslErrors );
 
-  connect( mReply, &QNetworkReply::finished, this, &QfNetworkReply::onFinished );
-  connect( mReply, &QNetworkReply::encrypted, this, &QfNetworkReply::onEncrypted );
-  connect( mReply, &QNetworkReply::downloadProgress, this, &QfNetworkReply::onDownloadProgress );
-  connect( mReply, &QNetworkReply::uploadProgress, this, &QfNetworkReply::onUploadProgress );
+  connect( mReply, &QNetworkReply::finished, this, &NetworkReply::onFinished );
+  connect( mReply, &QNetworkReply::encrypted, this, &NetworkReply::encrypted );
+  connect( mReply, &QNetworkReply::downloadProgress, this, &NetworkReply::downloadProgress );
+  connect( mReply, &QNetworkReply::uploadProgress, this, &NetworkReply::uploadProgress );
 }
 
 
-void QfNetworkReply::onDownloadProgress( int bytesReceived, int bytesTotal )
-{
-  emit uploadProgress( bytesReceived, bytesTotal );
-}
-
-
-void QfNetworkReply::onUploadProgress( int bytesSent, int bytesTotal )
-{
-  emit uploadProgress( bytesSent, bytesTotal );
-}
-
-
-void QfNetworkReply::onEncrypted()
-{
-  emit encrypted();
-}
-
-
-void QfNetworkReply::onFinished()
+void NetworkReply::onFinished()
 {
   bool canRetry = false;
   QNetworkReply::NetworkError error = mReply->error();
@@ -177,7 +172,7 @@ void QfNetworkReply::onFinished()
   emit temporaryErrorOccurred( error );
 
   // wait random time before the retry is sent
-  QTimer::singleShot( mRNG.bounded( mMaxTimeoutBetweenRetriesMs ), this, [ = ]()
+  QTimer::singleShot( mRNG.bounded( sMaxTimeoutBetweenRetriesMs ), this, [ = ]()
   {
     emit retry();
 

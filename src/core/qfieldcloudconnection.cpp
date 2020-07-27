@@ -154,7 +154,7 @@ QFieldCloudConnection::ConnectionStatus QFieldCloudConnection::status() const
   return mStatus;
 }
 
-QfNetworkReply *QFieldCloudConnection::post( const QString &endpoint, const QVariantMap &params, const QStringList &fileNames )
+NetworkReply *QFieldCloudConnection::post( const QString &endpoint, const QVariantMap &params, const QStringList &fileNames )
 {
   if ( mToken.isNull() )
     return nullptr;
@@ -170,23 +170,21 @@ QfNetworkReply *QFieldCloudConnection::post( const QString &endpoint, const QVar
 
     QByteArray requestBody = doc.toJson();
 
-    return QfNetworkManager::post( request, requestBody );
+    return NetworkManager::post( request, requestBody );
   }
 
   QHttpMultiPart *multiPart = new QHttpMultiPart( QHttpMultiPart::FormDataType );
   QByteArray requestBody = QJsonDocument( QJsonObject::fromVariantMap( params ) ).toJson();
   QHttpPart textPart;
 
-  textPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("application/json"));
-  textPart.setBody("toto");/* toto is the name I give to my file in the server */
+  textPart.setHeader( QNetworkRequest::ContentDispositionHeader, QVariant( "application/json" ) );
 
   for ( const QString &fileName : fileNames )
   {
     QHttpPart imagePart;
-    QFile *file = new QFile( fileName );
-    file->setParent( multiPart );
+    QFile *file = new QFile( fileName, multiPart );
 
-    if ( ! file->open(QIODevice::ReadOnly) )
+    if ( ! file->open( QIODevice::ReadOnly ) )
       return nullptr;
 
     const QString header = QStringLiteral( "form-data; name=\"file\"; filename=\"%1\"" ).arg( fileName );
@@ -195,28 +193,28 @@ QfNetworkReply *QFieldCloudConnection::post( const QString &endpoint, const QVar
     multiPart->append( imagePart );
   }
 
-  QfNetworkReply *reply = QfNetworkManager::post( request, multiPart );
+  NetworkReply *reply = NetworkManager::post( request, multiPart );
 
   multiPart->setParent( reply );
 
   return reply;
 }
 
-QfNetworkReply *QFieldCloudConnection::get( const QString &endpoint, const QVariantMap &params )
+NetworkReply *QFieldCloudConnection::get( const QString &endpoint, const QVariantMap &params )
 {
   QNetworkRequest request;
   QUrl url( mUrl + endpoint );
   QUrlQuery urlQuery;
 
   QMap<QString, QVariant>::const_iterator i = params.begin();
-  while (i != params.end())
+  while ( i != params.end() )
     urlQuery.addQueryItem( i.key(), i.value().toString() );
 
   request.setUrl( url );
   request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
   setAuthenticationToken( request );
 
-  return QfNetworkManager::get( request );
+  return NetworkManager::get( request );
 }
 
 void QFieldCloudConnection::setToken( const QByteArray &token )

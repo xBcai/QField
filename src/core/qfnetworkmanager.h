@@ -5,7 +5,7 @@
 
 
 class QNetworkRequest;
-class QfNetworkReply;
+class NetworkReply;
 class QHttpMultiPart;
 class QgsNetworkAccessManager;
 
@@ -20,7 +20,7 @@ class QfNetworkManager
      * @param request
      * @return
      */
-    static QfNetworkReply *get( const QNetworkRequest request );
+    static NetworkReply *get( const QNetworkRequest request );
 
 
     /**
@@ -29,7 +29,7 @@ class QfNetworkManager
      * @param payload
      * @return
      */
-    static QfNetworkReply *post( const QNetworkRequest request, const QByteArray payload = QByteArray() );
+    static NetworkReply *post( const QNetworkRequest request, const QByteArray payload = QByteArray() );
 
 
     /**
@@ -38,7 +38,7 @@ class QfNetworkManager
      * @param payload
      * @return
      */
-    static QfNetworkReply *post( const QNetworkRequest request, QHttpMultiPart *payload );
+    static NetworkReply *post( const QNetworkRequest request, QHttpMultiPart *payload );
 
 
     /**
@@ -47,7 +47,7 @@ class QfNetworkManager
      * @param payload
      * @return
      */
-    static QfNetworkReply *put( const QNetworkRequest request, const QByteArray payload = QByteArray() );
+    static NetworkReply *put( const QNetworkRequest request, const QByteArray payload = QByteArray() );
 
 
     /**
@@ -56,7 +56,7 @@ class QfNetworkManager
      * @param payload
      * @return
      */
-    static QfNetworkReply *put( const QNetworkRequest request, QHttpMultiPart *payload );
+    static NetworkReply *put( const QNetworkRequest request, QHttpMultiPart *payload );
 
 
     /**
@@ -65,7 +65,7 @@ class QfNetworkManager
      * @param payload
      * @return
      */
-    static QfNetworkReply *deleteResource( const QNetworkRequest request, QByteArray payload = QByteArray() );
+    static NetworkReply *deleteResource( const QNetworkRequest request, QByteArray payload = QByteArray() );
 
 };
 
