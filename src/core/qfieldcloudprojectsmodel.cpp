@@ -40,21 +40,15 @@ QFieldCloudProjectsModel::QFieldCloudProjectsModel()
   QJsonArray projects;
   reload( projects );
 
-  connect( this, &QFieldCloudProjectsModel::currentCloudProjectIdChanged, this, [ = ]()
+  connect( this, &QFieldCloudProjectsModel::modelReset, this, [ = ]()
   {
     const int index = findProject( mCurrentCloudProjectId );
 
     if ( index == -1 || index >= mCloudProjects.size() )
       return;
 
-    if ( mLayerObserver->currentDeltaFileWrapper()->count() > 0 || mLayerObserver->committedDeltaFileWrapper()->offlineLayerIds().size() > 0 )
-      mCloudProjects[index].modification |= LocalModification;
-    else
-      mCloudProjects[index].modification ^= LocalModification;
-  } );
+    refreshProjectModification( mCurrentCloudProjectId );
 
-  connect( this, &QFieldCloudProjectsModel::modelReset, this, [ = ]()
-  {
     updateCanCommitCurrentProject();
     updateCanSyncCurrentProject();
   } );
@@ -93,6 +87,10 @@ void QFieldCloudProjectsModel::setLayerObserver( LayerObserver *layerObserver )
     return;
 
   connect( layerObserver, &LayerObserver::layerEdited, this, &QFieldCloudProjectsModel::layerObserverLayerEdited );
+  connect( layerObserver, &LayerObserver::deltaFileCommitted, this, [ = ]()
+  {
+    refreshProjectModification( mCurrentCloudProjectId );
+  } );
 
   emit layerObserverChanged();
 }
@@ -256,12 +254,18 @@ void QFieldCloudProjectsModel::refreshProjectModification( const QString &projec
   if ( index == -1 || index >= mCloudProjects.size() )
     return;
 
-  // TODO
-  beginResetModel();
+  ProjectModifications oldModifications = mCloudProjects[index].modification;
 
+  if ( mLayerObserver->currentDeltaFileWrapper()->count() > 0 || mLayerObserver->committedDeltaFileWrapper()->offlineLayerIds().size() > 0 )
+    mCloudProjects[index].modification |= LocalModification;
+  else
+    mCloudProjects[index].modification ^= LocalModification;
 
-
-  endResetModel();
+  if ( oldModifications != mCloudProjects[index].modification )
+  {
+    QModelIndex idx = createIndex( index, 0 );
+    emit dataChanged( idx, idx, QVector<int>() << ModificationRole );
+  }
 }
 
 QString QFieldCloudProjectsModel::layerFileName( const QgsMapLayer *layer ) const
@@ -381,10 +385,9 @@ void QFieldCloudProjectsModel::projectDownloadFiles( const QString &projectId )
       mCloudProjects[index].downloadProjectFilesBytesReceived = bytesReceived;
       mCloudProjects[index].downloadProjectFilesProgress += static_cast<double>( mCloudProjects[index].downloadProjectFilesBytesTotal ) / mCloudProjects[index].downloadProjectFilesBytesReceived;
 
-      QVector<int> rolesChanged( {DownloadProgressRole} );
       QModelIndex idx = createIndex( index, 0 );
 
-      emit dataChanged( idx, idx, rolesChanged );
+      emit dataChanged( idx, idx,  QVector<int>() << DownloadProgressRole );
     } );
 
     connect( reply, &NetworkReply::finished, this, [ = ]()
@@ -689,6 +692,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
       const QString reason( "Failed to retrieve some of the updated layers, but changes are committed on the server. "
                             "Try to reload the project from the cloud." );
       emit syncFinished( projectId, true, reason );
+      emit dataChanged( idx, idx, QVector<int>() << StatusRole );
       return;
     }
 
@@ -697,10 +701,13 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
 
     deltaFile->reset();
     deltaFile->resetId();
-    deltaFile->toFile();
+
+    if ( deltaFile->toFile() )
+      QgsLogger::warning( QStringLiteral( "Failed to write delta file." ) );
 
     QgsProject::instance()->reloadAllLayers();
 
+    emit dataChanged( idx, idx, QVector<int>() << StatusRole << ModificationRole );
     emit syncFinished( projectId, false );
   } );
 }
@@ -898,6 +905,7 @@ void QFieldCloudProjectsModel::projectUploadOfflineLayers( const QString &projec
 void QFieldCloudProjectsModel::projectUploadAttachments( const QString &projectId )
 {
   const int index = findProject( projectId );
+  QModelIndex idx = createIndex( index, 0 );
 
   Q_ASSERT( index >= 0 && index < mCloudProjects.size() );
 
@@ -909,13 +917,14 @@ void QFieldCloudProjectsModel::projectUploadAttachments( const QString &projectI
 
     mCloudProjects[index].uploadAttachments[fileName].networkReply = attachmentCloudReply;
 
-    connect( attachmentCloudReply, &NetworkReply::uploadProgress, this, [this, index, fileName]( int bytesSent, int bytesTotal )
+    connect( attachmentCloudReply, &NetworkReply::uploadProgress, this, [ = ]( int bytesSent, int bytesTotal )
     {
       Q_UNUSED( bytesTotal );
       mCloudProjects[index].uploadAttachments[fileName].bytesTransferred = bytesSent;
+      emit dataChanged( idx, idx, QVector<int>() << UploadProgressRole );
     } );
 
-    connect( attachmentCloudReply, &NetworkReply::finished, this, [this, index, fileName, attachmentCloudReply]()
+    connect( attachmentCloudReply, &NetworkReply::finished, this, [ = ]()
     {
       QNetworkReply *attachmentReply = attachmentCloudReply->reply();
 
@@ -923,6 +932,8 @@ void QFieldCloudProjectsModel::projectUploadAttachments( const QString &projectI
       Q_ASSERT( attachmentReply );
 
       mCloudProjects[index].uploadAttachmentsFinished++;
+
+      emit dataChanged( idx, idx, QVector<int>() << UploadProgressRole );
 
       // if there is an error, don't panic, we continue uploading. The files may be later manually synced.
       if ( attachmentReply->error() != QNetworkReply::NoError )
