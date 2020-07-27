@@ -150,7 +150,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     void layerObserverChanged();
     void currentCloudProjectIdChanged();
     void warning( const QString &message );
-    void projectDownloaded( const QString &projectId, const QString &projectName, const bool hasError = false );
+    void projectDownloaded( const QString &projectId, const bool hasError, const QString &projectName );
     void projectStatusChanged( const QString &projectId, const ProjectStatus &projectStatus );
 
     //

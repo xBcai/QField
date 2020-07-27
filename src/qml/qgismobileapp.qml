@@ -1570,8 +1570,11 @@ ApplicationWindow {
     cloudConnection: cloudConnection
     layerObserver: layerObserverAlias
 
-    onProjectDownloaded: hasError ? displayToast( qsTr( "Project %1 failed to download" ).arg( projectName ) ) :
-                                  displayToast( qsTr( "Project %1 successfully downloaded, it's now available to open" ).arg( projectName ) );
+    onProjectDownloaded: function ( projectId, hasError, projectName ) {
+      return hasError
+          ? displayToast( qsTr( "Project %1 failed to download" ).arg( projectName ) )
+          : displayToast( qsTr( "Project %1 successfully downloaded, it's now available to open" ).arg( projectName ) );
+    }
 
     onSyncFinished: function ( projectId, hasError, errorString ) {
       if ( hasError ) {

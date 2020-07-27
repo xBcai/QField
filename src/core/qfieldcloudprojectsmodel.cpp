@@ -337,7 +337,7 @@ void QFieldCloudProjectsModel::projectDownloadFiles( const QString &projectId )
 
       mCloudProjects[index].downloadProjectFilesFailed++;
 
-      emit projectDownloaded( projectId, mCloudProjects[index].name, true );
+      emit projectDownloaded( projectId, true, mCloudProjects[index].name );
 
       return;
     }
@@ -417,12 +417,12 @@ void QFieldCloudProjectsModel::projectDownloadFiles( const QString &projectId )
         mCloudProjects[index].downloadProjectFilesFailed++;
         mCloudProjects[index].status = ProjectStatus::Error;
 
-        emit projectDownloaded( projectId, mCloudProjects[index].name, true );
+        emit projectDownloaded( projectId, true, mCloudProjects[index].name );
       }
 
       if ( mCloudProjects[index].downloadProjectFilesFinished == fileNames.count() )
       {
-        emit projectDownloaded( projectId, mCloudProjects[index].name, false );
+        emit projectDownloaded( projectId, false, mCloudProjects[index].name );
 
         mCloudProjects[index].status = ProjectStatus::Idle;
         mCloudProjects[index].localPath = QFieldCloudUtils::localProjectFilePath( projectId );
@@ -543,9 +543,6 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
 
     Q_ASSERT( deltasCloudReply->isFinished() );
     Q_ASSERT( deltasReply );
-
-    qDebug() << "ERR: " << deltasReply->error() << deltasReply->errorString();
-    qDebug() << "ERRBODY: " << deltasReply->readAll();
 
     // if there is an error, cannot continue sync
     if ( deltasReply->error() != QNetworkReply::NoError )
