@@ -265,8 +265,6 @@ bool DeltaFileWrapper::toFile()
 {
   QFile deltaFile( mFileName );
 
-  // QgsLogger::debug( "Start writing deltas JSON" );
-
   if ( ! deltaFile.open( QIODevice::WriteOnly | QIODevice::Unbuffered ) )
   {
     mErrorType = DeltaFileWrapper::IOError;
