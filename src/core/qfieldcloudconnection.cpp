@@ -201,6 +201,7 @@ NetworkReply *QFieldCloudConnection::post( const QString &endpoint, const QVaria
   QNetworkRequest request( mUrl + endpoint );
   QByteArray requestBody = QJsonDocument( QJsonObject::fromVariantMap( params ) ).toJson();
   setAuthenticationToken( request );
+  request.setAttribute( QNetworkRequest::FollowRedirectsAttribute, true );
 
   if ( fileNames.isEmpty() )
   {
@@ -261,6 +262,7 @@ NetworkReply *QFieldCloudConnection::get( const QString &endpoint, const QVarian
 
   request.setUrl( url );
   request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
+  request.setAttribute( QNetworkRequest::FollowRedirectsAttribute, true );
   setAuthenticationToken( request );
 
   return NetworkManager::get( request );
