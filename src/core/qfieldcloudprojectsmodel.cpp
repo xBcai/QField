@@ -556,6 +556,8 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
 
       projectCancelUpload( projectId, false );
 
+      emit syncFinished( projectId, true, deltasReply->errorString() );
+
       return;
     }
 
@@ -622,7 +624,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
         break;
       case DeltaFileErrorStatus:
         mLayerObserver->committedDeltaFileWrapper()->reset();
-        emit syncFailed( projectId, mCloudProjects[index].deltaFileUploadStatusString );
+        emit syncFinished( projectId, true, mCloudProjects[index].deltaFileUploadStatusString );
         return;
       case DeltaFileAppliedStatus:
       case DeltaFileAppliedWithConflictsStatus:
@@ -653,7 +655,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
       // TODO translate this message
       const QString reason( "Failed to retrieve some of the updated layers, but changes are committed on the server. "
                             "Try to reload the project from the cloud." );
-      emit syncFailed( projectId, reason );
+      emit syncFinished( projectId, true, reason );
       return;
     }
 
