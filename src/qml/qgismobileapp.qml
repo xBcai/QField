@@ -1130,7 +1130,7 @@ ApplicationWindow {
       height: 48
       leftPadding: 10
       enabled: cloudProjectsModel.canSyncCurrentProject()
-      text: qsTr( "Upload" )
+      text: qsTr( "Synchronize" )
       onTriggered: cloudProjectsModel.uploadProject(cloudProjectsModel.currentCloudProjectId)
     }
 
