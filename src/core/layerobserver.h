@@ -34,40 +34,40 @@ typedef QMap<QgsFeatureId, QgsFeature> QgsChangedFeatures;
  */
 class LayerObserver : public QObject
 {
-  Q_OBJECT
+    Q_OBJECT
 
-  Q_PROPERTY( DeltaFileWrapper *currentDeltaFileWrapper READ currentDeltaFileWrapper NOTIFY currentDeltaFileWrapperChanged )
-  Q_PROPERTY( DeltaFileWrapper *committedDeltaFileWrapper READ committedDeltaFileWrapper NOTIFY committedDeltaFileWrapperChanged )
+    Q_PROPERTY( DeltaFileWrapper *currentDeltaFileWrapper READ currentDeltaFileWrapper NOTIFY currentDeltaFileWrapperChanged )
+    Q_PROPERTY( DeltaFileWrapper *committedDeltaFileWrapper READ committedDeltaFileWrapper NOTIFY committedDeltaFileWrapperChanged )
 
   public:
     /**
      * Construct a new Layer Observer object
-     * 
-     * @param project 
+     *
+     * @param project
      */
     LayerObserver( const QgsProject *project );
 
 
     /**
      * Generates a new complete name with path for deltas file
-     * 
+     *
      * @param isCurrentDeltaFile if true, no timestamp is appended
-     * @return QString 
+     * @return QString
      */
     QString generateDeltaFileName( bool isCurrentDeltaFile = false );
 
 
     /**
      * Returns whether delta file writing has an error
-     * 
-     * @return bool 
+     *
+     * @return bool
      */
     bool hasError() const;
 
 
     /**
      * Starts new delta file and finishes writing for the old one
-     * 
+     *
      * @return bool whether the commit was successful
      */
     Q_INVOKABLE bool commit();
@@ -95,25 +95,25 @@ class LayerObserver : public QObject
     DeltaFileWrapper *committedDeltaFileWrapper() const;
 
 
-signals:
+  signals:
     void layerEdited( const QString &layerId );
     void currentDeltaFileWrapperChanged();
     void committedDeltaFileWrapperChanged();
 
 
-private slots:
+  private slots:
     /**
      * Monitors the current project for new layers. Add the needed event listeners to monitor for changes.
      * Assigns listeners only for layer actions of `cloud` and `offline`.
-     * 
+     *
      * @param layers layers added
      */
     void onLayersAdded( const QList<QgsMapLayer *> layers );
 
 
     /**
-     * Commit the changes of the current delta file and 
-     * 
+     * Commit the changes of the current delta file and
+     *
      */
     void onHomePathChanged();
 
@@ -126,7 +126,7 @@ private slots:
 
     /**
      * Writes the "create" deltas
-     * 
+     *
      * @param layerId layer ID
      * @param addedFeatures new features
      */
@@ -135,27 +135,27 @@ private slots:
 
     /**
      * Writes the "delete" deltas
-     * 
+     *
      * @param layerId layer ID
-     * @param deletedFeatureIds old feature IDs 
+     * @param deletedFeatureIds old feature IDs
      */
     void onCommittedFeaturesRemoved( const QString &layerId, const QgsFeatureIds &deletedFeatureIds );
 
 
     /**
      * Writes the "patch" deltas
-     * 
-     * @param layerId 
-     * @param changedAttributesValues 
+     *
+     * @param layerId
+     * @param changedAttributesValues
      */
     void onCommittedAttributeValuesChanges( const QString &layerId, const QgsChangedAttributesMap &changedAttributesValues );
 
 
     /**
      * Writes the "patch" deltas.
-     * 
-     * @param layerId 
-     * @param changedGeometries 
+     *
+     * @param layerId
+     * @param changedGeometries
      */
     void onCommittedGeometriesChanges( const QString &layerId, const QgsGeometryMap &changedGeometries );
 

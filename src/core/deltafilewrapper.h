@@ -28,14 +28,14 @@
 
 /**
  * A class that wraps the operations with a delta file. All read and write operations to a delta file should go through this class.
- * 
+ *
  */
 class DeltaFileWrapper : public QObject
 {
-  Q_OBJECT
+    Q_OBJECT
 
-  Q_PROPERTY( int count READ count NOTIFY countChanged )
-  Q_PROPERTY( const QStringList offlineLayerIds READ offlineLayerIds NOTIFY offlineLayerIdsChanged )
+    Q_PROPERTY( int count READ count NOTIFY countChanged )
+    Q_PROPERTY( const QStringList offlineLayerIds READ offlineLayerIds NOTIFY offlineLayerIdsChanged )
 
   public:
     /**
@@ -64,10 +64,10 @@ class DeltaFileWrapper : public QObject
      */
     const static QString FormatVersion;
 
-  
+
     /**
      * Construct a new Feature Deltas object.
-     * 
+     *
      * @param fileName complete file name with path where the object should be stored
      */
     DeltaFileWrapper( const QgsProject *project, const QString &fileName );
@@ -80,7 +80,7 @@ class DeltaFileWrapper : public QObject
 
     /**
      * Returns a list of field names that have edit form as attachments
-     * 
+     *
      * @param project current project instance
      * @param layerId layer ID
      * @return QStringList list of field names
@@ -90,7 +90,7 @@ class DeltaFileWrapper : public QObject
 
     /**
      * Creates checksum of a file. Returns null QByteArray if cannot be calculated.
-     * 
+     *
      * @param fileName file name to get checksum of
      * @param hashAlgorithm hash algorithm (md5, sha1, sha256 etc)
      * @return QByteArray checksum
@@ -112,7 +112,7 @@ class DeltaFileWrapper : public QObject
 
     /**
      * Returns deltas file id.
-     * 
+     *
      * @return QString id
      */
     QString id() const;
@@ -120,7 +120,7 @@ class DeltaFileWrapper : public QObject
 
     /**
      * Returns deltas file name.
-     * 
+     *
      * @return QString file name
      */
     QString fileName() const;
@@ -128,7 +128,7 @@ class DeltaFileWrapper : public QObject
 
     /**
      * Returns deltas file project id.
-     * 
+     *
      * @return QString project id
      */
     QString projectId() const;
@@ -160,7 +160,7 @@ class DeltaFileWrapper : public QObject
 
     /**
      * Returns the deltas as a JSON array of delta elements
-     * 
+     *
      * @return QJsonArray deltas JSON array
      */
     QJsonArray deltas() const;
@@ -168,14 +168,14 @@ class DeltaFileWrapper : public QObject
 
     /**
      * Error type why the class has an error.
-     * 
+     *
      * @return ErrorTypes error type
      */
     ErrorTypes errorType() const;
 
     /**
      * Human readable error description why the class has an error.
-     * 
+     *
      * @return QString human readable error reason
      */
     QString errorString() const;
@@ -214,7 +214,7 @@ class DeltaFileWrapper : public QObject
 
     /**
      * Returns a set of file names to be uploaded
-     * 
+     *
      * @return QMap<QString, QString> unique file names
      */
     QMap<QString, QString> attachmentFileNames() const;
@@ -265,7 +265,7 @@ class DeltaFileWrapper : public QObject
     void addOfflineLayerId( const QString &offlineLayerId );
 
 
-signals:
+  signals:
     /**
      * Emitted when the `deltas` list has changed.
      *
@@ -281,12 +281,12 @@ signals:
      */
     void offlineLayerIdsChanged();
 
-private:
+  private:
 
     /**
      * Converts geometry to QJsonValue string in WKT format.
      * Returns null if the geometry is null, or WKT string of the geometry
-     * 
+     *
      */
     QJsonValue geometryToJsonValue( const QgsGeometry &geom ) const;
 
@@ -331,8 +331,8 @@ private:
      * The delta file name.
      */
     QString mFileName;
-    
-    
+
+
     /**
      * The delta file project id.
      */
