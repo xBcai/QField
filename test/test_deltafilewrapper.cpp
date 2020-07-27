@@ -234,9 +234,16 @@ class TestDeltaFileWrapper: public QObject
       dfw.addCreate( mLayer->id(), QgsFeature() );
 
       QCOMPARE( getDeltasArray( dfw.toString() ).size(), 1 );
+    }
+
+
+    void testResetId()
+    {
+      DeltaFileWrapper dfw( mProject, QString( std::tmpnam( nullptr ) ) );
+      dfw.addCreate( mLayer->id(), QgsFeature() );
 
       const QString dfwId = dfw.id();
-      dfw.reset( true );
+      dfw.resetId();
 
       QCOMPARE( getDeltasArray( dfw.toString() ).size(), 0 );
       QVERIFY( dfwId != dfw.id() );

@@ -80,7 +80,8 @@ bool LayerObserver::commit()
   }
 
   // Create brand new delta file for the current (uncommitted) deltas.
-  mCurrentDeltaFileWrapper->reset( true );
+  mCurrentDeltaFileWrapper->reset();
+  mCurrentDeltaFileWrapper->resetId();
 
   // Make sure the brand new current delta file is synced to the disk storage.
   if ( ! mCurrentDeltaFileWrapper->toFile() )
@@ -96,7 +97,10 @@ bool LayerObserver::commit()
 
 void LayerObserver::reset( bool isHardReset ) const
 {
-  return mCurrentDeltaFileWrapper->reset( isHardReset );
+  if ( isHardReset )
+    mCurrentDeltaFileWrapper->resetId();
+
+  return mCurrentDeltaFileWrapper->reset();
 }
 
 
