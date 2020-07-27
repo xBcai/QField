@@ -621,6 +621,9 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
         } );
         break;
       case DeltaFileErrorStatus:
+        mLayerObserver->committedDeltaFileWrapper()->reset();
+        emit syncFailed( projectId, mCloudProjects[index].deltaFileUploadStatusString );
+        return;
       case DeltaFileAppliedStatus:
       case DeltaFileAppliedWithConflictsStatus:
         projectDownloadLayers( projectId );
@@ -740,7 +743,9 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
 
   Q_ASSERT( index >= 0 && index < mCloudProjects.size() );
 
-  NetworkReply *deltaStatusReply = mCloudConnection->get( QStringLiteral( "/api/v1/delta-status/%1" ).arg( mCloudProjects[index].deltaFileId ) );
+  NetworkReply *deltaStatusReply = mCloudConnection->get( QStringLiteral( "/api/v1/delta-status/%1/" ).arg( mCloudProjects[index].deltaFileId ) );
+
+  mCloudProjects[index].deltaFileUploadStatusString = QString();
 
   connect( deltaStatusReply, &NetworkReply::finished, this, [ = ]()
   {
@@ -754,24 +759,18 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
 
     if ( rawReply->error() != QNetworkReply::NoError )
     {
-      // never give up to get the status
+      int statusCode = rawReply->attribute( QNetworkRequest::HttpStatusCodeAttribute ).toInt();
+
       mCloudProjects[index].deltaFileUploadStatus = DeltaFileErrorStatus;
+      // TODO this is oversimplification. e.g. 404 error is when the requested delta file id is not existant
+      mCloudProjects[index].deltaFileUploadStatusString = QStringLiteral( "[HTTP%1] Networking error, please retry!" ).arg( statusCode );
+
       emit networkDeltaStatusChecked( projectId );
+
       return;
     }
 
     const QJsonDocument doc = QJsonDocument::fromJson( rawReply->readAll() );
-
-    qDebug() << doc;
-
-    // TODO fake the results for now, I don't like it too!!!
-    if ( doc.isEmpty() )
-    {
-      qDebug() << "FAKE DOC";
-      mCloudProjects[index].deltaFileUploadStatus = DeltaFileAppliedStatus;
-      emit networkDeltaStatusChecked( projectId );
-      return;
-    }
 
     Q_ASSERT( doc.isObject() );
 
@@ -787,11 +786,16 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
       mCloudProjects[index].deltaFileUploadStatus = DeltaFileWaitingStatus;
     else if ( status == QStringLiteral( "BUSY" ) )
       mCloudProjects[index].deltaFileUploadStatus = DeltaFileBusyStatus;
+    else if ( status == QStringLiteral( "ERROR" ) )
+    {
+      mCloudProjects[index].deltaFileUploadStatus = DeltaFileErrorStatus;
+      mCloudProjects[index].deltaFileUploadStatusString = doc.object().value( QStringLiteral( "output" ) ).toString().split( '\n' ).last();
+    }
     else
     {
-      QgsLogger::warning( QStringLiteral( "Unknown status \"%1\"" ).arg( status ) );
       mCloudProjects[index].deltaFileUploadStatus = DeltaFileErrorStatus;
-      Q_ASSERT( 0 );
+      mCloudProjects[index].deltaFileUploadStatusString = QStringLiteral( "Unknown status \"%1\"" ).arg( status );
+      QgsLogger::warning( mCloudProjects[index].deltaFileUploadStatusString );
     }
 
     emit networkDeltaStatusChecked( projectId );
