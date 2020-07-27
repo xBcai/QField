@@ -1572,6 +1572,16 @@ ApplicationWindow {
 
     onProjectDownloaded: hasError ? displayToast( qsTr( "Project %1 failed to download" ).arg( projectName ) ) :
                                   displayToast( qsTr( "Project %1 successfully downloaded, it's now available to open" ).arg( projectName ) );
+
+    onSyncFinished: function ( projectId, hasError, errorString ) {
+      if ( hasError ) {
+        displayToast( qsTr( "Project failed to synchronize with QFieldCloud: %1" ).arg( errorString ) )
+        return;
+      }
+
+      displayToast( qsTr( "Project successfully synchronized with QFieldCloud" ) )
+    }
+
     onWarning: displayToast( message )
   }
 
