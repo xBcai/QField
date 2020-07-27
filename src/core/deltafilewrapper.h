@@ -100,9 +100,14 @@ class DeltaFileWrapper : public QObject
 
     /**
      * Clears the deltas from memory as there are no deltas at all. Does not affect the permanent storage until `toFile()` is called.
-     * @param isHardReset if true, then the delta is recreated from scratch
      */
-    void reset( bool isHardReset = false );
+    void reset();
+
+
+    /**
+     * Assigns a new unique delta file id.
+     */
+    void resetId();
 
 
     /**

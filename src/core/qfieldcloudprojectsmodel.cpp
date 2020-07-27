@@ -659,10 +659,17 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     mCloudProjects[index].status = ProjectStatus::Idle;
     mCloudProjects[index].modification ^= LocalModification;
 
-    mLayerObserver->committedDeltaFileWrapper()->reset( true );
-    mLayerObserver->committedDeltaFileWrapper()->toFile();
+    DeltaFileWrapper *commitedDeltaFileWrapper = mLayerObserver->committedDeltaFileWrapper();
+
+    Q_ASSERT( commitedDeltaFileWrapper );
+
+    commitedDeltaFileWrapper->reset();
+    commitedDeltaFileWrapper->resetId();
+    commitedDeltaFileWrapper->toFile();
 
     QgsProject::instance()->reloadAllLayers();
+
+    emit syncFinished( projectId, false );
   } );
 }
 

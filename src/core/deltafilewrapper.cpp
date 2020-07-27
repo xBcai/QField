@@ -171,7 +171,7 @@ QString DeltaFileWrapper::projectId() const
 }
 
 
-void DeltaFileWrapper::reset( bool isHardReset )
+void DeltaFileWrapper::reset()
 {
   if ( ! mIsDirty && mDeltas.size() == 0 )
     return;
@@ -182,10 +182,11 @@ void DeltaFileWrapper::reset( bool isHardReset )
 
   emit countChanged();
   emit offlineLayerIdsChanged();
+}
 
-  if ( ! isHardReset )
-    return;
 
+void DeltaFileWrapper::resetId()
+{
   mJsonRoot.insert( QStringLiteral( "id" ), QUuid::createUuid().toString( QUuid::WithoutBraces ) );
 }
 
