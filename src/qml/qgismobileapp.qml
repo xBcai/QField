@@ -1110,8 +1110,9 @@ ApplicationWindow {
       height: 48
       leftPadding: 10
 
-      text: qsTr( "Commit %1 changes" ).arg( layerObserver.currentDeltaFileWrapper.count )
-      enabled: cloudProjectsModel.canCommitCurrentProject()
+      text: layerObserver.currentDeltaFileWrapper.count > 0
+            ? qsTr( "Commit %1 changes" ).arg( layerObserver.currentDeltaFileWrapper.count )
+            : qsTr( "Nothing to commit" )
       onTriggered: {
         if ( layerObserver.commit() ) {
           displayToast( qsTr( "Successfully committed!" ) )
