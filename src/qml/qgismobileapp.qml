@@ -1132,6 +1132,11 @@ ApplicationWindow {
       enabled: cloudProjectsModel.canSyncCurrentProject()
       text: qsTr( "Synchronize" )
       onTriggered: cloudProjectsModel.uploadProject(cloudProjectsModel.currentCloudProjectId)
+
+      onPressAndHold: {
+        discardCommittedDeltasDialog.open()
+        cloudMenu.visible = false
+      }
     }
 
     Connections {
@@ -1139,6 +1144,46 @@ ApplicationWindow {
       onModelReset: {
         cloudCommitMenuItem.enabled = cloudProjectsModel.canCommitCurrentProject()
         cloudUploadMenuItem.enabled = cloudProjectsModel.canSyncCurrentProject()
+      }
+    }
+
+
+    MessageDialog {
+      id: discardCommittedDeltasDialog
+
+      visible: false
+
+      property bool isDiscarded: false
+      property int committedDeltasCount: 0
+
+      title: qsTr( "Discard committed deltas" )
+      text: qsTr( "Should the local %n deltas(s) really be discarded? Deltas cannot be restored and QFieldCloud will never aknowledge them, unless you sync the whole file!", "0", committedDeltasCount )
+      standardButtons: StandardButton.Ok | StandardButton.Cancel
+      onAccepted: function () {
+        if ( isDiscarded )
+          return
+
+        isDiscarded = true
+
+        layerObserverAlias.committedDeltaFileWrapper.reset()
+        layerObserverAlias.committedDeltaFileWrapper.resetId()
+
+        if ( layerObserverAlias.committedDeltaFileWrapper.toFile() ) {
+          displayToast( qsTr( "Successfully discarded %n local committed deltas", "", committedDeltasCount ) )
+        } else {
+          displayToast( qsTr( "Failed to reset local deltas.", "", committedDeltasCount ) )
+        }
+
+        visible = false
+      }
+      onRejected: function () {
+        visible = false
+      }
+
+      function show() {
+        this.isDiscarded = false
+        this.committedDeltasCount = layerObserverAlias.committedDeltaFileWrapper.count()
+        this.open()
       }
     }
   }
