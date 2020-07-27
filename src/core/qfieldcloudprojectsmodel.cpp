@@ -628,8 +628,6 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
       default:
         Q_ASSERT( 0 );
     }
-
-    projectGetDeltaStatus( projectId );
   } );
 
 
@@ -787,7 +785,7 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
       mCloudProjects[index].deltaFileUploadStatus = DeltaFilePendingStatus;
     else if ( status == QStringLiteral( "WAITING" ) )
       mCloudProjects[index].deltaFileUploadStatus = DeltaFileWaitingStatus;
-    else if ( status == QStringLiteral( "Busy" ) )
+    else if ( status == QStringLiteral( "BUSY" ) )
       mCloudProjects[index].deltaFileUploadStatus = DeltaFileBusyStatus;
     else
     {
