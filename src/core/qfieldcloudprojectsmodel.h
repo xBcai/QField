@@ -25,7 +25,7 @@
 
 class QNetworkRequest;
 class QFieldCloudConnection;
-class QfNetworkReply;
+class NetworkReply;
 class LayerObserver;
 class QgsMapLayer;
 
@@ -160,7 +160,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     void projectListReceived();
 
     void downloadFile( const QString &projectId, const QString &fileName );
-    QfNetworkReply *uploadFile( const QString &projectId, const QString &fileName );
+    NetworkReply *uploadFile( const QString &projectId, const QString &fileName );
 
     int findProject( const QString &projectId ) const;
 
@@ -173,7 +173,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       FileTransfer(
         const QString &fileName,
         const int bytesTotal,
-        QfNetworkReply *networkReply = nullptr,
+        NetworkReply *networkReply = nullptr,
         const QStringList &layerIds = QStringList()
       )
         : fileName( fileName ),
@@ -188,7 +188,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       int bytesTotal;
       int bytesTransferred = 0;
       bool isFinished = false;
-      QfNetworkReply *networkReply;
+      NetworkReply *networkReply;
       QNetworkReply::NetworkError error = QNetworkReply::NoError;
       QStringList layerIds;
     };

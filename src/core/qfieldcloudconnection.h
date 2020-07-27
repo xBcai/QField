@@ -16,8 +16,8 @@
 #ifndef QFIELDCLOUDCONNECTION_H
 #define QFIELDCLOUDCONNECTION_H
 
-#include <qfnetworkmanager.h>
-#include <qfnetworkreply.h>
+#include "networkmanager.h"
+#include "networkreply.h"
 
 #include <QObject>
 #include <QVariantMap>
@@ -69,7 +69,7 @@ class QFieldCloudConnection : public QObject
      * If this connection is not logged in, will return nullptr.
      * The returned reply needs to be deleted by the caller.
      */
-    QfNetworkReply *post( const QString &endpoint, const QVariantMap &params = QVariantMap(), const QStringList &fileNames = QStringList() );
+    NetworkReply *post( const QString &endpoint, const QVariantMap &params = QVariantMap(), const QStringList &fileNames = QStringList() );
 
 
     /**
@@ -78,7 +78,7 @@ class QFieldCloudConnection : public QObject
      * If this connection is not logged in, will return nullptr.
      * The returned reply needs to be deleted by the caller.
      */
-    QfNetworkReply *get( const QString &endpoint, const QVariantMap &params = QVariantMap() );
+    NetworkReply *get( const QString &endpoint, const QVariantMap &params = QVariantMap() );
 
   signals:
     void usernameChanged();
