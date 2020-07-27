@@ -31,17 +31,17 @@ class TestDeltaFileWrapper: public QObject
     {
       QTemporaryDir projectDir;
       projectDir.setAutoRemove( false );
-      
+
       QVERIFY2( projectDir.isValid(), "Failed to create temp dir" );
       QVERIFY2( mTmpFile.open(), "Cannot open temporary delta file" );
 
-      
+
       QgsProject::instance()->setPresetHomePath( projectDir.path() );
       QgsProject::instance()->writeEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ), QStringLiteral( "TEST_PROJECT_ID" ) );
-      
+
       QFile attachmentFile( QStringLiteral( "%1/%2" ) .arg( projectDir.path(), QStringLiteral( "attachment.jpg" ) ) );
 
-      const char* fileContents = "кирилица"; // SHA 256 71055d022f50027387eae32426a1857d6e2fa2d416d64753b63470db7f00f239
+      const char *fileContents = "кирилица"; // SHA 256 71055d022f50027387eae32426a1857d6e2fa2d416d64753b63470db7f00f239
       QVERIFY( attachmentFile.open( QIODevice::ReadWrite ) );
       QVERIFY( attachmentFile.write( fileContents ) );
       QVERIFY( attachmentFile.flush() );
@@ -57,7 +57,7 @@ class TestDeltaFileWrapper: public QObject
 
     void init()
     {
-      mTmpFile.resize(0);
+      mTmpFile.resize( 0 );
     }
 
 
@@ -67,12 +67,12 @@ class TestDeltaFileWrapper: public QObject
       DeltaFileWrapper dfw1( mProject, fileName );
 
       QCOMPARE( dfw1.errorType(), DeltaFileWrapper::NoError );
-      
+
       DeltaFileWrapper dfw2( mProject, fileName );
 
       QCOMPARE( dfw2.errorType(), DeltaFileWrapper::LockError );
     }
-    
+
 
     void testNoErrorExistingFile()
     {
@@ -253,8 +253,8 @@ class TestDeltaFileWrapper: public QObject
     void testToString()
     {
       DeltaFileWrapper dfw( mProject, QString( std::tmpnam( nullptr ) ) );
-      dfw.addCreate( mLayer->id(), QgsFeature( QgsFields() , 100 ) );
-      dfw.addDelete( mLayer->id(), QgsFeature( QgsFields() , 101 ) );
+      dfw.addCreate( mLayer->id(), QgsFeature( QgsFields(), 100 ) );
+      dfw.addDelete( mLayer->id(), QgsFeature( QgsFields(), 101 ) );
       QJsonDocument doc = normalizeSchema( dfw.toString() );
 
       QVERIFY( ! doc.isNull() );
@@ -289,8 +289,8 @@ class TestDeltaFileWrapper: public QObject
     void testToJson()
     {
       DeltaFileWrapper dfw( mProject, QString( std::tmpnam( nullptr ) ) );
-      dfw.addCreate( mLayer->id(), QgsFeature( QgsFields() , 100 ) );
-      dfw.addDelete( mLayer->id(), QgsFeature( QgsFields() , 101 ) );
+      dfw.addCreate( mLayer->id(), QgsFeature( QgsFields(), 100 ) );
+      dfw.addDelete( mLayer->id(), QgsFeature( QgsFields(), 101 ) );
       QJsonDocument doc = normalizeSchema( QString( dfw.toJson() ) );
 
       QVERIFY( ! doc.isNull() );
@@ -352,7 +352,7 @@ class TestDeltaFileWrapper: public QObject
     void testCount()
     {
       DeltaFileWrapper dfw( mProject, std::tmpnam( nullptr ) );
-      
+
       QCOMPARE( dfw.count(), 0 );
 
       dfw.addCreate( mLayer->id(), QgsFeature() );
@@ -418,23 +418,23 @@ class TestDeltaFileWrapper: public QObject
       dfw1.addCreate( mLayer->id(), QgsFeature() );
 
       QVERIFY( ! dfw1.hasError() );
-      QCOMPARE( getDeltasArray( dfw1.toString() ).size(), 1);
+      QCOMPARE( getDeltasArray( dfw1.toString() ).size(), 1 );
       QVERIFY( dfw1.toFile() );
-      QCOMPARE( getDeltasArray( dfw1.toString() ).size(), 1);
+      QCOMPARE( getDeltasArray( dfw1.toString() ).size(), 1 );
 
       QFile deltaFile( fileName );
       QVERIFY( deltaFile.open( QIODevice::ReadOnly ) );
-      QCOMPARE( getDeltasArray( deltaFile.readAll() ).size(), 1);
+      QCOMPARE( getDeltasArray( deltaFile.readAll() ).size(), 1 );
     }
 
 
-    void testAppend() 
+    void testAppend()
     {
       DeltaFileWrapper dfw1( mProject, QString( std::tmpnam( nullptr ) ) );
       DeltaFileWrapper dfw2( mProject, QString( std::tmpnam( nullptr ) ) );
-      dfw1.addCreate( mLayer->id(), QgsFeature (QgsFields(), 100) );
+      dfw1.addCreate( mLayer->id(), QgsFeature( QgsFields(), 100 ) );
       dfw2.append( &dfw1 );
-      
+
       QCOMPARE( dfw2.count(), 1 );
     }
 
@@ -444,8 +444,8 @@ class TestDeltaFileWrapper: public QObject
       DeltaFileWrapper dfw( mProject, QString( std::tmpnam( nullptr ) ) );
 
       QStringList attachmentFields = dfw.attachmentFieldNames( mProject, mLayer->id() );
-      
-      QCOMPARE( QStringList({QStringLiteral("attachment")}), attachmentFields );
+
+      QCOMPARE( QStringList( {QStringLiteral( "attachment" )} ), attachmentFields );
     }
 
 
@@ -527,10 +527,11 @@ class TestDeltaFileWrapper: public QObject
       QVERIFY( ! dfw.hasError() );
 
       QMap<QString, QString> attachmentFileNames = dfw.attachmentFileNames();
-      QMap<QString, QString> expectedAttachmentFileNames({
+      QMap<QString, QString> expectedAttachmentFileNames(
+      {
         {"FILE1.jpg", ""},
         {"FILE3.jpg", ""}
-      });
+      } );
 
       QCOMPARE( attachmentFileNames, expectedAttachmentFileNames );
     }
@@ -572,7 +573,7 @@ class TestDeltaFileWrapper: public QObject
       )"""" ).arg( mAttachmentFileName, mAttachmentFileChecksum ).toUtf8() ) );
 
 
-      // Check if creates delta of a feature with a NULL geometry and non existant attachment. 
+      // Check if creates delta of a feature with a NULL geometry and non existant attachment.
       // NOTE this is the same as calling f clearGeometry()
       dfw.reset();
       f.setGeometry( QgsGeometry() );
@@ -799,7 +800,7 @@ class TestDeltaFileWrapper: public QObject
       )"""" ).arg( mAttachmentFileName, mAttachmentFileChecksum ).toUtf8() ) );
 
 
-      // Check if creates delta of a feature with a NULL geometry and non existant attachment. 
+      // Check if creates delta of a feature with a NULL geometry and non existant attachment.
       // NOTE this is the same as calling f clearGeometry()
       dfw.reset();
       f.setGeometry( QgsGeometry() );
@@ -856,15 +857,15 @@ class TestDeltaFileWrapper: public QObject
       fields.append( QgsField( "dbl", QVariant::Double, "double" ) );
       fields.append( QgsField( "int", QVariant::Int, "integer" ) );
       fields.append( QgsField( "str", QVariant::String, "text" ) );
-      QgsFeature f1(fields, 100);
+      QgsFeature f1( fields, 100 );
       f1.setAttribute( QStringLiteral( "dbl" ), 3.14 );
       f1.setAttribute( QStringLiteral( "int" ), 42 );
       f1.setAttribute( QStringLiteral( "str" ), QStringLiteral( "stringy" ) );
 
-      QgsFeature f2( QgsFields(), 101);
+      QgsFeature f2( QgsFields(), 101 );
       f2.setGeometry( QgsGeometry( new QgsPoint( 25.9657, 43.8356 ) ) );
 
-      QgsFeature f3(fields, 102);
+      QgsFeature f3( fields, 102 );
 
       dfw.addCreate( "dummyLayerId1", f1 );
       dfw.addDelete( "dummyLayerId2", f2 );
@@ -938,17 +939,17 @@ class TestDeltaFileWrapper: public QObject
      * Normalized the random part of the delta file JSON schema to static values.
      * "id"         - "11111111-1111-1111-1111-111111111111"
      * "projectId"  - "projectId"
-     * 
+     *
      * @param json - JSON string
      * @return QJsonDocument normalized JSON document. NULL document if the input is invalid.
      */
-    QJsonDocument normalizeSchema ( const QString &json )
+    QJsonDocument normalizeSchema( const QString &json )
     {
       QJsonDocument doc = QJsonDocument::fromJson( json.toUtf8() );
 
       if ( doc.isNull() )
         return doc;
-      
+
       QJsonObject o = doc.object();
       QJsonArray deltas;
 
@@ -994,12 +995,12 @@ class TestDeltaFileWrapper: public QObject
     }
 
 
-    QJsonArray getDeltasArray ( const QString &json )
+    QJsonArray getDeltasArray( const QString &json )
     {
       return normalizeSchema( json.toUtf8() )
-        .object()
-        .value( QStringLiteral( "deltas" ) )
-        .toArray();
+             .object()
+             .value( QStringLiteral( "deltas" ) )
+             .toArray();
     }
 };
 
