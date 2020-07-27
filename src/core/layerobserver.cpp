@@ -268,7 +268,7 @@ void LayerObserver::onCommittedGeometriesChanges( const QString &layerId, const 
   QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( sender() );
   QgsFeatureIds patchedFids = mPatchedFids.value( layerId );
   QgsChangedFeatures changedFeatures = mChangedFeatures.value( layerId );
-  const QgsFeatureIds changedGeometriesFids = changedGeometries.keys().toSet();
+  const QgsFeatureIds changedGeometriesFids = qgis::listToSet( changedGeometries.keys() );
 
   for ( const QgsFeatureId &fid : changedGeometriesFids )
   {
@@ -302,7 +302,6 @@ void LayerObserver::onEditingStopped( )
       emit layerEdited( layerId );
       break;
     case QFieldCloudProjectsModel::LayerAction::Cloud:
-      emit layerEdited( layerId );
       mPatchedFids.take( layerId );
       mChangedFeatures.take( layerId );
 
@@ -311,6 +310,7 @@ void LayerObserver::onEditingStopped( )
         // TODO somehow indicate the user that writing failed
         QgsLogger::warning( QStringLiteral( "Failed writing JSON file" ) );
       }
+      emit layerEdited( layerId );
       break;
     default:
       Q_ASSERT( 0 );

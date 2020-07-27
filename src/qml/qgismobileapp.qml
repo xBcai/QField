@@ -1113,6 +1113,7 @@ ApplicationWindow {
       text: layerObserver.currentDeltaFileWrapper.count > 0
             ? qsTr( "Commit %1 changes" ).arg( layerObserver.currentDeltaFileWrapper.count )
             : qsTr( "Nothing to commit" )
+      enabled: cloudProjectsModel.canCommitCurrentProject
       onTriggered: {
         if ( layerObserver.commit() ) {
           displayToast( qsTr( "Successfully committed!" ) )
@@ -1130,7 +1131,7 @@ ApplicationWindow {
       width: parent.width
       height: 48
       leftPadding: 10
-      enabled: cloudProjectsModel.canSyncCurrentProject()
+      enabled: cloudProjectsModel.canSyncCurrentProject
       text: qsTr( "Synchronize" )
       onTriggered: cloudProjectsModel.uploadProject(cloudProjectsModel.currentCloudProjectId)
 
@@ -1139,15 +1140,6 @@ ApplicationWindow {
         cloudMenu.visible = false
       }
     }
-
-    Connections {
-      target: cloudProjectsModel
-      onModelReset: {
-        cloudCommitMenuItem.enabled = cloudProjectsModel.canCommitCurrentProject()
-        cloudUploadMenuItem.enabled = cloudProjectsModel.canSyncCurrentProject()
-      }
-    }
-
 
     MessageDialog {
       id: discardCommittedDeltasDialog
@@ -1411,8 +1403,6 @@ ApplicationWindow {
         mapCanvasBackground.color = mapCanvas.mapSettings.backgroundColor
         cloudProjectsModel.currentCloudProjectId = QFieldCloudUtils.getProjectId(qgisProject)
         cloudProjectsModel.refreshProjectModification( cloudProjectsModel.currentCloudProjectId )
-        cloudCommitMenuItem.enabled = cloudProjectsModel.canCommitCurrentProject()
-        cloudUploadMenuItem.enabled = cloudProjectsModel.canSyncCurrentProject()
       }  
     }
 
