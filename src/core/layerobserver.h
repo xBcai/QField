@@ -76,7 +76,7 @@ class LayerObserver : public QObject
     /**
      * Clears the current delta file changes
      */
-    void reset( bool isHardReset = false ) const;
+    Q_INVOKABLE void reset( bool isHardReset = false ) const;
 
 
     /**

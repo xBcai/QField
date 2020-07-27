@@ -101,13 +101,13 @@ class DeltaFileWrapper : public QObject
     /**
      * Clears the deltas from memory as there are no deltas at all. Does not affect the permanent storage until `toFile()` is called.
      */
-    void reset();
+    Q_INVOKABLE void reset();
 
 
     /**
      * Assigns a new unique delta file id.
      */
-    void resetId();
+    Q_INVOKABLE void resetId();
 
 
     /**
@@ -155,7 +155,7 @@ class DeltaFileWrapper : public QObject
      *
      * @return int number of delta elements
      */
-    int count() const;
+    Q_INVOKABLE int count() const;
 
 
     /**
@@ -203,7 +203,7 @@ class DeltaFileWrapper : public QObject
      *
      * @return bool whether write has been successful
      */
-    bool toFile();
+    Q_INVOKABLE bool toFile();
 
 
     /**

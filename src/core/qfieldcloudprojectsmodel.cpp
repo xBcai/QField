@@ -457,7 +457,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
   QModelIndex idx = createIndex( index, 0 );
   emit dataChanged( idx, idx,  QVector<int>() << StatusRole << UploadProgressRole );
 
-  const DeltaFileWrapper *deltaFile = mLayerObserver->committedDeltaFileWrapper();
+  DeltaFileWrapper *deltaFile = mLayerObserver->committedDeltaFileWrapper();
 
   if ( deltaFile->hasError() )
   {
@@ -551,6 +551,11 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
       // maybe the project does not exist, then create it?
       QgsLogger::warning( QStringLiteral( "Failed to upload delta file, reason:\n%1" ).arg( deltasReply->errorString() ) );
 
+      deltaFile->resetId();
+
+      if ( ! deltaFile->toFile() )
+        QgsLogger::warning( QStringLiteral( "Failed update committed delta file." ) );
+
       projectCancelUpload( projectId, false );
 
       emit syncFinished( projectId, true, deltasReply->errorString() );
@@ -620,7 +625,11 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
         } );
         break;
       case DeltaFileErrorStatus:
-        mLayerObserver->committedDeltaFileWrapper()->reset();
+        deltaFile->resetId();
+
+        if ( ! deltaFile->toFile() )
+          QgsLogger::warning( QStringLiteral( "Failed update committed delta file." ) );
+
         emit syncFinished( projectId, true, mCloudProjects[index].deltaFileUploadStatusString );
         return;
       case DeltaFileAppliedStatus:
@@ -659,13 +668,9 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     mCloudProjects[index].status = ProjectStatus::Idle;
     mCloudProjects[index].modification ^= LocalModification;
 
-    DeltaFileWrapper *commitedDeltaFileWrapper = mLayerObserver->committedDeltaFileWrapper();
-
-    Q_ASSERT( commitedDeltaFileWrapper );
-
-    commitedDeltaFileWrapper->reset();
-    commitedDeltaFileWrapper->resetId();
-    commitedDeltaFileWrapper->toFile();
+    deltaFile->reset();
+    deltaFile->resetId();
+    deltaFile->toFile();
 
     QgsProject::instance()->reloadAllLayers();
 
