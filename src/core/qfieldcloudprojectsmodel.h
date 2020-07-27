@@ -227,6 +227,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
       QString deltaFileId;
       DeltaFileStatus deltaFileUploadStatus = DeltaFileLocalStatus;
+      QString deltaFileUploadStatusString;
       QStringList deltaLayersToDownload;
 
       int layersDownloadedFinished = 0;
