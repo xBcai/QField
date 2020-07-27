@@ -8,27 +8,8 @@ import Theme 1.0
 Page {
   id: qfieldcloudScreen
   signal finished
-  property QFieldCloudConnection connection: QFieldCloudConnection
-  {
-    url: "http://dev.qfield.cloud"
-    onStatusChanged: {
-        if ( status == QFieldCloudConnection.LoggedIn ) {
-          projects.visible = true
-          connectionSettings.visible = false
-          usernameField.text = connection.username
-        }
-    }
-    onLoginFailed: displayToast( qsTr( "Login failed" ) )
-  }
-
-  QFieldCloudProjectsModel {
-    id: projectsModel
-    cloudConnection: connection
-
-    onProjectDownloaded: failed ? displayToast( qsTr( "Project %1 failed to download" ).arg( projectName ) ) :
-                                  displayToast( qsTr( "Project %1 successfully downloaded, it's now available to open" ).arg( projectName ) );
-    onWarning: displayToast( message )
-  }
+  property QFieldCloudConnection connection
+  property QFieldCloudProjectsModel projectsModel
   property LayerObserver layerObserver
 
   header: PageHeader {
