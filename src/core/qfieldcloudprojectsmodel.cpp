@@ -52,6 +52,12 @@ QFieldCloudProjectsModel::QFieldCloudProjectsModel()
     else
       mCloudProjects[index].modification ^= LocalModification;
   } );
+
+  connect( this, &QFieldCloudProjectsModel::modelReset, this, [ = ]()
+  {
+    updateCanCommitCurrentProject();
+    updateCanSyncCurrentProject();
+  } );
 }
 
 QFieldCloudConnection *QFieldCloudProjectsModel::cloudConnection() const
@@ -81,10 +87,12 @@ void QFieldCloudProjectsModel::setLayerObserver( LayerObserver *layerObserver )
   if ( mLayerObserver == layerObserver )
     return;
 
-  if ( layerObserver )
-    connect( layerObserver, &LayerObserver::layerEdited, this, &QFieldCloudProjectsModel::layerObserverLayerEdited );
-
   mLayerObserver = layerObserver;
+
+  if ( ! layerObserver )
+    return;
+
+  connect( layerObserver, &LayerObserver::layerEdited, this, &QFieldCloudProjectsModel::layerObserverLayerEdited );
 
   emit layerObserverChanged();
 }
@@ -181,34 +189,54 @@ QFieldCloudProjectsModel::ProjectStatus QFieldCloudProjectsModel::projectStatus(
 
 bool QFieldCloudProjectsModel::canCommitCurrentProject()
 {
-  if ( mCurrentCloudProjectId.isEmpty() )
-    return false;
+  return mCanCommitCurrentProject;
+}
 
-  if ( projectStatus( mCurrentCloudProjectId ) == ProjectStatus::Idle )
+void QFieldCloudProjectsModel::updateCanCommitCurrentProject()
+{
+  bool oldCanCommitCurrentProject = mCanCommitCurrentProject;
+
+  if ( mCurrentCloudProjectId.isEmpty() )
+  {
+    mCanCommitCurrentProject = false;
+  }
+  else if ( projectStatus( mCurrentCloudProjectId ) == ProjectStatus::Idle )
   {
     DeltaFileWrapper *currentDeltaFileWrapper = mLayerObserver->currentDeltaFileWrapper();
 
-    if ( currentDeltaFileWrapper->count() > 0 || currentDeltaFileWrapper->offlineLayerIds().count() > 0 )
-      return true;
+    mCanCommitCurrentProject = ( currentDeltaFileWrapper->count() > 0 || currentDeltaFileWrapper->offlineLayerIds().count() > 0 );
+  }
+  else
+  {
+    mCanCommitCurrentProject = false;
   }
 
-  return false;
+  if ( oldCanCommitCurrentProject != mCanCommitCurrentProject )
+    emit canCommitCurrentProjectChanged();
 }
 
 bool QFieldCloudProjectsModel::canSyncCurrentProject()
 {
+  return mCanSyncCurrentProject;
+}
+
+void QFieldCloudProjectsModel::updateCanSyncCurrentProject()
+{
+  bool oldCanSyncCurrentProject = mCanSyncCurrentProject;
+
   if ( mCurrentCloudProjectId.isEmpty() )
-    return false;
+    mCanSyncCurrentProject = false;
+  else if ( projectStatus( mCurrentCloudProjectId ) == ProjectStatus::Idle
+            && mLayerObserver->committedDeltaFileWrapper()->count() > 0 )
+    mCanSyncCurrentProject = true;
+  else if ( projectStatus( mCurrentCloudProjectId ) == ProjectStatus::Idle
+            && projectModification( mCurrentCloudProjectId ) & RemoteModification )
+    mCanSyncCurrentProject = true;
+  else
+    mCanSyncCurrentProject = false;
 
-  if ( projectStatus( mCurrentCloudProjectId ) == ProjectStatus::Idle
-       && mLayerObserver->committedDeltaFileWrapper()->count() > 0 )
-    return true;
-
-  if ( projectStatus( mCurrentCloudProjectId ) == ProjectStatus::Idle
-       && projectModification( mCurrentCloudProjectId ) & RemoteModification )
-    return true;
-
-  return false;
+  if ( oldCanSyncCurrentProject != mCanSyncCurrentProject )
+    emit canSyncCurrentProjectChanged();
 }
 
 QFieldCloudProjectsModel::ProjectModifications QFieldCloudProjectsModel::projectModification( const QString &projectId ) const
@@ -455,8 +483,6 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     return;
 
   QModelIndex idx = createIndex( index, 0 );
-  emit dataChanged( idx, idx,  QVector<int>() << StatusRole << UploadProgressRole );
-
   DeltaFileWrapper *deltaFile = mLayerObserver->committedDeltaFileWrapper();
 
   if ( deltaFile->hasError() )
@@ -480,6 +506,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
   mCloudProjects[index].uploadAttachmentsFinished = 0;
   mCloudProjects[index].uploadAttachmentsFailed = 0;
 
+  emit dataChanged( idx, idx,  QVector<int>() << StatusRole << UploadProgressRole );
 
   // //////////
   // prepare offline layer files to be uploaded
@@ -765,8 +792,6 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
 
     Q_ASSERT( deltaStatusReply->isFinished() );
     Q_ASSERT( rawReply );
-
-    qDebug() << "rawHeaderPairs:" << rawReply->rawHeaderPairs();
 
     if ( rawReply->error() != QNetworkReply::NoError )
     {

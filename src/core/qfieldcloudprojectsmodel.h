@@ -122,12 +122,11 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     void setLayerObserver( LayerObserver *layerObserver );
 
     Q_PROPERTY( QString currentCloudProjectId READ currentCloudProjectId WRITE setCurrentCloudProjectId NOTIFY currentCloudProjectIdChanged )
+    Q_PROPERTY( bool canCommitCurrentProject READ canCommitCurrentProject NOTIFY canCommitCurrentProjectChanged )
+    Q_PROPERTY( bool canSyncCurrentProject READ canSyncCurrentProject NOTIFY canSyncCurrentProjectChanged )
 
     QString currentCloudProjectId() const;
     void setCurrentCloudProjectId( const QString &currentCloudProjectId );
-
-    Q_INVOKABLE bool canSyncCurrentProject();
-    Q_INVOKABLE bool canCommitCurrentProject();
 
     Q_INVOKABLE void refreshProjectsList();
     Q_INVOKABLE void downloadProject( const QString &projectId );
@@ -149,6 +148,8 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     void cloudConnectionChanged();
     void layerObserverChanged();
     void currentCloudProjectIdChanged();
+    void canCommitCurrentProjectChanged();
+    void canSyncCurrentProjectChanged();
     void warning( const QString &message );
     void projectDownloaded( const QString &projectId, const bool hasError, const QString &projectName );
     void projectStatusChanged( const QString &projectId, const ProjectStatus &projectStatus );
@@ -263,6 +264,9 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     QString mCurrentCloudProjectId;
     LayerObserver *mLayerObserver = nullptr;
 
+    bool mCanCommitCurrentProject = false;
+    bool mCanSyncCurrentProject = false;
+
     void projectCancelUpload( const QString &projectId, bool shouldCancelAtServer );
     void projectUploadOfflineLayers( const QString &projectId );
     void projectUploadAttachments( const QString &projectId );
@@ -271,6 +275,11 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     NetworkReply *downloadFile( const QString &projectId, const QString &fileName );
     void projectDownloadFiles( const QString &projectId );
+
+    bool canCommitCurrentProject();
+    bool canSyncCurrentProject();
+    void updateCanCommitCurrentProject();
+    void updateCanSyncCurrentProject();
 };
 
 Q_DECLARE_METATYPE( QFieldCloudProjectsModel::ProjectStatus )

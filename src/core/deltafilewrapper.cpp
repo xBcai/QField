@@ -286,6 +286,8 @@ bool DeltaFileWrapper::toFile()
   mIsDirty = false;
   // QgsLogger::debug( "Finished writing deltas JSON" );
 
+  emit savedToFile();
+
   return true;
 }
 

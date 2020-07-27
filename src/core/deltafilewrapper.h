@@ -281,6 +281,14 @@ class DeltaFileWrapper : public QObject
      */
     void offlineLayerIdsChanged();
 
+
+    /**
+     *
+     * @todo TEST
+     */
+    void savedToFile();
+
+
   private:
 
     /**
