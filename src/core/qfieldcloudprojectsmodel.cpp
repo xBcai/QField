@@ -277,9 +277,6 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
 
       emit warning( QStringLiteral( "Error fetching project: %1" ).arg( rawReply->errorString() ) );
 
-      qDebug() << "ERR: " << rawReply->error() << "|" << rawReply->errorString();
-      qDebug() << "ERRBODY:" << rawReply->readAll();
-
       return;
     }
 
@@ -292,6 +289,18 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
 
       mCloudProjects[index].downloadProjectFiles.insert( fileName, FileTransfer( fileName, fileSize ) );
       mCloudProjects[index].downloadProjectFilesBytesTotal += fileSize;
+    }
+
+    if ( mCloudProjects[index].downloadProjectFiles.isEmpty() )
+    {
+      QModelIndex idx = createIndex( index, 0 );
+
+      mCloudProjects[index].status = ProjectStatus::Idle;
+
+      emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
+      emit warning( QStringLiteral( "Project empty" ) );
+
+      return;
     }
 
     // download the files and if all good emit projectDownloaded
