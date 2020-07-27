@@ -99,6 +99,7 @@ class LayerObserver : public QObject
     void layerEdited( const QString &layerId );
     void currentDeltaFileWrapperChanged();
     void committedDeltaFileWrapperChanged();
+    void deltaFileCommitted();
 
 
   private slots:

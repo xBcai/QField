@@ -90,6 +90,8 @@ bool LayerObserver::commit()
     return false;
   }
 
+  emit deltaFileCommitted();
+
   // Successfully committed!
   return true;
 }
