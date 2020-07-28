@@ -40,6 +40,19 @@ QFieldCloudProjectsModel::QFieldCloudProjectsModel()
   QJsonArray projects;
   reload( projects );
 
+  connect( this, &QFieldCloudProjectsModel::currentCloudProjectIdChanged, this, [ = ]()
+  {
+    const int index = findProject( mCurrentCloudProjectId );
+
+    if ( index == -1 || index >= mCloudProjects.size() )
+      return;
+
+    refreshProjectModification( mCurrentCloudProjectId );
+
+    updateCanCommitCurrentProject();
+    updateCanSyncCurrentProject();
+  } );
+
   connect( this, &QFieldCloudProjectsModel::modelReset, this, [ = ]()
   {
     const int index = findProject( mCurrentCloudProjectId );
@@ -90,6 +103,8 @@ void QFieldCloudProjectsModel::setLayerObserver( LayerObserver *layerObserver )
   connect( layerObserver, &LayerObserver::deltaFileCommitted, this, [ = ]()
   {
     refreshProjectModification( mCurrentCloudProjectId );
+    updateCanCommitCurrentProject();
+    updateCanSyncCurrentProject();
   } );
 
   emit layerObserverChanged();
@@ -256,7 +271,10 @@ void QFieldCloudProjectsModel::refreshProjectModification( const QString &projec
 
   ProjectModifications oldModifications = mCloudProjects[index].modification;
 
-  if ( mLayerObserver->currentDeltaFileWrapper()->count() > 0 || mLayerObserver->committedDeltaFileWrapper()->offlineLayerIds().size() > 0 )
+  if ( mLayerObserver->currentDeltaFileWrapper()->count() > 0
+       || mLayerObserver->currentDeltaFileWrapper()->offlineLayerIds().size() > 0
+       || mLayerObserver->committedDeltaFileWrapper()->count() > 0
+       || mLayerObserver->committedDeltaFileWrapper()->offlineLayerIds().size() > 0 )
     mCloudProjects[index].modification |= LocalModification;
   else
     mCloudProjects[index].modification ^= LocalModification;
@@ -494,8 +512,6 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     return;
   }
 
-  refreshProjectModification( projectId );
-
   mCloudProjects[index].status = ProjectStatus::Uploading;
   mCloudProjects[index].deltaFileId = deltaFile->id();
   mCloudProjects[index].deltaFileUploadStatus = DeltaFileLocalStatus;
@@ -508,6 +524,10 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
   mCloudProjects[index].uploadAttachments.empty();
   mCloudProjects[index].uploadAttachmentsFinished = 0;
   mCloudProjects[index].uploadAttachmentsFailed = 0;
+
+  refreshProjectModification( projectId );
+  updateCanCommitCurrentProject();
+  updateCanSyncCurrentProject();
 
   emit dataChanged( idx, idx,  QVector<int>() << StatusRole << UploadProgressRole );
 
