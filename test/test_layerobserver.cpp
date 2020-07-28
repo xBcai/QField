@@ -54,7 +54,7 @@ class TestLayerObserver: public QObject
       projectDir.setAutoRemove( false );
 
       QVERIFY2( projectDir.isValid(), "Failed to create temp dir" );
-      
+
       QgsProject::instance()->setPresetHomePath( projectDir.path() );
       QgsProject::instance()->writeEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ), QStringLiteral( "TEST_PROJECT_ID" ) );
 
@@ -86,7 +86,7 @@ class TestLayerObserver: public QObject
     void testHasError()
     {
       // ? how I can test such thing?
-      QSKIP("decide how we test errors");
+      QSKIP( "decide how we test errors" );
       QCOMPARE( mLayerObserver->hasError(), false );
       QVERIFY( QFile::exists( mLayerObserver->generateDeltaFileName( true ) ) );
     }
@@ -165,7 +165,7 @@ class TestLayerObserver: public QObject
       QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList() );
       // when we stop editing, all changes are written
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList({"create"}) );
+      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList( {"create"} ) );
     }
 
 
@@ -179,7 +179,7 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->startEditing() );
       QVERIFY( mLayer->addFeature( f1 ) );
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList({"create"}) );
+      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList( {"create"} ) );
     }
 
 
@@ -188,7 +188,7 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->startEditing() );
       QVERIFY( mLayer->deleteFeature( 1 ) );
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList({"delete"}) );
+      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList( {"delete"} ) );
     }
 
 
@@ -204,7 +204,7 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->updateFeature( f1 ) );
       QVERIFY( mLayer->updateFeature( f2 ) );
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList({"patch", "patch"}) );
+      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList( {"patch", "patch"} ) );
     }
 
 
@@ -222,9 +222,9 @@ class TestLayerObserver: public QObject
       QVERIFY( mLayer->updateFeature( f2 ) );
 
       QVERIFY( mLayer->commitChanges() );
-      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList({"patch", "patch"}) );
+      QCOMPARE( getDeltaOperations( mLayerObserver->generateDeltaFileName( true ) ), QStringList( {"patch", "patch"} ) );
     }
-    
+
   private:
 
     std::unique_ptr<QgsVectorLayer> mLayer;
@@ -238,7 +238,7 @@ class TestLayerObserver: public QObject
 
       if ( ! deltaFile.open( QIODevice::ReadOnly ) )
         return operations;
-      
+
       QJsonDocument doc = QJsonDocument::fromJson( deltaFile.readAll() );
 
       if ( doc.isNull() )
@@ -259,7 +259,7 @@ class TestLayerObserver: public QObject
 
       if ( ! deltaFile.open( QIODevice::ReadOnly ) )
         return QString();
-      
+
       QJsonDocument doc = QJsonDocument::fromJson( deltaFile.readAll() );
 
       if ( doc.isNull() )
