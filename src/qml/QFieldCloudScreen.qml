@@ -208,6 +208,7 @@ Page {
               anchors.fill: parent
 
               model: projectsModel
+              clip: true
 
               delegate: Rectangle {
                   id: rectangle
