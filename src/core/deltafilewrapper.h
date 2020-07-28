@@ -300,18 +300,6 @@ class DeltaFileWrapper : public QObject
 
 
     /**
-     * Attachment fields cache.
-     */
-    static QMap<QString, QStringList> sCacheAttachmentFieldNames;
-
-
-    /**
-     * Storage to keep track of the currently opened files. The stored paths are absolute, to ensure they are unique.
-     */
-    static QSet<QString> sFileLocks;
-
-
-    /**
      * The current project instance
      */
     const QgsProject *mProject = nullptr;
