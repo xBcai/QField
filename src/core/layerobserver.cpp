@@ -30,8 +30,8 @@ LayerObserver::LayerObserver( const QgsProject *project )
   : mProject( project )
 {
   // ! TODO possible memory leak here, shouldn't it be unique ptr? If yes, then why it fails, it used to be :(
-  mCurrentDeltaFileWrapper = new DeltaFileWrapper( mProject, generateDeltaFileName( true ) );
-  mCommittedDeltaFileWrapper = new DeltaFileWrapper( mProject, generateDeltaFileName( false ) );
+  mCurrentDeltaFileWrapper = std::unique_ptr<DeltaFileWrapper>( new DeltaFileWrapper( mProject, generateDeltaFileName( true ) ) );
+  mCommittedDeltaFileWrapper = std::unique_ptr<DeltaFileWrapper>( new DeltaFileWrapper( mProject, generateDeltaFileName( false ) ) );
 
   connect( mProject, &QgsProject::homePathChanged, this, &LayerObserver::onHomePathChanged );
   connect( mProject, &QgsProject::layersAdded, this, &LayerObserver::onLayersAdded );
@@ -66,7 +66,7 @@ bool LayerObserver::commit()
     return true;
 
   // Try to append the contents of the current delta file to the committed one. Very unlikely to break there.
-  if ( ! mCommittedDeltaFileWrapper->append( mCurrentDeltaFileWrapper ) )
+  if ( ! mCommittedDeltaFileWrapper->append( mCurrentDeltaFileWrapper.get() ) )
   {
     QgsLogger::warning( QStringLiteral( "Unable to append delta file wrapper contents!" ) );
     return false;
@@ -108,13 +108,13 @@ void LayerObserver::reset( bool isHardReset ) const
 
 DeltaFileWrapper *LayerObserver::currentDeltaFileWrapper() const
 {
-  return mCurrentDeltaFileWrapper;
+  return mCurrentDeltaFileWrapper.get();
 }
 
 
 DeltaFileWrapper *LayerObserver::committedDeltaFileWrapper() const
 {
-  return mCommittedDeltaFileWrapper;
+  return mCommittedDeltaFileWrapper.get();
 }
 
 
@@ -130,8 +130,8 @@ void LayerObserver::onHomePathChanged()
   if ( QFieldCloudUtils::getProjectId( mProject ).isEmpty() )
     return;
 
-  mCurrentDeltaFileWrapper = new DeltaFileWrapper( mProject, generateDeltaFileName( true ) );
-  mCommittedDeltaFileWrapper = new DeltaFileWrapper( mProject, generateDeltaFileName( false ) );
+  mCurrentDeltaFileWrapper = std::unique_ptr<DeltaFileWrapper>( new DeltaFileWrapper( mProject, generateDeltaFileName( true ) ) );
+  mCommittedDeltaFileWrapper = std::unique_ptr<DeltaFileWrapper>( new DeltaFileWrapper( mProject, generateDeltaFileName( false ) ) );
 
   emit currentDeltaFileWrapperChanged();
   emit committedDeltaFileWrapperChanged();
