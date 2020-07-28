@@ -171,13 +171,13 @@ class LayerObserver : public QObject
     /**
      * The current Deltas File Wrapper object
      */
-    DeltaFileWrapper *mCurrentDeltaFileWrapper;
+    std::unique_ptr<DeltaFileWrapper> mCurrentDeltaFileWrapper;
 
 
     /**
      * The commited Deltas File Wrapper object
      */
-    DeltaFileWrapper *mCommittedDeltaFileWrapper;
+    std::unique_ptr<DeltaFileWrapper> mCommittedDeltaFileWrapper;
 
 
     /**
