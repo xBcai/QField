@@ -1162,6 +1162,7 @@ ApplicationWindow {
         layerObserverAlias.committedDeltaFileWrapper.resetId()
 
         if ( layerObserverAlias.committedDeltaFileWrapper.toFile() ) {
+          cloudProjectsModel.refreshProjectModification( cloudProjectsModel.currentCloudProjectId )
           displayToast( qsTr( "Successfully discarded %n local committed deltas", "", committedDeltasCount ) )
         } else {
           displayToast( qsTr( "Failed to reset local deltas.", "", committedDeltasCount ) )

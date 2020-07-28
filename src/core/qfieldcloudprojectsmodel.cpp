@@ -40,6 +40,7 @@ QFieldCloudProjectsModel::QFieldCloudProjectsModel()
   QJsonArray projects;
   reload( projects );
 
+  // TODO all of these connects are a bit too much, and I guess not very precise, should be refactored!
   connect( this, &QFieldCloudProjectsModel::currentCloudProjectIdChanged, this, [ = ]()
   {
     const int index = findProject( mCurrentCloudProjectId );
@@ -61,6 +62,17 @@ QFieldCloudProjectsModel::QFieldCloudProjectsModel()
       return;
 
     refreshProjectModification( mCurrentCloudProjectId );
+
+    updateCanCommitCurrentProject();
+    updateCanSyncCurrentProject();
+  } );
+
+  connect( this, &QFieldCloudProjectsModel::dataChanged, this, [ = ]()
+  {
+    const int index = findProject( mCurrentCloudProjectId );
+
+    if ( index == -1 || index >= mCloudProjects.size() )
+      return;
 
     updateCanCommitCurrentProject();
     updateCanSyncCurrentProject();
