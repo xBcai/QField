@@ -28,6 +28,8 @@ class TestLayerObserver: public QObject
     void initTestCase()
     {
       mLayer.reset( new QgsVectorLayer( QStringLiteral( "Point?crs=EPSG:3857&field=int:integer&field=str:string" ), QStringLiteral( "int" ), QStringLiteral( "memory" ) ) );
+      mLayer->setCustomProperty( "QFieldSync/action", QStringLiteral( "CLOUD" ) );
+
       QVERIFY( mLayer->isValid() );
 
       QgsFeature f1( mLayer->fields() );
