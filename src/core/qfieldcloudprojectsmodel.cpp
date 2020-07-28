@@ -702,8 +702,8 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     deltaFile->reset();
     deltaFile->resetId();
 
-    if ( deltaFile->toFile() )
-      QgsLogger::warning( QStringLiteral( "Failed to write delta file." ) );
+    if ( ! deltaFile->toFile() )
+      QgsLogger::warning( QStringLiteral( "Failed to write delta file. %1" ).arg( deltaFile->errorString() ) );
 
     QgsProject::instance()->reloadAllLayers();
 
