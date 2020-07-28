@@ -250,10 +250,18 @@ class DeltaFileWrapper : public QObject
 
     /**
      * Returns the list of offline layers to be synchronized.
-     * @return list of layers
+     * @return list of layers ids
      * @todo TEST
      */
     QStringList offlineLayerIds() const;
+
+
+    /**
+     * Returns the list of layers that have applied deltas on them.
+     * @return list of layers ids
+     * @todo TEST
+     **/
+    QStringList deltaLayerIds() const;
 
 
     /**

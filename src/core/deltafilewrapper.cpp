@@ -678,6 +678,23 @@ QStringList DeltaFileWrapper::offlineLayerIds() const
 }
 
 
+QStringList DeltaFileWrapper::deltaLayerIds() const
+{
+  QStringList layerIds;
+
+  for ( const QJsonValue &v : qgis::as_const( mDeltas ) )
+  {
+    QJsonObject deltaItem = v.toObject();
+    const QString layerId = deltaItem.value( QStringLiteral( "layerId" ) ).toString();
+
+    if ( ! layerIds.contains( layerId ) )
+      layerIds.append( layerId );
+  }
+
+  return layerIds;
+}
+
+
 void DeltaFileWrapper::addOfflineLayerId( const QString &offlineLayerId )
 {
   if ( mOfflineLayerIds.contains( offlineLayerId ) )
