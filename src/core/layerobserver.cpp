@@ -184,8 +184,8 @@ void LayerObserver::onBeforeCommitChanges()
     return;
 
   const QgsFeatureIds deletedFids = eb->deletedFeatureIds();
-  const QgsFeatureIds changedGeometriesFids = eb->changedGeometries().keys().toSet();
-  const QgsFeatureIds changedAttributesFids = eb->changedAttributeValues().keys().toSet();
+  const QgsFeatureIds changedGeometriesFids = qgis::listToSet( eb->changedGeometries().keys() );
+  const QgsFeatureIds changedAttributesFids = qgis::listToSet( eb->changedAttributeValues().keys() );
   // NOTE QgsFeatureIds underlying implementation is QSet, so no need to check if the QgsFeatureId already exists
   QgsFeatureIds changedFids;
 
@@ -244,7 +244,7 @@ void LayerObserver::onCommittedAttributeValuesChanges( const QString &layerId, c
   QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( sender() );
   QgsFeatureIds patchedFids = mPatchedFids.value( layerId );
   QgsChangedFeatures changedFeatures = mChangedFeatures.value( layerId );
-  const QgsFeatureIds changedAttributesValuesFids = changedAttributesValues.keys().toSet();
+  const QgsFeatureIds changedAttributesValuesFids = qgis::listToSet( changedAttributesValues.keys() );
 
   for ( const QgsFeatureId &fid : changedAttributesValuesFids )
   {
