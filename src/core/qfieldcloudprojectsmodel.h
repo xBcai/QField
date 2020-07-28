@@ -231,9 +231,6 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       QString deltaFileUploadStatusString;
       QStringList deltaLayersToDownload;
 
-      int layersDownloadedFinished = 0;
-      int layersDownloadedFailed = 0;
-
       QMap<QString, FileTransfer> downloadProjectFiles;
       int downloadProjectFilesFinished = 0;
       int downloadProjectFilesFailed = 0;

@@ -614,6 +614,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     }
 
     mCloudProjects[index].deltaFileUploadStatus = DeltaFilePendingStatus;
+    mCloudProjects[index].deltaLayersToDownload = deltaFile->deltaLayerIds();
     emit networkDeltaUploaded( projectId );
   } );
 
@@ -644,8 +645,8 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     if ( projectId != uploadedProjectId )
       return;
 
-    Q_ASSERT( mCloudProjects[index].layersDownloadedFinished == mCloudProjects[index].uploadOfflineLayers.size() );
-    Q_ASSERT( mCloudProjects[index].layersDownloadedFailed == 0 );
+    Q_ASSERT( mCloudProjects[index].downloadLayersFinished == mCloudProjects[index].uploadOfflineLayers.size() );
+    Q_ASSERT( mCloudProjects[index].downloadLayersFailed == 0 );
 
     projectGetDeltaStatus( projectId );
   } );
@@ -701,11 +702,11 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
       return;
 
     // wait until all layers are downloaded
-    if ( mCloudProjects[index].layersDownloadedFinished < mCloudProjects[index].deltaLayersToDownload.size() )
+    if ( mCloudProjects[index].downloadLayersFinished < mCloudProjects[index].deltaLayersToDownload.size() )
       return;
 
     // there are some files that failed to download
-    if ( mCloudProjects[index].layersDownloadedFailed > 0 )
+    if ( mCloudProjects[index].downloadLayersFailed > 0 )
     {
       mCloudProjects[index].status = ProjectStatus::Error;
       // TODO translate this message
