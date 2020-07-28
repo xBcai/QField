@@ -29,7 +29,6 @@
 LayerObserver::LayerObserver( const QgsProject *project )
   : mProject( project )
 {
-  // ! TODO possible memory leak here, shouldn't it be unique ptr? If yes, then why it fails, it used to be :(
   mCurrentDeltaFileWrapper = std::unique_ptr<DeltaFileWrapper>( new DeltaFileWrapper( mProject, generateDeltaFileName( true ) ) );
   mCommittedDeltaFileWrapper = std::unique_ptr<DeltaFileWrapper>( new DeltaFileWrapper( mProject, generateDeltaFileName( false ) ) );
 
