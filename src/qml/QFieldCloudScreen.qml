@@ -46,39 +46,24 @@ Page {
             font: Theme.tipFont
         }
 
-        ToolButton {
+        QfToolButton {
+          id: settingsButton
           Layout.alignment: Qt.AlignTop
-
-          height: 56
-          width: 56
-          visible: true
-
-          contentItem: Rectangle {
-            anchors.fill: parent
-            height: 56
-            width: 56
-            color: "transparent"
-            Image {
-              anchors.fill: parent
-              fillMode: Image.Pad
-              horizontalAlignment: Image.AlignHCenter
-              verticalAlignment: Image.AlignVCenter
-              source: !projects.visible ? Theme.getThemeIcon( 'ic_clear_black_18dp' ) : Theme.getThemeIcon( 'ic_gear_black_24dp' )
+          anchors.verticalCenter: parent.verticalCenter
+          iconSource: !projects.visible ? Theme.getThemeIcon( 'ic_clear_black_18dp' ) : Theme.getThemeIcon( 'ic_gear_black_24dp' )
+          bgcolor: "transparent"
+          onClicked: {
+            if (!connectionSettings.visible) {
+              connectionSettings.visible = true
+              projects.visible = false
+              usernameField.forceActiveFocus()
+            } else {
+              connectionSettings.visible = false
+              projects.visible = true
+              refreshProjectsListBtn.forceActiveFocus()
             }
           }
-
-          onClicked: {
-              if (!connectionSettings.visible) {
-                connectionSettings.visible = true
-                projects.visible = false
-                usernameField.forceActiveFocus()
-              } else {
-                connectionSettings.visible = false
-                projects.visible = true
-                refreshProjectsListBtn.forceActiveFocus()
-              }
-          }
-       }
+        }
     }
 
     ColumnLayout {
