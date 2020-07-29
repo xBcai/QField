@@ -31,39 +31,39 @@ class NetworkManager
   public:
 
     /**
-     * GET a \a request and returns a reply
+     * makes HTTP GET \a request and returns a reply
      */
-    static NetworkReply *get( const QNetworkRequest request );
+    static NetworkReply *get( const QNetworkRequest &request );
 
 
     /**
-     * POST a \a request with an optional \a payload and returns a reply
+     * makes HTTP POST \a request with an optional \a payload and returns a reply
      */
-    static NetworkReply *post( const QNetworkRequest request, const QByteArray &payload = QByteArray() );
+    static NetworkReply *post( const QNetworkRequest &request, const QByteArray &payload = QByteArray() );
 
 
     /**
-     * POST a \a request with a multipart \a payload and returns a reply
+     * makes HTTP POST \a request with a multipart \a payload and returns a reply
      */
-    static NetworkReply *post( const QNetworkRequest request, QHttpMultiPart *payload );
+    static NetworkReply *post( const QNetworkRequest &request, QHttpMultiPart *payload );
 
 
     /**
-     * PUT a \a request with an optional \a payload and returns a reply
+     * makes HTTP PUT \a request with an optional \a payload and returns a reply
      */
-    static NetworkReply *put( const QNetworkRequest request, const QByteArray &payload = QByteArray() );
+    static NetworkReply *put( const QNetworkRequest &request, const QByteArray &payload = QByteArray() );
 
 
     /**
-     * PUT a \a request with a multipart \a payload and returns a reply
+     * makes HTTP PUT \a request with a multipart \a payload and returns a reply
      */
-    static NetworkReply *put( const QNetworkRequest request, QHttpMultiPart *payload );
+    static NetworkReply *put( const QNetworkRequest &request, QHttpMultiPart *payload );
 
 
     /**
-     * DELETE a \a request with an optional \a payload and returns a reply
+     * makes HTTP DELETE \a request with an optional \a payload and returns a reply
      */
-    static NetworkReply *deleteResource( const QNetworkRequest request, const QByteArray &payload = QByteArray() );
+    static NetworkReply *deleteResource( const QNetworkRequest &request, const QByteArray &payload = QByteArray() );
 
 };
 
