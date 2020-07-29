@@ -60,7 +60,6 @@
 #include "qgsquickcoordinatetransformer.h"
 #include "qgsquickmaptransform.h"
 #include "qgsnetworkaccessmanager.h"
-#include "qfieldcloudutils.h"
 
 #include "qgismobileapp.h"
 
@@ -112,10 +111,6 @@
 #include "layerobserver.h"
 #include "deltafilewrapper.h"
 
-// Check QGIS Version
-#if VERSION_INT >= 30600
-#include "qgsnetworkaccessmanager.h"
-#endif
 
 #define QUOTE(string) _QUOTE(string)
 #define _QUOTE(string) #string
