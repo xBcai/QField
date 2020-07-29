@@ -25,6 +25,9 @@
 //#include <QRandomGenerator>
 
 
+/**
+ * A wrapper around QNetworkReply that allows retriable requests.
+ */
 class NetworkReply : public QObject
 {
 
@@ -34,7 +37,7 @@ class NetworkReply : public QObject
 
 
     /**
-     * A wrapper around QNetworkReply that allows retryable requests.
+     * A wrapper around QNetworkReply that allows retriable requests.
      * @param op HTTP method
      * @param nam network access manager
      * @param request the request to be performed
@@ -44,7 +47,7 @@ class NetworkReply : public QObject
 
 
     /**
-     * A wrapper around QNetworkReply that allows retryable requests.
+     * A wrapper around QNetworkReply that allows retriable requests.
      * @param op HTTP method
      * @param nam network access manager
      * @param request the request to be performed
@@ -60,7 +63,7 @@ class NetworkReply : public QObject
 
 
     /**
-     * Get the QNetworkReply object once the CloudReply is finilized.
+     * Get the QNetworkReply object once the CloudReply is finilized. Do not delete it manually.
      * @return network reply
      */
     QNetworkReply *reply() const;
@@ -201,7 +204,7 @@ class NetworkReply : public QObject
     /**
      * Request payload as multipart
      */
-    QHttpMultiPart *mPayloadMultiPart;
+    QHttpMultiPart *mPayloadMultiPart = nullptr;
 
 
     /**

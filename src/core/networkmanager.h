@@ -25,13 +25,19 @@ class QHttpMultiPart;
 class QgsNetworkAccessManager;
 
 
+/**
+ * NetworkManager is used to make reliable and retriable network requests. It wraps around `QgsNetworkAccessManager`.
+ *
+ * Note: After the request has finished, it is the responsibility of the user to delete the NetworkReply object at an appropriate time.
+ * Do not directly delete it inside the slot connected to finished(). You can use the deleteLater() function.
+ */
 class NetworkManager
 {
 
   public:
 
     /**
-     * makes HTTP GET \a request and returns a reply
+     * makes HTTP GET \a request and returns a reply.
      */
     static NetworkReply *get( const QNetworkRequest &request );
 
