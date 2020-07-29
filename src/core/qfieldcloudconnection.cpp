@@ -13,6 +13,7 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "qfield.h"
 #include "qfieldcloudconnection.h"
 #include <qgsnetworkaccessmanager.h>
 #include <qgsapplication.h>
