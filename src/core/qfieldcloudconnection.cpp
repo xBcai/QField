@@ -218,14 +218,8 @@ NetworkReply *QFieldCloudConnection::get( const QString &endpoint, const QVarian
   QUrl url( mUrl + endpoint );
   QUrlQuery urlQuery;
 
-  QMap<QString, QVariant>::const_iterator it = params.constBegin();
-  QMap<QString, QVariant>::const_iterator itEnd = params.constEnd();
-
-  while ( it != itEnd )
-  {
-    urlQuery.addQueryItem( it.key(), it.value().toString() );
-    ++it;
-  }
+  for ( auto [ key, value ] : qfield::asKeyValueRange( params ) )
+    urlQuery.addQueryItem( key, value.toString() );
 
   url.setQuery( urlQuery );
 
