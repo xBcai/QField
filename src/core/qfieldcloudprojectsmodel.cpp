@@ -699,8 +699,6 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
       case DeltaFileAppliedWithConflictsStatus:
         projectDownloadLayers( projectId );
         return;
-      default:
-        Q_ASSERT( 0 );
     }
   } );
 

@@ -163,9 +163,6 @@ void NetworkReply::onFinished()
     case QNetworkReply::UnknownServerError:
       canRetry = false;
       break;
-    default:
-      canRetry = false;
-      break;
   }
 
   if ( ! canRetry || mRetriesLeft == 0 )
