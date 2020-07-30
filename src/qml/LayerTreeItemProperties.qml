@@ -64,8 +64,9 @@ Popup {
         property var padlockIcon: Theme.getThemeIcon('ic_lock_black_24dp')
         property var padlockSize: fontMetrics.height - 5
 
-        visible: index !== undefined && (layerTree.data(index, FlatLayerTreeModel.ReadOnly) ||
-                                        layerTree.data(index, FlatLayerTreeModel.GeometryLocked))
+        visible: !!index && (
+                   layerTree.data(index, FlatLayerTreeModel.ReadOnly)
+                   || layerTree.data(index, FlatLayerTreeModel.GeometryLocked))
         Layout.fillWidth: true
 
         wrapMode: Text.WordWrap

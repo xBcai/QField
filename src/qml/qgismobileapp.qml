@@ -1406,14 +1406,6 @@ ApplicationWindow {
         cloudProjectsModel.refreshProjectModification( cloudProjectsModel.currentCloudProjectId )
       }  
     }
-
-    Connections {
-      target: layerObserver
-      onCurrentDeltaFileWrapperChanged: () => {
-        console.log( 'MESSAGE ME' )
-        displayToast( "MESSAGE ME" )
-      }
-    }
   }
 
   BusyIndicator {
