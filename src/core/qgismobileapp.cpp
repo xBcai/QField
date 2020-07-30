@@ -419,6 +419,11 @@ void QgisMobileapp::onReadProject( const QDomDocument &doc )
     // Overwrite the title to match what is used in QField Cloud
     const QString projectId = fi.dir().dirName();
     title = QSettings().value( QStringLiteral( "QFieldCloud/projects/%1/name" ).arg( projectId ), fi.fileName() ).toString();
+
+    if ( mProject->readEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ) ).isEmpty()
+         && ! mProject->writeEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ), projectId )
+         && ! mProject->write() )
+      QgsLogger::warning( "Unable to set cloudProjectId to the project" );
   }
   else
   {
