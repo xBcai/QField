@@ -335,8 +335,12 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
     if ( rawReply->error() != QNetworkReply::NoError )
     {
       if ( index > -1 )
+      {
         mCloudProjects[index].status = ProjectStatus::Idle;
 
+        QModelIndex idx = createIndex( index, 0 );
+        emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
+      }
       emit warning( QStringLiteral( "Error fetching project: %1" ).arg( rawReply->errorString() ) );
 
       return;
