@@ -48,9 +48,8 @@ Page {
 
         QfToolButton {
           id: settingsButton
-          Layout.alignment: Qt.AlignTop
-          anchors.verticalCenter: parent.verticalCenter
-          iconSource: !projects.visible ? Theme.getThemeIcon( 'ic_clear_black_18dp' ) : Theme.getThemeIcon( 'ic_gear_black_24dp' )
+          Layout.alignment: Qt.AlignVCenter
+          iconSource: !projects.visible ? Theme.getThemeIcon( 'ic_close_black_24dp' ) : Theme.getThemeIcon( 'ic_gear_black_24dp' )
           bgcolor: "transparent"
           onClicked: {
             if (!connectionSettings.visible) {
