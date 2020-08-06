@@ -23,6 +23,8 @@
 
 #include <qgsproject.h>
 
+#include <qfield.h>
+
 const QString DeltaFileWrapper::FormatVersion = QStringLiteral( "1.0" );
 
 /**
@@ -704,4 +706,184 @@ void DeltaFileWrapper::addOfflineLayerId( const QString &offlineLayerId )
   mIsDirty = true;
 
   emit offlineLayerIdsChanged();
+}
+
+
+bool DeltaFileWrapper::isDeltaBeingApplied() const
+{
+  return mIsDeltaFileBeingApplied;
+}
+
+
+bool DeltaFileWrapper::apply()
+{
+  return _apply( false );
+}
+
+
+bool DeltaFileWrapper::applyReversed()
+{
+  return _apply( true );
+}
+
+
+bool DeltaFileWrapper::_apply( bool shouldApplyInReverse )
+{
+  if ( ! toFile() )
+    return false;
+
+  mIsDeltaFileBeingApplied = true;
+
+  bool isSuccess = true;
+
+  // 1) get all vector layers referenced in the delta file and make them editable
+  QHash<QString, QgsVectorLayer *> vectorLayers;
+  for ( const QJsonValue &deltaJson : qgis::as_const( mDeltas ) )
+  {
+    const QVariantMap delta = deltaJson.toObject().toVariantMap();
+    const QString layerId = delta.value( QStringLiteral( "layerId" ) ).toString();
+
+    QgsVectorLayer *vl = static_cast<QgsVectorLayer *>( mProject->mapLayer( layerId ) );
+
+    if ( ! vl || ! vl->startEditing() )
+    {
+      isSuccess = false;
+      break;
+    }
+
+    vectorLayers.insert( vl->id(), vl );
+  }
+
+  // 2) actual application of the delta contents
+  if ( isSuccess )
+    isSuccess = _applyDeltasOnLayers( vectorLayers, shouldApplyInReverse );
+
+
+  // 3) commit the changes, if fails, revert the rest of the layers
+  if ( isSuccess )
+  {
+    for ( auto [ layerId, vl ] : qfield::asKeyValueRange( vectorLayers ) )
+    {
+      // despite the error, try to rollback all the changes so far
+      if ( vl->commitChanges() )
+      {
+        vectorLayers[layerId] = nullptr;
+      }
+      else
+      {
+        QgsLogger::warning( QStringLiteral( "Failed to commit layer with id \"%1\", all the rest layers will be rollbacked" ).arg( layerId ) );
+        isSuccess = false;
+        break;
+      }
+    }
+  }
+
+  // 4) revert the changes that didn't manage to be applied
+  if ( ! isSuccess )
+  {
+    for ( auto [ layerId, vl ] : qfield::asKeyValueRange( vectorLayers ) )
+    {
+      // the layer has already been committed
+      if ( ! vl ) continue;
+
+      // despite the error, try to rollback all the changes so far
+      if ( ! vl->rollBack() )
+        QgsLogger::warning( QStringLiteral( "Failed to rollback layer with id \"%1\"" ).arg( layerId ) );
+    }
+  }
+
+  mIsDeltaFileBeingApplied = false;
+
+  return isSuccess;
+}
+
+
+bool DeltaFileWrapper::_applyDeltasOnLayers( QHash<QString, QgsVectorLayer *> &vectorLayers, bool shouldApplyInReverse )
+{
+  QJsonArray deltas;
+
+  if ( shouldApplyInReverse )
+    // not the most optimal solution, but at least the QJsonValues are not copied
+    for ( int i = 0, s = mDeltas.size(); i < s; i++ )
+      deltas.append( mDeltas[ i ] );
+  else
+    deltas = QJsonArray( mDeltas );
+
+  for ( const QJsonValue &deltaJson : qgis::as_const( deltas ) )
+  {
+    const QVariantMap delta = deltaJson.toObject().toVariantMap();
+    const QString layerId = delta.value( QStringLiteral( "layerId" ) ).toString();
+    const int fid = delta.value( QStringLiteral( "fid" ) ).toInt();
+    const QStringList attachmentFieldNamesList = attachmentFieldNames( mProject, layerId );
+    QString method = delta.value( QStringLiteral( "method" ) ).toString();
+    QVariantMap oldValues = delta.value( QStringLiteral( "old" ) ).toMap();
+    QVariantMap newValues = delta.value( QStringLiteral( "new" ) ).toMap();
+
+    if ( shouldApplyInReverse )
+    {
+      if ( method == QStringLiteral( "create" ) )
+        method = QStringLiteral( "delete" );
+      else if ( method == QStringLiteral( "delete" ) )
+        method = QStringLiteral( "create" );
+
+      std::swap( oldValues, newValues );
+    }
+
+    Q_ASSERT( vectorLayers[layerId] );
+
+    if ( ! vectorLayers[layerId] )
+      return false;
+
+    QgsFields fields = vectorLayers[layerId]->fields();
+
+    if ( method == QStringLiteral( "create" ) )
+    {
+      Q_ASSERT( ! newValues.isEmpty() );
+
+      if ( ! vectorLayers[layerId]->deleteFeature( fid ) )
+        return false;
+    }
+    else if ( method == QStringLiteral( "delete" ) )
+    {
+      Q_ASSERT( ! oldValues.isEmpty() );
+
+      const QString geomWkt = oldValues.value( QStringLiteral( "geometry" ) ).toString();
+      const QVariantMap attributes = oldValues.value( QStringLiteral( "attributes" ) ).toMap();
+
+      QgsFeature f( fields, fid );
+
+      if ( ! geomWkt.isEmpty() )
+        f.setGeometry( QgsGeometry::fromWkt( geomWkt ) );
+
+      const QStringList attrNames = attributes.keys();
+
+      for ( auto [ attrName, attrValue ] : qfield::asKeyValueRange( attributes ) )
+        f.setAttribute( attrName, attrValue );
+
+      vectorLayers[layerId]->addFeature( f );
+    }
+    else if ( method == QStringLiteral( "patch" ) )
+    {
+      Q_ASSERT( ! newValues.isEmpty() );
+      Q_ASSERT( ! oldValues.isEmpty() );
+
+      const QString geomWkt = oldValues.value( QStringLiteral( "geometry" ) ).toString();
+      const QVariantMap attributes = oldValues.value( QStringLiteral( "attributes" ) ).toMap();
+
+      if ( ! geomWkt.isEmpty() )
+      {
+        QgsGeometry geom = QgsGeometry::fromWkt( geomWkt );
+        vectorLayers[layerId]->changeGeometry( fid, geom );
+      }
+
+      for ( auto [ attrName, attrValue ] : qfield::asKeyValueRange( attributes ) )
+        vectorLayers[layerId]->changeAttributeValue( fid, fields.indexOf( attrName ), attrValue );
+    }
+    else
+    {
+      Q_ASSERT( 0 );
+    }
+  }
+
+  return true;
 }
