@@ -273,6 +273,36 @@ class DeltaFileWrapper : public QObject
     void addOfflineLayerId( const QString &offlineLayerId );
 
 
+    /**
+     * Whether or not the current delta file is being applied.
+     *
+     * @todo TEST
+     */
+    bool isDeltaBeingApplied() const;
+
+
+    /**
+     * Attempts to apply a delta file.
+     * The list of deltas is not being reset after successfull application and should be handled by the caller.
+     *
+     * @note it is not guaranteed that the project layers have not changed in case of failure
+     * @return whether the attempt was successful
+     * @todo TEST
+     */
+    Q_INVOKABLE bool apply();
+
+
+    /**
+     * Attempts to apply a delta file in reverse order (resulting in local changes being discarded).
+     * The list of deltas is not being reset after successfull application and should be handled by the caller.
+     *
+     * @note it is not guaranteed that the project layers have not changed in case of failure
+     * @return whether the attempt was successful.
+     * @todo TEST
+     */
+    Q_INVOKABLE bool applyReversed();
+
+
   signals:
     /**
      * Emitted when the `deltas` list has changed.
@@ -305,6 +335,20 @@ class DeltaFileWrapper : public QObject
      *
      */
     QJsonValue geometryToJsonValue( const QgsGeometry &geom ) const;
+
+
+    /**
+     * Applies the current delta file on the current project. A wrapper method arround \a _applyDeltasOnLayers.
+     * If \a shouldApplyInReverse is passed, the deltas are applied in reverse order (e.g. discarding the changes).
+     */
+    bool _apply( bool shouldApplyInReverse );
+
+
+    /**
+     * Applies the current delta file on a list of given layers \a vectorLayers.
+     * If \a shouldApplyInReverse is passed, the deltas are applied in reverse order (e.g. discarding the changes).
+     */
+    bool _applyDeltasOnLayers( QHash<QString, QgsVectorLayer *> &vectorLayers, bool shouldApplyInReverse );
 
 
     /**
@@ -356,9 +400,15 @@ class DeltaFileWrapper : public QObject
 
 
     /**
-     * Holds whether the deltas in the memory differ from the deltas in the file
+     * Holds whether the deltas in the memory differ from the deltas in the file.
      */
     bool mIsDirty = false;
+
+
+    /**
+     * Whether the delta file is currently being applied.
+     */
+    bool mIsDeltaFileBeingApplied = false;
 };
 
 #endif // FEATUREDELTAS_H
