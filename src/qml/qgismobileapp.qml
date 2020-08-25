@@ -1096,92 +1096,6 @@ ApplicationWindow {
     }
   }
 
-  Menu {
-    id: cloudMenu
-    title: qsTr( "Cloud Menu" )
-
-    width: Math.max(250, mainWindow.width/4)
-
-    MenuItem {
-      id: cloudCommitMenuItem
-
-      font: Theme.defaultFont
-      width: parent.width
-      height: 48
-      leftPadding: 10
-
-      text: layerObserver.currentDeltaFileWrapper.count > 0
-            ? qsTr( "Commit %1 changes" ).arg( layerObserver.currentDeltaFileWrapper.count )
-            : qsTr( "Nothing to commit" )
-      enabled: cloudProjectsModel.canCommitCurrentProject
-      onTriggered: {
-        if ( layerObserver.commit() ) {
-          displayToast( qsTr( "Successfully committed!" ) )
-          cloudProjectsModel.refreshProjectModification( cloudProjectsModel.currentCloudProjectId )
-        } else {
-          displayToast( qsTr( "Not committed!" ) )
-        }
-      }
-    }
-
-    MenuItem {
-      id: cloudUploadMenuItem
-
-      font: Theme.defaultFont
-      width: parent.width
-      height: 48
-      leftPadding: 10
-      enabled: cloudProjectsModel.canSyncCurrentProject
-      text: qsTr( "Synchronize" )
-      onTriggered: cloudProjectsModel.uploadProject(cloudProjectsModel.currentCloudProjectId)
-
-      onPressAndHold: {
-        discardCommittedDeltasDialog.open()
-        cloudMenu.visible = false
-      }
-    }
-
-    MessageDialog {
-      id: discardCommittedDeltasDialog
-
-      visible: false
-
-      property bool isDiscarded: false
-      property int committedDeltasCount: 0
-
-      title: qsTr( "Discard committed deltas" )
-      text: qsTr( "Should the local %n deltas(s) really be discarded? Deltas cannot be restored and QFieldCloud will never aknowledge them, unless you sync the whole file!", "0", committedDeltasCount )
-      standardButtons: StandardButton.Ok | StandardButton.Cancel
-      onAccepted: function () {
-        if ( isDiscarded )
-          return
-
-        isDiscarded = true
-
-        layerObserverAlias.committedDeltaFileWrapper.reset()
-        layerObserverAlias.committedDeltaFileWrapper.resetId()
-
-        if ( layerObserverAlias.committedDeltaFileWrapper.toFile() ) {
-          cloudProjectsModel.refreshProjectModification( cloudProjectsModel.currentCloudProjectId )
-          displayToast( qsTr( "Successfully discarded %n local committed deltas", "", committedDeltasCount ) )
-        } else {
-          displayToast( qsTr( "Failed to reset local deltas.", "", committedDeltasCount ) )
-        }
-
-        visible = false
-      }
-      onRejected: function () {
-        visible = false
-      }
-
-      function show() {
-        this.isDiscarded = false
-        this.committedDeltasCount = layerObserverAlias.committedDeltaFileWrapper.count()
-        this.open()
-      }
-    }
-  }
-
   PositioningSettings {
       id: positioningSettings
 
@@ -1632,6 +1546,15 @@ ApplicationWindow {
     }
 
     Component.onCompleted: focusstack.addFocusTaker( this )
+  }
+
+  QFieldCloudPopup {
+    id: cloudPopup
+    visible: false
+    parent: ApplicationWindow.overlay
+
+    width: parent.width
+    height: parent.height
   }
 
   WelcomeScreen {

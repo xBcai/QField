@@ -31,7 +31,7 @@ Drawer {
 
   /* Workaround for menu position, will need to be adjusted when updating menu to Quick2 */
   onShowMenu: mainMenu.popup(settingsButton.x + 2, 2)
-  onShowCloudMenu: cloudMenu.popup(cloudButton.x + 2, 2)
+  onShowCloudMenu: cloudPopup.show()
 
   onCurrentLayerChanged: {
     if ( currentLayer && currentLayer.readOnly && stateMachine.state == "digitize" )
