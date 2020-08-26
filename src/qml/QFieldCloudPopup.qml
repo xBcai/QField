@@ -17,9 +17,7 @@ Popup {
       title: qsTr("QFieldCloud Sync")
 
       showApplyButton: false
-      showCancelButton: {
-        return true
-      }
+      showCancelButton: [QFieldCloudProjectsModel.Idle, QFieldCloudProjectsModel.Error].indexOf(cloudProjectsModel.currentProjectStatus) >= 0
 
       onCancel: {
         popup.close()
@@ -71,77 +69,93 @@ Popup {
         }
 
         Text {
-          id: chooseText
-          font: Theme.tipFont
-          text: qsTr('Choose an action:')
-          wrapMode: Text.WordWrap
-          horizontalAlignment: Text.AlignHCenter
-          Layout.bottomMargin: 10
-          Layout.fillWidth: true
-        }
-
-        QfButton {
-          id: syncButton
-          Layout.fillWidth: true
+          id: busyText
+          visible: [QFieldCloudProjectsModel.Idle, QFieldCloudProjectsModel.Error].indexOf(cloudProjectsModel.currentProjectStatus) == -1
           font: Theme.defaultFont
-          text: "Sync!"
-
-          onClicked: cloudProjectsModel.uploadProject(cloudProjectsModel.currentCloudProjectId)
-        }
-
-        Text {
-          id: syncText
-          font: Theme.tipFont
-          color: Theme.gray
-          text: qsTr('Synchronize the whole project with all modified features and download the freshly updated project with all the applied changes from QFieldCLoud.')
+          text: qsTr('Shhh, stay calm, busy...')
           wrapMode: Text.WordWrap
           horizontalAlignment: Text.AlignHCenter
           Layout.bottomMargin: 20
           Layout.fillWidth: true
         }
 
-        QfButton {
-          id: pushButton
-          Layout.fillWidth: true
-          font: Theme.defaultFont
-          text: "Push"
+        GridLayout {
+          id: cloudInnerGrid
+          width: parent.width
+          visible: [QFieldCloudProjectsModel.Idle, QFieldCloudProjectsModel.Error].indexOf(cloudProjectsModel.currentProjectStatus) >= 0
+          columns: 1
+          columnSpacing: parent.columnSpacing
+          rowSpacing: parent.rowSpacing
 
-          onClicked: {
-            console.log()
+          Text {
+            id: chooseText
+            font: Theme.tipFont
+            text: qsTr('Choose an action:')
+            wrapMode: Text.WordWrap
+            horizontalAlignment: Text.AlignHCenter
+            Layout.bottomMargin: 10
+            Layout.fillWidth: true
           }
-        }
 
-        Text {
-          id: pushText
-          font: Theme.tipFont
-          color: Theme.gray
-          text: qsTr('Save internet bandwidth by only pushing the local features and pictures to the cloud, without updating the whole project.')
-          wrapMode: Text.WordWrap
-          horizontalAlignment: Text.AlignHCenter
-          Layout.bottomMargin: 20
-          Layout.fillWidth: true
-        }
+          QfButton {
+            id: syncButton
+            Layout.fillWidth: true
+            font: Theme.defaultFont
+            text: "Sync!"
 
-        QfButton {
-          id: discardButton
-          Layout.fillWidth: true
-          font: Theme.defaultFont
-          text: "Discard local changes"
-
-          onClicked: {
-            console.log()
+            onClicked: uploadProject(true)
           }
-        }
 
-        Text {
-          id: discardText
-          font: Theme.tipFont
-          color: Theme.gray
-          text: qsTr('Revert all modified features in the cloud layers. You cannot restore those changes!')
-          wrapMode: Text.WordWrap
-          horizontalAlignment: Text.AlignHCenter
-          Layout.bottomMargin: 10
-          Layout.fillWidth: true
+          Text {
+            id: syncText
+            font: Theme.tipFont
+            color: Theme.gray
+            text: qsTr('Synchronize the whole project with all modified features and download the freshly updated project with all the applied changes from QFieldCloud.')
+            wrapMode: Text.WordWrap
+            horizontalAlignment: Text.AlignHCenter
+            Layout.bottomMargin: 20
+            Layout.fillWidth: true
+          }
+
+          QfButton {
+            id: pushButton
+            Layout.fillWidth: true
+            font: Theme.defaultFont
+            text: "Push changes"
+
+            onClicked: uploadProject(false)
+          }
+
+          Text {
+            id: pushText
+            font: Theme.tipFont
+            color: Theme.gray
+            text: qsTr('Save internet bandwidth by only pushing the local features and pictures to the cloud, without updating the whole project.')
+            wrapMode: Text.WordWrap
+            horizontalAlignment: Text.AlignHCenter
+            Layout.bottomMargin: 20
+            Layout.fillWidth: true
+          }
+
+          QfButton {
+            id: discardButton
+            Layout.fillWidth: true
+            font: Theme.defaultFont
+            text: "Discard local changes"
+
+            onClicked: discardLocalChanges()
+          }
+
+          Text {
+            id: discardText
+            font: Theme.tipFont
+            color: Theme.gray
+            text: qsTr('Revert all modified features in the local cloud layers. You cannot restore those changes!')
+            wrapMode: Text.WordWrap
+            horizontalAlignment: Text.AlignHCenter
+            Layout.bottomMargin: 10
+            Layout.fillWidth: true
+          }
         }
       }
     }
@@ -151,12 +165,25 @@ Popup {
     target: cloudConnection
 
     function onLoginChanged() {
-      if(cloudConnection.status === QFieldCloudConnection.LoggedIn) {
-        welcomeText.text = qsTr('Welcome, ') + '<strong>' + cloudConnection.username + '</strong>'
-      } else {
+      if(cloudConnection.status !== QFieldCloudConnection.LoggedIn) {
         visible = false
         displayToast(qsTr('Not logged in'))
       }
+    }
+  }
+
+  Connections {
+    target: cloudProjectsModel
+
+    function onDataChanged(topLeftIdx, bottomRightIdx, roles) {
+//      console.log('onProjectStatusChanged', index, index2, projectId, status)
+//      if (projectId !== cloudProjectsModel.currentProjectId)
+//        return
+
+//      var showButtons = status in [QFieldCloudProjectsModel.Idle, QFieldCloudProjectsModel.Error]
+
+//      cloudInnerGrid.visible = showButtons
+//      busyText.visible = !showButtons
     }
   }
 
@@ -165,5 +192,25 @@ Popup {
 
     if (!visible)
       displayToast(qsTr('Not logged in'))
+
+    welcomeText.text = qsTr('Welcome, ') + '<strong>' + cloudConnection.username + '</strong>'
+  }
+
+  function uploadProject(shouldDownloadUpdates) {
+    if (cloudProjectsModel.canCommitCurrentProject || cloudProjectsModel.canSyncCurrentProject) {
+      cloudProjectsModel.uploadProject(cloudProjectsModel.currentProjectId, shouldDownloadUpdates)
+      return
+    }
+
+    displayToast(qsTr('Nothing to sync'))
+  }
+
+  function discardLocalChanges() {
+    if (cloudProjectsModel.canCommitCurrentProject || cloudProjectsModel.canSyncCurrentProject) {
+      cloudProjectsModel.discardLocalChanges(cloudProjectsModel.currentProjectId)
+      return
+    }
+
+    displayToast(qsTr('No changes to discard'))
   }
 }

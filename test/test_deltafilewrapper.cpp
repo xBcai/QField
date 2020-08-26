@@ -934,6 +934,22 @@ class TestDeltaFileWrapper: public QObject
       )"""" ) );
     }
 
+
+    void testApply()
+    {
+
+    }
+
+
+    void testApplyReversed()
+    {
+      // TODO test add
+      // TODO test delete
+      // TODO test patch
+      // TODO test multiple deltas of the same feature
+    }
+
+
   private:
     QgsProject *mProject = QgsProject::instance();
 

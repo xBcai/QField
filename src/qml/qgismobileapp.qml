@@ -1316,8 +1316,8 @@ ApplicationWindow {
       onLoadProjectEnded: {
         busyMessage.visible = false
         mapCanvasBackground.color = mapCanvas.mapSettings.backgroundColor
-        cloudProjectsModel.currentCloudProjectId = QFieldCloudUtils.getProjectId(qgisProject)
-        cloudProjectsModel.refreshProjectModification( cloudProjectsModel.currentCloudProjectId )
+        cloudProjectsModel.currentProjectId = QFieldCloudUtils.getProjectId(qgisProject)
+        cloudProjectsModel.refreshProjectModification( cloudProjectsModel.currentProjectId )
       }  
     }
   }

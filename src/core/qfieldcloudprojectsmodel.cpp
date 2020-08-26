@@ -41,14 +41,14 @@ QFieldCloudProjectsModel::QFieldCloudProjectsModel()
   reload( projects );
 
   // TODO all of these connects are a bit too much, and I guess not very precise, should be refactored!
-  connect( this, &QFieldCloudProjectsModel::currentCloudProjectIdChanged, this, [ = ]()
+  connect( this, &QFieldCloudProjectsModel::currentProjectIdChanged, this, [ = ]()
   {
-    const int index = findProject( mCurrentCloudProjectId );
+    const int index = findProject( mCurrentProjectId );
 
     if ( index == -1 || index >= mCloudProjects.size() )
       return;
 
-    refreshProjectModification( mCurrentCloudProjectId );
+    refreshProjectModification( mCurrentProjectId );
 
     updateCanCommitCurrentProject();
     updateCanSyncCurrentProject();
@@ -56,26 +56,37 @@ QFieldCloudProjectsModel::QFieldCloudProjectsModel()
 
   connect( this, &QFieldCloudProjectsModel::modelReset, this, [ = ]()
   {
-    const int index = findProject( mCurrentCloudProjectId );
+    const int index = findProject( mCurrentProjectId );
 
     if ( index == -1 || index >= mCloudProjects.size() )
       return;
 
-    refreshProjectModification( mCurrentCloudProjectId );
+    refreshProjectModification( mCurrentProjectId );
 
     updateCanCommitCurrentProject();
     updateCanSyncCurrentProject();
   } );
 
-  connect( this, &QFieldCloudProjectsModel::dataChanged, this, [ = ]()
+  connect( this, &QFieldCloudProjectsModel::dataChanged, this, [ = ]( const QModelIndex & topLeft, const QModelIndex & bottomRight, const QVector<int> &roles )
   {
-    const int index = findProject( mCurrentCloudProjectId );
+    Q_UNUSED( bottomRight );
+
+    const int index = findProject( mCurrentProjectId );
 
     if ( index == -1 || index >= mCloudProjects.size() )
       return;
 
     updateCanCommitCurrentProject();
     updateCanSyncCurrentProject();
+
+    // current project
+    if ( topLeft.row() == index )
+    {
+      if ( roles.contains( static_cast<int>( ColumnRole::StatusRole ) ) )
+      {
+        emit currentProjectStatusChanged();
+      }
+    }
   } );
 }
 
@@ -114,7 +125,7 @@ void QFieldCloudProjectsModel::setLayerObserver( LayerObserver *layerObserver )
   connect( layerObserver, &LayerObserver::layerEdited, this, &QFieldCloudProjectsModel::layerObserverLayerEdited );
   connect( layerObserver, &LayerObserver::deltaFileCommitted, this, [ = ]()
   {
-    refreshProjectModification( mCurrentCloudProjectId );
+    refreshProjectModification( mCurrentProjectId );
     updateCanCommitCurrentProject();
     updateCanSyncCurrentProject();
   } );
@@ -122,18 +133,28 @@ void QFieldCloudProjectsModel::setLayerObserver( LayerObserver *layerObserver )
   emit layerObserverChanged();
 }
 
-QString QFieldCloudProjectsModel::currentCloudProjectId() const
+QString QFieldCloudProjectsModel::currentProjectId() const
 {
-  return mCurrentCloudProjectId;
+  return mCurrentProjectId;
 }
 
-void QFieldCloudProjectsModel::setCurrentCloudProjectId( const QString &currentCloudProjectId )
+void QFieldCloudProjectsModel::setCurrentProjectId( const QString &currentProjectId )
 {
-  if ( mCurrentCloudProjectId == currentCloudProjectId )
+  if ( mCurrentProjectId == currentProjectId )
     return;
 
-  mCurrentCloudProjectId = currentCloudProjectId;
-  emit currentCloudProjectIdChanged();
+  mCurrentProjectId = currentProjectId;
+  emit currentProjectIdChanged();
+}
+
+QFieldCloudProjectsModel::ProjectStatus QFieldCloudProjectsModel::currentProjectStatus() const
+{
+  const int index = findProject( mCurrentProjectId );
+
+  if ( index == -1 || index >= mCloudProjects.size() )
+    return QFieldCloudProjectsModel::ProjectStatus::Error;
+
+  return mCloudProjects[index].status;
 }
 
 void QFieldCloudProjectsModel::refreshProjectsList()
@@ -221,11 +242,11 @@ void QFieldCloudProjectsModel::updateCanCommitCurrentProject()
 {
   bool oldCanCommitCurrentProject = mCanCommitCurrentProject;
 
-  if ( mCurrentCloudProjectId.isEmpty() )
+  if ( mCurrentProjectId.isEmpty() )
   {
     mCanCommitCurrentProject = false;
   }
-  else if ( projectStatus( mCurrentCloudProjectId ) == ProjectStatus::Idle )
+  else if ( projectStatus( mCurrentProjectId ) == ProjectStatus::Idle )
   {
     DeltaFileWrapper *currentDeltaFileWrapper = mLayerObserver->currentDeltaFileWrapper();
 
@@ -249,13 +270,13 @@ void QFieldCloudProjectsModel::updateCanSyncCurrentProject()
 {
   bool oldCanSyncCurrentProject = mCanSyncCurrentProject;
 
-  if ( mCurrentCloudProjectId.isEmpty() )
+  if ( mCurrentProjectId.isEmpty() )
     mCanSyncCurrentProject = false;
-  else if ( projectStatus( mCurrentCloudProjectId ) == ProjectStatus::Idle
+  else if ( projectStatus( mCurrentProjectId ) == ProjectStatus::Idle
             && mLayerObserver->committedDeltaFileWrapper()->count() > 0 )
     mCanSyncCurrentProject = true;
-  else if ( projectStatus( mCurrentCloudProjectId ) == ProjectStatus::Idle
-            && projectModification( mCurrentCloudProjectId ) & RemoteModification )
+  else if ( projectStatus( mCurrentProjectId ) == ProjectStatus::Idle
+            && projectModification( mCurrentProjectId ) & RemoteModification )
     mCanSyncCurrentProject = true;
   else
     mCanSyncCurrentProject = false;
@@ -503,7 +524,7 @@ void QFieldCloudProjectsModel::projectDownloadFiles( const QString &projectId )
 }
 
 
-void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
+void QFieldCloudProjectsModel::uploadProject( const QString &projectId, const bool shouldDownloadUpdates )
 {
   if ( !mCloudConnection )
     return;
@@ -518,6 +539,12 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
 
   if ( !( mCloudProjects[index].modification & LocalModification ) )
     return;
+
+  if ( ! mLayerObserver->commit() )
+  {
+    QgsLogger::warning( QStringLiteral( "Failed to commit changes." ) );
+    return;
+  }
 
   QModelIndex idx = createIndex( index, 0 );
   DeltaFileWrapper *deltaFile = mLayerObserver->committedDeltaFileWrapper();
@@ -583,7 +610,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     const int fileSize = QFileInfo( fileName ).size();
 
     Q_ASSERT( ! fileName.isEmpty() );
-    Q_ASSERT( fileSize > 0 );
+//    Q_ASSERT( fileSize > 0 );
 
     // ? should we also check the checksums of the files being uploaded? they are available at deltaFile->attachmentFileNames()->values()
 
@@ -664,7 +691,11 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId )
     Q_ASSERT( mCloudProjects[index].downloadLayersFinished == mCloudProjects[index].uploadOfflineLayers.size() );
     Q_ASSERT( mCloudProjects[index].downloadLayersFailed == 0 );
 
-    projectGetDeltaStatus( projectId );
+    // download the updated files, so the files are for sure the same on the client and on the server
+    if ( shouldDownloadUpdates )
+      projectGetDeltaStatus( projectId );
+    else
+      emit syncFinished( projectId, false );
   } );
 
 
@@ -1043,7 +1074,7 @@ void QFieldCloudProjectsModel::layerObserverLayerEdited( const QString &layerId 
 {
   Q_UNUSED( layerId );
 
-  const int index = findProject( mCurrentCloudProjectId );
+  const int index = findProject( mCurrentProjectId );
 
   if ( index == -1 || index >= mCloudProjects.size() )
   {
