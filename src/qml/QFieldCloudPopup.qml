@@ -143,7 +143,7 @@ Popup {
             font: Theme.defaultFont
             text: 'Discard local changes'
 
-            onClicked: discardLocalChanges()
+            onClicked: discardLocalChangesFromCurrentProject()
           }
 
           Text {
@@ -205,9 +205,13 @@ Popup {
     displayToast(qsTr('Nothing to sync'))
   }
 
-  function discardLocalChanges() {
+  function discardLocalChangesFromCurrentProject() {
     if (cloudProjectsModel.canCommitCurrentProject || cloudProjectsModel.canSyncCurrentProject) {
-      cloudProjectsModel.discardLocalChanges(cloudProjectsModel.currentProjectId)
+      if ( cloudProjectsModel.discardLocalChangesFromCurrentProject(cloudProjectsModel.currentProjectId) )
+        displayToast(qsTr('Local changes discarded'))
+      else
+        displayToast(qsTr('Failed to discard changes'))
+
       return
     }
 
