@@ -89,16 +89,6 @@ class DeltaFileWrapper : public QObject
 
 
     /**
-     * Creates checksum of a file. Returns null QByteArray if cannot be calculated.
-     *
-     * @param fileName file name to get checksum of
-     * @param hashAlgorithm hash algorithm (md5, sha1, sha256 etc)
-     * @return QByteArray checksum
-     */
-    static QByteArray fileChecksum( const QString &fileName, const QCryptographicHash::Algorithm hashAlgorithm = QCryptographicHash::Sha256 );
-
-
-    /**
      * Clears the deltas from memory as there are no deltas at all. Does not affect the permanent storage until `toFile()` is called.
      */
     Q_INVOKABLE void reset();
@@ -341,7 +331,7 @@ class DeltaFileWrapper : public QObject
      * Applies the current delta file on the current project. A wrapper method arround \a _applyDeltasOnLayers.
      * If \a shouldApplyInReverse is passed, the deltas are applied in reverse order (e.g. discarding the changes).
      */
-    bool _apply( bool shouldApplyInReverse );
+    bool applyInternal( bool shouldApplyInReverse );
 
 
     /**
