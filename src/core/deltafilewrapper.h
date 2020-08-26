@@ -338,7 +338,7 @@ class DeltaFileWrapper : public QObject
      * Applies the current delta file on a list of given layers \a vectorLayers.
      * If \a shouldApplyInReverse is passed, the deltas are applied in reverse order (e.g. discarding the changes).
      */
-    bool _applyDeltasOnLayers( QHash<QString, QgsVectorLayer *> &vectorLayers, bool shouldApplyInReverse );
+    bool applyDeltasOnLayers( QHash<QString, QgsVectorLayer *> &vectorLayers, bool shouldApplyInReverse );
 
 
     /**

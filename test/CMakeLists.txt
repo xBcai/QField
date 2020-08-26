@@ -25,7 +25,7 @@ ENDMACRO (ADD_QFIELD_TEST)
 
 ADD_QFIELD_TEST(vertexmodeltest test_vertexmodel.cpp)
 ADD_QFIELD_TEST(referencingfeaturelistmodeltest test_referencingfeaturelistmodel.cpp)
-ADD_QFIELD_TEST(featuredeltastest test_deltafilewrapper.cpp)
+ADD_QFIELD_TEST(deltafilewrappertest test_deltafilewrapper.cpp)
 ADD_QFIELD_TEST(layerobservertest test_layerobserver.cpp)
 ADD_QFIELD_TEST(featureutilstest test_featureutils.cpp)
 ADD_QFIELD_TEST(fileutilstest test_fileutils.cpp)
