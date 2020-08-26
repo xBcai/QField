@@ -21,6 +21,7 @@
 
 #include "qfield_testbase.h"
 #include "deltafilewrapper.h"
+#include "utils/fileutils.h"
 
 
 class TestDeltaFileWrapper: public QObject
@@ -47,7 +48,7 @@ class TestDeltaFileWrapper: public QObject
       QVERIFY( attachmentFile.flush() );
 
       mAttachmentFileName = attachmentFile.fileName();
-      mAttachmentFileChecksum = DeltaFileWrapper::fileChecksum( mAttachmentFileName ).toHex();
+      mAttachmentFileChecksum = FileUtils::fileChecksum( mAttachmentFileName ).toHex();
       mLayer.reset( new QgsVectorLayer( QStringLiteral( "Point?crs=EPSG:3857&field=int:integer&field=dbl:double&field=str:string&field=attachment:string" ), QStringLiteral( "layer_name" ), QStringLiteral( "memory" ) ) );
       mLayer->setEditorWidgetSetup( 3, QgsEditorWidgetSetup( QStringLiteral( "ExternalResource" ), QVariantMap() ) );
 

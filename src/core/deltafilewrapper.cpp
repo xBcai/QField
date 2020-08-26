@@ -16,6 +16,8 @@
  ***************************************************************************/
 
 #include "deltafilewrapper.h"
+#include "qfield.h"
+#include "utils/fileutils.h"
 
 #include <QFileInfo>
 #include <QFile>
@@ -23,7 +25,6 @@
 
 #include <qgsproject.h>
 
-#include <qfield.h>
 
 const QString DeltaFileWrapper::FormatVersion = QStringLiteral( "1.0" );
 
@@ -433,22 +434,6 @@ QMap<QString, QString> DeltaFileWrapper::attachmentFileNames() const
 }
 
 
-QByteArray DeltaFileWrapper::fileChecksum( const QString &fileName, const QCryptographicHash::Algorithm hashAlgorithm )
-{
-  QFile f( fileName );
-
-  if ( ! f.open( QFile::ReadOnly ) )
-    return QByteArray();
-
-  QCryptographicHash hash( hashAlgorithm );
-
-  if ( hash.addData( &f ) )
-    return hash.result();
-
-  return QByteArray();
-}
-
-
 void DeltaFileWrapper::addPatch( const QString &layerId, const QgsFeature &oldFeature, const QgsFeature &newFeature )
 {
   QJsonObject delta(
@@ -506,7 +491,7 @@ void DeltaFileWrapper::addPatch( const QString &layerId, const QgsFeature &oldFe
         if ( ! oldFileName.isEmpty() )
         {
           const QString oldFullFileName = QFileInfo( oldFileName ).isAbsolute() ? oldFileName : QStringLiteral( "%1/%2" ).arg( homeDir, oldFileName );
-          const QByteArray oldFileChecksum = fileChecksum( oldFullFileName, QCryptographicHash::Sha256 );
+          const QByteArray oldFileChecksum = FileUtils::fileChecksum( oldFullFileName, QCryptographicHash::Sha256 );
           const QJsonValue oldFileChecksumJson = oldFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( oldFileChecksum.toHex() ) );
           tmpOldFileChecksums.insert( oldFullFileName, oldFileChecksumJson );
         }
@@ -514,7 +499,7 @@ void DeltaFileWrapper::addPatch( const QString &layerId, const QgsFeature &oldFe
         if ( ! newFileName.isEmpty() )
         {
           const QString newFullFileName = QFileInfo( newFileName ).isAbsolute() ? newFileName : QStringLiteral( "%1/%2" ).arg( homeDir, newFileName );
-          const QByteArray newFileChecksum = fileChecksum( newFullFileName, QCryptographicHash::Sha256 );
+          const QByteArray newFileChecksum = FileUtils::fileChecksum( newFullFileName, QCryptographicHash::Sha256 );
           const QJsonValue newFileChecksumJson = newFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( newFileChecksum.toHex() ) );
           tmpNewFileChecksums.insert( newFullFileName, newFileChecksumJson );
         }
@@ -585,7 +570,7 @@ void DeltaFileWrapper::addDelete( const QString &layerId, const QgsFeature &oldF
     if ( attachmentFieldsList.contains( name ) && ! oldVal.isNull() )
     {
       const QString oldFileName = oldVal.toString();
-      const QByteArray oldFileChecksum = fileChecksum( oldFileName, QCryptographicHash::Sha256 );
+      const QByteArray oldFileChecksum = FileUtils::fileChecksum( oldFileName, QCryptographicHash::Sha256 );
       const QJsonValue oldFileChecksumJson = oldFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( oldFileChecksum.toHex() ) );
 
       tmpOldFileChecksums.insert( oldVal.toString(), oldFileChecksumJson );
@@ -635,7 +620,7 @@ void DeltaFileWrapper::addCreate( const QString &layerId, const QgsFeature &newF
     if ( attachmentFieldsList.contains( name ) )
     {
       const QString newFileName = newVal.toString();
-      const QByteArray newFileChecksum = fileChecksum( newFileName, QCryptographicHash::Sha256 );
+      const QByteArray newFileChecksum = FileUtils::fileChecksum( newFileName, QCryptographicHash::Sha256 );
       const QJsonValue newFileChecksumJson = newFileChecksum.isEmpty() ? QJsonValue::Null : QJsonValue( QString( newFileChecksum.toHex() ) );
 
       tmpNewFileChecksums.insert( newVal.toString(), newFileChecksumJson );
@@ -717,17 +702,17 @@ bool DeltaFileWrapper::isDeltaBeingApplied() const
 
 bool DeltaFileWrapper::apply()
 {
-  return _apply( false );
+  return applyInternal( false );
 }
 
 
 bool DeltaFileWrapper::applyReversed()
 {
-  return _apply( true );
+  return applyInternal( true );
 }
 
 
-bool DeltaFileWrapper::_apply( bool shouldApplyInReverse )
+bool DeltaFileWrapper::applyInternal( bool shouldApplyInReverse )
 {
   if ( ! toFile() )
     return false;

@@ -47,5 +47,20 @@ QString FileUtils::fileSuffix( const QString &filePath )
 bool FileUtils::fileExists( const QString &filePath )
 {
   QFileInfo fileInfo( filePath );
-  return (fileInfo.exists() && fileInfo.isFile() );
+  return ( fileInfo.exists() && fileInfo.isFile() );
+}
+
+QByteArray FileUtils::fileChecksum( const QString &fileName, const QCryptographicHash::Algorithm hashAlgorithm )
+{
+  QFile f( fileName );
+
+  if ( ! f.open( QFile::ReadOnly ) )
+    return QByteArray();
+
+  QCryptographicHash hash( hashAlgorithm );
+
+  if ( hash.addData( &f ) )
+    return hash.result();
+
+  return QByteArray();
 }

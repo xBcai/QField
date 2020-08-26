@@ -14,7 +14,7 @@ Popup {
     anchors.fill: parent
 
     header: PageHeader {
-      title: qsTr("QFieldCloud Sync")
+      title: qsTr('QFieldCloud Sync')
 
       showApplyButton: false
       showCancelButton: [QFieldCloudProjectsModel.Idle, QFieldCloudProjectsModel.Error].indexOf(cloudProjectsModel.currentProjectStatus) >= 0
@@ -51,7 +51,7 @@ Popup {
 
         Image {
           id: qfieldcloudLogo
-          source: "qrc:/images/qfieldcloud-logo.png"
+          source: 'qrc:/images/qfieldcloud-logo.png'
           Layout.bottomMargin: 20
           Layout.alignment: Qt.AlignHCenter
           fillMode: Image.PreserveAspectFit
@@ -101,7 +101,7 @@ Popup {
             id: syncButton
             Layout.fillWidth: true
             font: Theme.defaultFont
-            text: "Sync!"
+            text: 'Sync!'
 
             onClicked: uploadProject(true)
           }
@@ -121,7 +121,7 @@ Popup {
             id: pushButton
             Layout.fillWidth: true
             font: Theme.defaultFont
-            text: "Push changes"
+            text: 'Push changes'
 
             onClicked: uploadProject(false)
           }
@@ -141,7 +141,7 @@ Popup {
             id: discardButton
             Layout.fillWidth: true
             font: Theme.defaultFont
-            text: "Discard local changes"
+            text: 'Discard local changes'
 
             onClicked: discardLocalChanges()
           }
