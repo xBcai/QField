@@ -218,9 +218,12 @@ void LayerObserver::onCommittedFeaturesAdded( const QString &layerId, const QgsF
   if ( mCommittedDeltaFileWrapper->isDeltaBeingApplied() )
     return;
 
+  const QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( sender() );
+  const QPair<int, QString> pkAttrPair = DeltaFileWrapper::getPkAttribute( vl );
+
   for ( const QgsFeature &newFeature : addedFeatures )
   {
-    mCurrentDeltaFileWrapper->addCreate( layerId, newFeature );
+    mCurrentDeltaFileWrapper->addCreate( layerId, pkAttrPair.second, newFeature );
   }
 }
 
@@ -232,12 +235,15 @@ void LayerObserver::onCommittedFeaturesRemoved( const QString &layerId, const Qg
   if ( mCommittedDeltaFileWrapper->isDeltaBeingApplied() )
     return;
 
+  const QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( sender() );
+  const QPair<int, QString> pkAttrPair = DeltaFileWrapper::getPkAttribute( vl );
+
   for ( const QgsFeatureId &fid : deletedFeatureIds )
   {
     Q_ASSERT( changedFeatures.contains( fid ) );
 
     QgsFeature oldFeature = changedFeatures.take( fid );
-    mCurrentDeltaFileWrapper->addDelete( layerId, oldFeature );
+    mCurrentDeltaFileWrapper->addDelete( layerId, pkAttrPair.second, oldFeature );
   }
 
   mChangedFeatures.insert( layerId, changedFeatures );
@@ -250,6 +256,7 @@ void LayerObserver::onCommittedAttributeValuesChanges( const QString &layerId, c
   QgsFeatureIds patchedFids = mPatchedFids.value( layerId );
   QgsChangedFeatures changedFeatures = mChangedFeatures.value( layerId );
   const QgsFeatureIds changedAttributesValuesFids = qgis::listToSet( changedAttributesValues.keys() );
+  const QPair<int, QString> pkAttrPair = DeltaFileWrapper::getPkAttribute( vl );
 
   if ( mCommittedDeltaFileWrapper->isDeltaBeingApplied() )
     return;
@@ -265,7 +272,7 @@ void LayerObserver::onCommittedAttributeValuesChanges( const QString &layerId, c
 
     QgsFeature oldFeature = changedFeatures.take( fid );
     QgsFeature newFeature = vl->getFeature( fid );
-    mCurrentDeltaFileWrapper->addPatch( layerId, oldFeature, newFeature );
+    mCurrentDeltaFileWrapper->addPatch( layerId, pkAttrPair.second, oldFeature, newFeature );
   }
 
   mPatchedFids.insert( layerId, patchedFids );
@@ -279,6 +286,7 @@ void LayerObserver::onCommittedGeometriesChanges( const QString &layerId, const 
   QgsFeatureIds patchedFids = mPatchedFids.value( layerId );
   QgsChangedFeatures changedFeatures = mChangedFeatures.value( layerId );
   const QgsFeatureIds changedGeometriesFids = qgis::listToSet( changedGeometries.keys() );
+  const QPair<int, QString> pkAttrPair = DeltaFileWrapper::getPkAttribute( vl );
 
   if ( mCommittedDeltaFileWrapper->isDeltaBeingApplied() )
     return;
@@ -295,7 +303,7 @@ void LayerObserver::onCommittedGeometriesChanges( const QString &layerId, const 
     QgsFeature oldFeature = changedFeatures.take( fid );
     QgsFeature newFeature = vl->getFeature( fid );
 
-    mCurrentDeltaFileWrapper->addPatch( layerId, oldFeature, newFeature );
+    mCurrentDeltaFileWrapper->addPatch( layerId, pkAttrPair.second, oldFeature, newFeature );
   }
 
   mPatchedFids.insert( layerId, patchedFids );

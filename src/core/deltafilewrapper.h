@@ -89,6 +89,12 @@ class DeltaFileWrapper : public QObject
 
 
     /**
+     * @brief Get a pair of the index and the name of the primary key column of given \a vl layer. We assume there is no multi-column primary key.
+     */
+    static QPair<int, QString> getPkAttribute( const QgsVectorLayer *vl );
+
+
+    /**
      * Clears the deltas from memory as there are no deltas at all. Does not affect the permanent storage until `toFile()` is called.
      */
     Q_INVOKABLE void reset();
@@ -214,28 +220,31 @@ class DeltaFileWrapper : public QObject
      * Adds create delta.
      *
      * @param layerId layer ID where the old feature belongs to
+     * @param pkAttrName attribute name of the primary key
      * @param newFeature the feature that has been created
      */
-    void addCreate( const QString &layerId, const QgsFeature &newFeature );
+    void addCreate( const QString &layerId, const QString &pkAttrName, const QgsFeature &newFeature );
 
 
     /**
      * Adds delete delta.
      *
      * @param layerId layer ID where the old feature belongs to
+     * @param pkAttrName attribute name of the primary key
      * @param oldFeature the feature that has been deleted
      */
-    void addDelete( const QString &layerId, const QgsFeature &oldFeature );
+    void addDelete( const QString &layerId, const QString &pkAttrName, const QgsFeature &oldFeature );
 
 
     /**
      * Adds patch delta.
      *
      * @param layerId layer ID where the old feature belongs to
+     * @param pkAttrName attribute name of the primary key
      * @param oldFeature the old version of the feature that has been modified
      * @param newFeature the new version of the feature that has been modified
      */
-    void addPatch( const QString &layerId, const QgsFeature &oldFeature, const QgsFeature &newFeature );
+    void addPatch( const QString &layerId, const QString &pkAttrName, const QgsFeature &oldFeature, const QgsFeature &newFeature );
 
 
     /**
