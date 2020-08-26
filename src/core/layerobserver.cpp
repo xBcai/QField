@@ -215,6 +215,9 @@ void LayerObserver::onBeforeCommitChanges()
 
 void LayerObserver::onCommittedFeaturesAdded( const QString &layerId, const QgsFeatureList &addedFeatures )
 {
+  if ( mCommittedDeltaFileWrapper->isDeltaBeingApplied() )
+    return;
+
   for ( const QgsFeature &newFeature : addedFeatures )
   {
     mCurrentDeltaFileWrapper->addCreate( layerId, newFeature );
@@ -225,6 +228,9 @@ void LayerObserver::onCommittedFeaturesAdded( const QString &layerId, const QgsF
 void LayerObserver::onCommittedFeaturesRemoved( const QString &layerId, const QgsFeatureIds &deletedFeatureIds )
 {
   QgsChangedFeatures changedFeatures = mChangedFeatures.value( layerId );
+
+  if ( mCommittedDeltaFileWrapper->isDeltaBeingApplied() )
+    return;
 
   for ( const QgsFeatureId &fid : deletedFeatureIds )
   {
@@ -244,6 +250,9 @@ void LayerObserver::onCommittedAttributeValuesChanges( const QString &layerId, c
   QgsFeatureIds patchedFids = mPatchedFids.value( layerId );
   QgsChangedFeatures changedFeatures = mChangedFeatures.value( layerId );
   const QgsFeatureIds changedAttributesValuesFids = qgis::listToSet( changedAttributesValues.keys() );
+
+  if ( mCommittedDeltaFileWrapper->isDeltaBeingApplied() )
+    return;
 
   for ( const QgsFeatureId &fid : changedAttributesValuesFids )
   {
@@ -270,6 +279,9 @@ void LayerObserver::onCommittedGeometriesChanges( const QString &layerId, const 
   QgsFeatureIds patchedFids = mPatchedFids.value( layerId );
   QgsChangedFeatures changedFeatures = mChangedFeatures.value( layerId );
   const QgsFeatureIds changedGeometriesFids = qgis::listToSet( changedGeometries.keys() );
+
+  if ( mCommittedDeltaFileWrapper->isDeltaBeingApplied() )
+    return;
 
   for ( const QgsFeatureId &fid : changedGeometriesFids )
   {

@@ -1240,3 +1240,28 @@ QVariant QFieldCloudProjectsModel::data( const QModelIndex &index, int role ) co
   return QVariant();
 }
 
+bool QFieldCloudProjectsModel::discardLocalChangesFromCurrentProject()
+{
+  const int index = findProject( mCurrentProjectId );
+
+  if ( index == -1 || index >= mCloudProjects.size() )
+    return false;
+
+  if ( ! mLayerObserver->commit() )
+    return false;
+
+  qDebug() << mLayerObserver->committedDeltaFileWrapper()->count() << mLayerObserver->currentDeltaFileWrapper()->count();
+
+  DeltaFileWrapper *dfw = mLayerObserver->committedDeltaFileWrapper();
+
+  if ( ! dfw->applyReversed() )
+    return false;
+
+  dfw->reset();
+  dfw->resetId();
+
+  if ( ! dfw->toFile() )
+    return false;
+
+  return true;
+}

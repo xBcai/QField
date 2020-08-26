@@ -135,6 +135,11 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     Q_INVOKABLE void downloadProject( const QString &projectId );
     Q_INVOKABLE void uploadProject( const QString &projectId, const bool shouldDownloadUpdates );
     Q_INVOKABLE void removeLocalProject( const QString &projectId );
+
+    /**
+     * Reverts the changes of the current cloud project.
+     */
+    Q_INVOKABLE bool discardLocalChangesFromCurrentProject();
     Q_INVOKABLE ProjectStatus projectStatus( const QString &projectId );
     Q_INVOKABLE ProjectModifications projectModification( const QString &projectId ) const;
     Q_INVOKABLE void refreshProjectModification( const QString &projectId );
