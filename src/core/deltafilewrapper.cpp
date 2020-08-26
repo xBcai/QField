@@ -435,11 +435,11 @@ QMap<QString, QString> DeltaFileWrapper::attachmentFileNames() const
 }
 
 
-void DeltaFileWrapper::addPatch( const QString &layerId, const QgsFeature &oldFeature, const QgsFeature &newFeature )
+void DeltaFileWrapper::addPatch( const QString &layerId, const QString &pkAttrName, const QgsFeature &oldFeature, const QgsFeature &newFeature )
 {
   QJsonObject delta(
   {
-    {"fid", oldFeature.id()},
+    {"fid", oldFeature.attribute( pkAttrName ).toInt()},
     {"layerId", layerId},
     {"method", "patch"}
   } );
@@ -551,9 +551,9 @@ void DeltaFileWrapper::addPatch( const QString &layerId, const QgsFeature &oldFe
 }
 
 
-void DeltaFileWrapper::addDelete( const QString &layerId, const QgsFeature &oldFeature )
+void DeltaFileWrapper::addDelete( const QString &layerId, const QString &pkAttrName, const QgsFeature &oldFeature )
 {
-  QJsonObject delta( {{"fid", oldFeature.id()},
+  QJsonObject delta( {{"fid", oldFeature.attribute( pkAttrName ).toInt()},
     {"layerId", layerId},
     {"method", "delete"}} );
   const QStringList attachmentFieldsList = attachmentFieldNames( mProject, layerId );
@@ -601,9 +601,9 @@ void DeltaFileWrapper::addDelete( const QString &layerId, const QgsFeature &oldF
 }
 
 
-void DeltaFileWrapper::addCreate( const QString &layerId, const QgsFeature &newFeature )
+void DeltaFileWrapper::addCreate( const QString &layerId, const QString &pkAttrName, const QgsFeature &newFeature )
 {
-  QJsonObject delta( {{"fid", newFeature.id()},
+  QJsonObject delta( {{"fid", newFeature.attribute( pkAttrName ).toInt()},
     {"layerId", layerId},
     {"method", "create"}} );
   const QStringList attachmentFieldsList = attachmentFieldNames( mProject, layerId );
@@ -800,10 +800,7 @@ bool DeltaFileWrapper::applyDeltasOnLayers( QHash<QString, QgsVectorLayer *> &ve
     const int deltaFid = delta.value( QStringLiteral( "fid" ) ).toInt();
     const QStringList attachmentFieldNamesList = attachmentFieldNames( mProject, layerId );
     const QgsFields fields = vectorLayers[layerId]->fields();
-    const QList<int> pkAttrs = vectorLayers[layerId]->primaryKeyAttributes() << fields.indexFromName( QStringLiteral( "fid" ) );
-    // we assume the first index to be the primary key index... kinda stupid, but memory layers don't have primary key at all, but we use it on geopackages, but... snap!
-    const int pkAttrIdx = pkAttrs[0];
-    const QString pkAttrName = fields.at( pkAttrIdx ).name();
+    const QPair<int, QString> pkAttrPair = getPkAttribute( vectorLayers[layerId] );
 
     QString method = delta.value( QStringLiteral( "method" ) ).toString();
     QVariantMap oldValues = delta.value( QStringLiteral( "old" ) ).toMap();
@@ -827,7 +824,7 @@ bool DeltaFileWrapper::applyDeltasOnLayers( QHash<QString, QgsVectorLayer *> &ve
 
     if ( method != QStringLiteral( "create" ) )
     {
-      QgsFeatureIterator it = vectorLayers[layerId]->getFeatures( QgsFeatureRequest( QgsExpression( QStringLiteral( " %1 = %2 " ).arg( pkAttrName ).arg( deltaFid ) ) ) );
+      QgsFeatureIterator it = vectorLayers[layerId]->getFeatures( QgsFeatureRequest( QgsExpression( QStringLiteral( " %1 = %2 " ).arg( pkAttrPair.second ).arg( deltaFid ) ) ) );
 
       if ( ! it.nextFeature( f ) )
         return false;
@@ -854,8 +851,8 @@ bool DeltaFileWrapper::applyDeltasOnLayers( QHash<QString, QgsVectorLayer *> &ve
       for ( auto [ attrName, attrValue ] : qfield::asKeyValueRange( attributes ) )
         qgsAttributeMap.insert( fields.indexFromName( attrName ), attrValue );
 
-      if ( ! qgsAttributeMap.contains( pkAttrIdx ) )
-        qgsAttributeMap.insert( pkAttrIdx, deltaFid );
+      if ( ! qgsAttributeMap.contains( pkAttrPair.first ) )
+        qgsAttributeMap.insert( pkAttrPair.first, deltaFid );
 
       QgsFeature f = QgsVectorLayerUtils::createFeature( vectorLayers[layerId], geom, qgsAttributeMap );
 
@@ -901,4 +898,16 @@ bool DeltaFileWrapper::applyDeltasOnLayers( QHash<QString, QgsVectorLayer *> &ve
   }
 
   return true;
+}
+
+
+QPair<int, QString> DeltaFileWrapper::getPkAttribute( const QgsVectorLayer *vl )
+{
+  const QgsFields fields = vl->fields();
+  const QList<int> pkAttrs = vl->primaryKeyAttributes() << fields.indexFromName( QStringLiteral( "fid" ) );
+  // we assume the first index to be the primary key index... kinda stupid, but memory layers don't have primary key at all, but we use it on geopackages, but... snap!
+  const int pkAttrIdx = pkAttrs[0];
+  const QString pkAttrName = fields.at( pkAttrIdx ).name();
+
+  return QPair<int, QString>( pkAttrIdx, pkAttrName );
 }
