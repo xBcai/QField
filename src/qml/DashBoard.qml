@@ -73,10 +73,10 @@ Drawer {
           iconSource: Theme.getThemeVectorIcon( 'ic_cloud_24dp' )
           bgcolor: "transparent"
 //          bgcolor: {
-//            if (cloudProjectsModel.currentCloudProjectId) {
+//            if (cloudProjectsModel.currentProjectId) {
 //
 //              // TODO check why QFieldCloudProjectsModel is not available in this file...
-//              switch (cloudProjectsModel.projectStatus(cloudProjectsModel.currentCloudProjectId)) {
+//              switch (cloudProjectsModel.projectStatus(cloudProjectsModel.currentProjectId)) {
 //                case QFieldCloudProjectsModel.ProjectStatus.Idle:
 //                  return 'white'
 //                case QFieldCloudProjectsModel.ProjectStatus.Downloading:
@@ -90,8 +90,8 @@ Drawer {
 //              }
 //            }
 //          }
-          enabled: !!cloudProjectsModel.currentCloudProjectId
-          opacity: cloudProjectsModel.currentCloudProjectId ? 0.3 : 1
+          enabled: !!cloudProjectsModel.currentProjectId
+          opacity: cloudProjectsModel.currentProjectId ? 0.3 : 1
 
           onClicked: showCloudMenu()
         }

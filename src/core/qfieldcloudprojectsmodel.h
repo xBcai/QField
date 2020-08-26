@@ -121,16 +121,19 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     LayerObserver *layerObserver() const;
     void setLayerObserver( LayerObserver *layerObserver );
 
-    Q_PROPERTY( QString currentCloudProjectId READ currentCloudProjectId WRITE setCurrentCloudProjectId NOTIFY currentCloudProjectIdChanged )
+    Q_PROPERTY( QString currentProjectId READ currentProjectId WRITE setCurrentProjectId NOTIFY currentProjectIdChanged )
+    Q_PROPERTY( ProjectStatus currentProjectStatus READ currentProjectStatus NOTIFY currentProjectStatusChanged )
     Q_PROPERTY( bool canCommitCurrentProject READ canCommitCurrentProject NOTIFY canCommitCurrentProjectChanged )
     Q_PROPERTY( bool canSyncCurrentProject READ canSyncCurrentProject NOTIFY canSyncCurrentProjectChanged )
 
-    QString currentCloudProjectId() const;
-    void setCurrentCloudProjectId( const QString &currentCloudProjectId );
+    QString currentProjectId() const;
+    void setCurrentProjectId( const QString &currentProjectId );
+
+    ProjectStatus currentProjectStatus() const;
 
     Q_INVOKABLE void refreshProjectsList();
     Q_INVOKABLE void downloadProject( const QString &projectId );
-    Q_INVOKABLE void uploadProject( const QString &projectId );
+    Q_INVOKABLE void uploadProject( const QString &projectId, const bool shouldDownloadUpdates );
     Q_INVOKABLE void removeLocalProject( const QString &projectId );
     Q_INVOKABLE ProjectStatus projectStatus( const QString &projectId );
     Q_INVOKABLE ProjectModifications projectModification( const QString &projectId ) const;
@@ -147,7 +150,8 @@ class QFieldCloudProjectsModel : public QAbstractListModel
   signals:
     void cloudConnectionChanged();
     void layerObserverChanged();
-    void currentCloudProjectIdChanged();
+    void currentProjectIdChanged();
+    void currentProjectStatusChanged();
     void canCommitCurrentProjectChanged();
     void canSyncCurrentProjectChanged();
     void warning( const QString &message );
@@ -258,7 +262,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     QList<CloudProject> mCloudProjects;
     QFieldCloudConnection *mCloudConnection = nullptr;
-    QString mCurrentCloudProjectId;
+    QString mCurrentProjectId;
     LayerObserver *mLayerObserver = nullptr;
 
     bool mCanCommitCurrentProject = false;
