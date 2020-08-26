@@ -20,6 +20,7 @@
 #include <qgsproject.h>
 
 #include "qfield_testbase.h"
+#include "qfield.h"
 #include "deltafilewrapper.h"
 #include "utils/fileutils.h"
 
@@ -49,8 +50,9 @@ class TestDeltaFileWrapper: public QObject
 
       mAttachmentFileName = attachmentFile.fileName();
       mAttachmentFileChecksum = FileUtils::fileChecksum( mAttachmentFileName ).toHex();
-      mLayer.reset( new QgsVectorLayer( QStringLiteral( "Point?crs=EPSG:3857&field=int:integer&field=dbl:double&field=str:string&field=attachment:string" ), QStringLiteral( "layer_name" ), QStringLiteral( "memory" ) ) );
-      mLayer->setEditorWidgetSetup( 3, QgsEditorWidgetSetup( QStringLiteral( "ExternalResource" ), QVariantMap() ) );
+
+      mLayer.reset( new QgsVectorLayer( QStringLiteral( "Point?crs=EPSG:3857&field=fid:integer&field=int:integer&field=dbl:double&field=str:string&field=attachment:string" ), QStringLiteral( "layer_name" ), QStringLiteral( "memory" ) ) );
+      mLayer->setEditorWidgetSetup( mLayer->fields().indexFromName( QStringLiteral( "attachment" ) ), QgsEditorWidgetSetup( QStringLiteral( "ExternalResource" ), QVariantMap() ) );
 
       QVERIFY( QgsProject::instance()->addMapLayer( mLayer.get(), false, false ) );
     }
@@ -59,6 +61,25 @@ class TestDeltaFileWrapper: public QObject
     void init()
     {
       mTmpFile.resize( 0 );
+
+      QgsProject::instance()->removeMapLayer( mLayer.get() );
+
+      mLayer.reset( new QgsVectorLayer( QStringLiteral( "Point?crs=EPSG:3857&field=fid:integer&field=int:integer&field=dbl:double&field=str:string&field=attachment:string" ), QStringLiteral( "layer_name" ), QStringLiteral( "memory" ) ) );
+      mLayer->setEditorWidgetSetup( mLayer->fields().indexFromName( QStringLiteral( "attachment" ) ), QgsEditorWidgetSetup( QStringLiteral( "ExternalResource" ), QVariantMap() ) );
+
+      QVERIFY( QgsProject::instance()->addMapLayer( mLayer.get(), false, false ) );
+
+      QgsFeature f( mLayer->fields(), 1 );
+
+      f.setAttribute( QStringLiteral( "fid" ), 1 );
+      f.setAttribute( QStringLiteral( "dbl" ), 3.14 );
+      f.setAttribute( QStringLiteral( "int" ), 42 );
+      f.setAttribute( QStringLiteral( "str" ), QStringLiteral( "stringy" ) );
+      f.setAttribute( QStringLiteral( "attachment" ), mAttachmentFileName );
+
+      QVERIFY( mLayer->startEditing() );
+      QVERIFY( mLayer->addFeature( f ) );
+      QVERIFY( mLayer->commitChanges() );
     }
 
 
@@ -457,7 +478,7 @@ class TestDeltaFileWrapper: public QObject
 
       QStringList attachmentFields = dfw.attachmentFieldNames( mProject, mLayer->id() );
 
-      QCOMPARE( QStringList( {QStringLiteral( "attachment" )} ), attachmentFields );
+      QCOMPARE( attachmentFields, QStringList( {QStringLiteral( "attachment" )} ) );
     }
 
 
@@ -555,6 +576,7 @@ class TestDeltaFileWrapper: public QObject
     {
       DeltaFileWrapper dfw( mProject, QString( std::tmpnam( nullptr ) ) );
       QgsFeature f( mLayer->fields(), 100 );
+      f.setAttribute( QStringLiteral( "fid" ), 100 );
       f.setAttribute( QStringLiteral( "dbl" ), 3.14 );
       f.setAttribute( QStringLiteral( "int" ), 42 );
       f.setAttribute( QStringLiteral( "str" ), QStringLiteral( "stringy" ) );
@@ -574,6 +596,7 @@ class TestDeltaFileWrapper: public QObject
               "attributes": {
                 "attachment": "%1",
                 "dbl": 3.14,
+                "fid": 100,
                 "int": 42,
                 "str": "stringy"
               },
@@ -604,6 +627,7 @@ class TestDeltaFileWrapper: public QObject
               "attributes": {
                 "attachment": "%1",
                 "dbl": 3.14,
+                "fid": 100,
                 "int": 42,
                 "str": "stringy"
               },
@@ -780,6 +804,7 @@ class TestDeltaFileWrapper: public QObject
     {
       DeltaFileWrapper dfw( mProject, QString( std::tmpnam( nullptr ) ) );
       QgsFeature f( mLayer->fields(), 100 );
+      f.setAttribute( QStringLiteral( "fid" ), 100 );
       f.setAttribute( QStringLiteral( "dbl" ), 3.14 );
       f.setAttribute( QStringLiteral( "int" ), 42 );
       f.setAttribute( QStringLiteral( "str" ), QStringLiteral( "stringy" ) );
@@ -801,6 +826,7 @@ class TestDeltaFileWrapper: public QObject
               "attributes": {
                 "attachment": "%1",
                 "dbl": 3.14,
+                "fid": 100,
                 "int": 42,
                 "str": "stringy"
               },
@@ -831,6 +857,7 @@ class TestDeltaFileWrapper: public QObject
               "attributes": {
                 "attachment": "%1",
                 "dbl": 3.14,
+                "fid": 100,
                 "int": 42,
                 "str": "stringy"
               },
@@ -938,16 +965,271 @@ class TestDeltaFileWrapper: public QObject
 
     void testApply()
     {
+      QTemporaryFile deltaFile;
 
+      QVERIFY( deltaFile.open() );
+      QVERIFY( deltaFile.write( QStringLiteral( R""""(
+        {
+          "deltas": [
+            {
+              "fid": 100,
+              "layerId": "%1",
+              "method": "create",
+              "new": {
+                "attributes": {
+                  "attachment": "FILE1.jpg",
+                  "dbl": 3.14,
+                  "int": 42,
+                  "str": "stringy"
+                },
+                "files_sha256": {
+                  "FILE1.jpg": null
+                },
+                "geometry": null
+              }
+            },
+            {
+              "fid": 102,
+              "layerId": "%1",
+              "method": "create",
+              "new": {
+                "attributes": {
+                  "attachment": "FILE2.jpg",
+                  "dbl": null,
+                  "int": null,
+                  "str": null
+                },
+                "files_sha256": {
+                  "FILE2.jpg": null
+                },
+                "geometry": null
+              }
+            },
+            {
+              "fid": 102,
+              "layerId": "%1",
+              "method": "patch",
+              "new": {
+                "attributes": {
+                  "attachment": "FILE3.jpg"
+                },
+                "files_sha256": {
+                  "FILE3.jpg": null
+                },
+                "geometry": null
+              },
+              "old": {
+                "attributes": {
+                  "attachment": "FILE2.jpg"
+                },
+                "files_sha256": {
+                  "FILE2.jpg": null
+                },
+                "geometry": null
+              }
+            },
+            {
+              "fid": 1,
+              "layerId": "%1",
+              "method": "delete",
+              "old": {
+                "attachment": "%2",
+                "dbl": 3.14,
+                "int": 42,
+                "str": "stringy"
+              }
+            }
+          ],
+          "files": [],
+          "id": "11111111-1111-1111-1111-111111111111",
+          "offlineLayers": [],
+          "project": "projectId",
+          "version": "1.0"
+        }
+      )"""" ).arg( mLayer->id(), mAttachmentFileName ).toUtf8() ) );
+      QVERIFY( deltaFile.flush() );
+
+      DeltaFileWrapper dfw( mProject, deltaFile.fileName() );
+
+      // make sure there is a single feature with id 1
+      QgsFeature f0;
+      QgsFeatureIterator it0 = mLayer->getFeatures( QgsFeatureRequest( QgsExpression( " fid = 1 " ) ) );
+      QVERIFY( it0.nextFeature( f0 ) );
+      QCOMPARE( mLayer->featureCount(), 1 );
+
+      QVERIFY( dfw.apply() );
+
+      QCOMPARE( mLayer->featureCount(), 2 );
+
+      QgsFeature f1;
+      QgsFeatureIterator it1 = mLayer->getFeatures( QgsFeatureRequest( QgsExpression( " fid = 100 " ) ) );
+
+      QVERIFY( it1.nextFeature( f1 ) );
+      QVERIFY( f1.isValid() );
+      QCOMPARE( f1.attribute( QStringLiteral( "int" ) ), 42 );
+      QCOMPARE( f1.attribute( QStringLiteral( "dbl" ) ), 3.14 );
+      QCOMPARE( f1.attribute( QStringLiteral( "str" ) ), QStringLiteral( "stringy" ) );
+      QCOMPARE( f1.attribute( QStringLiteral( "attachment" ) ), QStringLiteral( "FILE1.jpg" ) );
+      QVERIFY( ! it1.nextFeature( f1 ) );
+
+      QgsFeature f2;
+      QgsFeatureIterator it2 = mLayer->getFeatures( QgsFeatureRequest( QgsExpression( " fid = 102 " ) ) );
+
+      QVERIFY( it2.nextFeature( f2 ) );
+      QVERIFY( f2.isValid() );
+      QCOMPARE( f2.attribute( QStringLiteral( "attachment" ) ).toString(), QStringLiteral( "FILE3.jpg" ) );
+      QVERIFY( ! it2.nextFeature( f2 ) );
+
+      QgsFeature f3;
+      QgsFeatureIterator it3 = mLayer->getFeatures( QgsFeatureRequest( QgsExpression( " fid = 1 " ) ) );
+      QVERIFY( ! it3.nextFeature( f3 ) );
     }
 
 
     void testApplyReversed()
     {
-      // TODO test add
-      // TODO test delete
-      // TODO test patch
-      // TODO test multiple deltas of the same feature
+      QTemporaryFile deltaFile;
+
+      QVERIFY( deltaFile.open() );
+      QVERIFY( deltaFile.write( QStringLiteral( R""""(
+        {
+          "deltas": [
+            {
+              "fid": 100,
+              "layerId": "%1",
+              "method": "create",
+              "new": {
+                "attributes": {
+                  "attachment": "FILE1.jpg",
+                  "dbl": 3.14,
+                  "int": 42,
+                  "str": "stringy"
+                },
+                "files_sha256": {
+                  "FILE1.jpg": null
+                },
+                "geometry": null
+              }
+            },
+            {
+              "fid": 102,
+              "layerId": "%1",
+              "method": "create",
+              "new": {
+                "attributes": {
+                  "attachment": "FILE2.jpg",
+                  "dbl": null,
+                  "int": null,
+                  "str": null
+                },
+                "files_sha256": {
+                  "FILE2.jpg": null
+                },
+                "geometry": null
+              }
+            },
+            {
+              "fid": 102,
+              "layerId": "%1",
+              "method": "patch",
+              "new": {
+                "attributes": {
+                  "attachment": "FILE3.jpg"
+                },
+                "files_sha256": {
+                  "FILE3.jpg": null
+                },
+                "geometry": null
+              },
+              "old": {
+                "attributes": {
+                  "attachment": "FILE2.jpg"
+                },
+                "files_sha256": {
+                  "FILE2.jpg": null
+                },
+                "geometry": null
+              }
+            },
+            {
+              "fid": 1,
+              "layerId": "%1",
+              "method": "delete",
+              "old": {
+                "attributes": {
+                  "attachment": "%2",
+                  "dbl": 3.14,
+                  "int": 42,
+                  "str": "stringy"
+                },
+                "files_sha256": {
+                  "%2": "%3"
+                }
+              }
+            }
+          ],
+          "files": [],
+          "id": "11111111-1111-1111-1111-111111111111",
+          "offlineLayers": [],
+          "project": "projectId",
+          "version": "1.0"
+        }
+      )"""" ).arg( mLayer->id(), mAttachmentFileName, mAttachmentFileChecksum ).toUtf8() ) );
+      QVERIFY( deltaFile.flush() );
+
+      DeltaFileWrapper dfw( mProject, deltaFile.fileName() );
+
+      // make sure there is a single feature with id 1
+      QgsFeature f0;
+      QgsFeatureIterator it0 = mLayer->getFeatures( QgsFeatureRequest( QgsExpression( " fid = 1 " ) ) );
+      QVERIFY( it0.nextFeature( f0 ) );
+      QCOMPARE( mLayer->featureCount(), 1 );
+
+      QVERIFY( dfw.apply() );
+
+      QCOMPARE( mLayer->featureCount(), 2 );
+
+      QgsFeature f1;
+      QgsFeatureIterator it1 = mLayer->getFeatures( QgsFeatureRequest( QgsExpression( " fid = 100 " ) ) );
+
+      QVERIFY( it1.nextFeature( f1 ) );
+      QVERIFY( f1.isValid() );
+      QCOMPARE( f1.attribute( QStringLiteral( "int" ) ), 42 );
+      QCOMPARE( f1.attribute( QStringLiteral( "dbl" ) ), 3.14 );
+      QCOMPARE( f1.attribute( QStringLiteral( "str" ) ), QStringLiteral( "stringy" ) );
+      QCOMPARE( f1.attribute( QStringLiteral( "attachment" ) ), QStringLiteral( "FILE1.jpg" ) );
+      QVERIFY( ! it1.nextFeature( f1 ) );
+
+      QgsFeature f2;
+      QgsFeatureIterator it2 = mLayer->getFeatures( QgsFeatureRequest( QgsExpression( " fid = 102 " ) ) );
+
+      QVERIFY( it2.nextFeature( f2 ) );
+      QVERIFY( f2.isValid() );
+      QCOMPARE( f2.attribute( QStringLiteral( "attachment" ) ).toString(), QStringLiteral( "FILE3.jpg" ) );
+      QVERIFY( ! it2.nextFeature( f2 ) );
+
+      QgsFeature f3;
+      QgsFeatureIterator it3 = mLayer->getFeatures( QgsFeatureRequest( QgsExpression( " fid = 1 " ) ) );
+      QVERIFY( ! it3.nextFeature( f3 ) );
+
+      // ^^^ the same as apply above
+
+      dfw.applyReversed();
+
+      QgsFeature f4;
+      QgsFeatureIterator it4 = mLayer->getFeatures( QgsFeatureRequest( QgsExpression( " fid = 100 OR fid = 102 " ) ) );
+      QVERIFY( ! it4.nextFeature( f4 ) );
+
+      QgsFeature f5;
+      QgsFeatureIterator it5 = mLayer->getFeatures( QgsFeatureRequest( QgsExpression( " fid = 1 " ) ) );
+      QVERIFY( it5.nextFeature( f5 ) );
+      QVERIFY( f5.isValid() );
+      QCOMPARE( f5.attribute( QStringLiteral( "fid" ) ), 1 );
+      QCOMPARE( f5.attribute( QStringLiteral( "int" ) ), 42 );
+      QCOMPARE( f5.attribute( QStringLiteral( "dbl" ) ), 3.14 );
+      QCOMPARE( f5.attribute( QStringLiteral( "str" ) ), QStringLiteral( "stringy" ) );
+      QCOMPARE( f5.attribute( QStringLiteral( "attachment" ) ), mAttachmentFileName );
+      QVERIFY( ! it5.nextFeature( f5 ) );
     }
 
 
