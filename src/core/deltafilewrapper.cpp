@@ -93,9 +93,6 @@ DeltaFileWrapper::DeltaFileWrapper( const QgsProject *project, const QString &fi
     if ( mErrorType == DeltaFileWrapper::NoError && ! mJsonRoot.value( QStringLiteral( "deltas" ) ).isArray() )
       mErrorType = DeltaFileWrapper::JsonFormatDeltasError;
 
-    if ( mErrorType == DeltaFileWrapper::NoError && ! mJsonRoot.value( QStringLiteral( "offlineLayers" ) ).isArray() )
-      mErrorType = DeltaFileWrapper::JsonFormatOfflineLayersError;
-
     if ( mErrorType == DeltaFileWrapper::NoError && ( ! mJsonRoot.value( QStringLiteral( "version" ) ).isString() || mJsonRoot.value( QStringLiteral( "version" ) ).toString().isEmpty() ) )
       mErrorType = DeltaFileWrapper::JsonFormatVersionError;
 
@@ -118,19 +115,6 @@ DeltaFileWrapper::DeltaFileWrapper( const QgsProject *project, const QString &fi
 
         mDeltas.append( v );
       }
-
-      const QJsonArray offlineLayersJsonArray = mJsonRoot.value( QStringLiteral( "offlineLayers" ) ).toArray();
-
-      for ( const QJsonValue &v : offlineLayersJsonArray )
-      {
-        if ( ! v.isString() )
-        {
-          mErrorType = DeltaFileWrapper::JsonFormatOfflineLayersItemError;
-          break;
-        }
-
-        mOfflineLayerIds.append( v.toString() );
-      }
     }
   }
   else if ( mErrorType == DeltaFileWrapper::NoError )
@@ -138,7 +122,6 @@ DeltaFileWrapper::DeltaFileWrapper( const QgsProject *project, const QString &fi
     mJsonRoot = QJsonObject( {{"version", DeltaFileWrapper::FormatVersion},
       {"id", QUuid::createUuid().toString( QUuid::WithoutBraces )},
       {"project", mCloudProjectId},
-      {"offlineLayers", QJsonArray::fromStringList( mOfflineLayerIds )},
       {"deltas", mDeltas}} );
 
     if ( ! deltaFile.open( QIODevice::ReadWrite ) )
@@ -190,10 +173,8 @@ void DeltaFileWrapper::reset()
 
   mIsDirty = true;
   mDeltas = QJsonArray();
-  mOfflineLayerIds.clear();
 
   emit countChanged();
-  emit offlineLayerIdsChanged();
 }
 
 
@@ -260,7 +241,6 @@ QByteArray DeltaFileWrapper::toJson( QJsonDocument::JsonFormat jsonFormat ) cons
 {
   QJsonObject jsonRoot( mJsonRoot );
   jsonRoot.insert( QStringLiteral( "deltas" ), mDeltas );
-  jsonRoot.insert( QStringLiteral( "offlineLayers" ), QJsonArray::fromStringList( mOfflineLayerIds ) );
   jsonRoot.insert( QStringLiteral( "files" ), QJsonArray() );
 
   return QJsonDocument( jsonRoot ).toJson( jsonFormat );
@@ -317,20 +297,7 @@ bool DeltaFileWrapper::append( const DeltaFileWrapper *deltaFileWrapper )
   for ( const QJsonValue &delta : constDeltas )
     mDeltas.append( delta );
 
-  const int offlineLayerIdsOldSize = mOfflineLayerIds.size();
-
-  for ( const QString &layerId : deltaFileWrapper->offlineLayerIds() )
-  {
-    if ( mOfflineLayerIds.contains( layerId ) )
-      continue;
-
-    mOfflineLayerIds.append( layerId );
-  }
-
   emit countChanged();
-
-  if ( offlineLayerIdsOldSize != mOfflineLayerIds.size() )
-    emit offlineLayerIdsChanged();
 
   return true;
 }
@@ -660,12 +627,6 @@ QJsonValue DeltaFileWrapper::geometryToJsonValue( const QgsGeometry &geom ) cons
 }
 
 
-QStringList DeltaFileWrapper::offlineLayerIds() const
-{
-  return mOfflineLayerIds;
-}
-
-
 QStringList DeltaFileWrapper::deltaLayerIds() const
 {
   QStringList layerIds;
@@ -680,18 +641,6 @@ QStringList DeltaFileWrapper::deltaLayerIds() const
   }
 
   return layerIds;
-}
-
-
-void DeltaFileWrapper::addOfflineLayerId( const QString &offlineLayerId )
-{
-  if ( mOfflineLayerIds.contains( offlineLayerId ) )
-    return;
-
-  mOfflineLayerIds.append( offlineLayerId );
-  mIsDirty = true;
-
-  emit offlineLayerIdsChanged();
 }
 
 

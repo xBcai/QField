@@ -35,7 +35,6 @@ class DeltaFileWrapper : public QObject
     Q_OBJECT
 
     Q_PROPERTY( int count READ count NOTIFY countChanged )
-    Q_PROPERTY( const QStringList offlineLayerIds READ offlineLayerIds NOTIFY offlineLayerIdsChanged )
 
   public:
     /**
@@ -53,8 +52,6 @@ class DeltaFileWrapper : public QObject
       JsonFormatVersionError,
       JsonFormatDeltasError,
       JsonFormatDeltaItemError,
-      JsonFormatOfflineLayersError,
-      JsonFormatOfflineLayersItemError,
       JsonIncompatibleVersionError
     };
 
@@ -248,28 +245,11 @@ class DeltaFileWrapper : public QObject
 
 
     /**
-     * Returns the list of offline layers to be synchronized.
-     * @return list of layers ids
-     * @todo TEST
-     */
-    QStringList offlineLayerIds() const;
-
-
-    /**
      * Returns the list of layers that have applied deltas on them.
      * @return list of layers ids
      * @todo TEST
      **/
     QStringList deltaLayerIds() const;
-
-
-    /**
-     * Adds a new offline layer id to be syncronized.
-     *
-     * @param offlineLayerId target layer id
-     * @todo TEST
-     */
-    void addOfflineLayerId( const QString &offlineLayerId );
 
 
     /**
@@ -309,14 +289,6 @@ class DeltaFileWrapper : public QObject
      * @todo TEST
      */
     void countChanged();
-
-
-    /**
-     * Emitted when the `offlineLayerIds` has changed.
-     *
-     * @todo TEST
-     */
-    void offlineLayerIdsChanged();
 
 
     /**
@@ -360,12 +332,6 @@ class DeltaFileWrapper : public QObject
      * The list of JSON deltas.
      */
     QJsonArray mDeltas;
-
-
-    /**
-     * The list offline layer ids to be synchronized.
-     */
-    QStringList mOfflineLayerIds;
 
 
     /**
