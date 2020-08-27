@@ -109,6 +109,18 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     Q_ENUM( DeltaFileStatus )
 
+    enum DownloadJobStatus
+    {
+      DownloadJobErrorStatus,
+      DownloadJobUnstartedStatus,
+      DownloadJobPendingStatus,
+      DownloadJobQueuedStatus,
+      DownloadJobBusyStatus,
+      DownloadJobCreatedStatus
+    };
+
+    Q_ENUM( DownloadJobStatus )
+
     QFieldCloudProjectsModel();
 
     Q_PROPERTY( QFieldCloudConnection *cloudConnection READ cloudConnection WRITE setCloudConnection NOTIFY cloudConnectionChanged )
@@ -168,11 +180,13 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     void networkOfflineLayerUploaded( const QString &projectId );
     void networkAllOfflineLayersUploaded( const QString &projectId );
     void networkDeltaStatusChecked( const QString &projectId );
+    void networkDownloadStatusChecked( const QString &projectId );
     void networkAttachmentsUploaded( const QString &projectId );
     void networkAllAttachmentsUploaded( const QString &projectId );
     void networkLayerDownloaded( const QString &projectId );
     void networkAllLayersDownloaded( const QString &projectId );
     void syncFinished( const QString &projectId, bool hasError, const QString &errorString = QString() );
+    void downloadFinished( const QString &projectId, bool hasError, const QString &errorString = QString() );
 
   private slots:
     void connectionStatusChanged();
@@ -184,7 +198,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     void layerObserverLayerEdited( const QString &layerId );
   private:
-    static const int sDelayBeforeDeltaStatusRetry = 1000;
+    static const int sDelayBeforeStatusRetry = 1000;
 
     struct FileTransfer
     {
@@ -240,12 +254,15 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       QString deltaFileUploadStatusString;
       QStringList deltaLayersToDownload;
 
-      QMap<QString, FileTransfer> downloadProjectFiles;
-      int downloadProjectFilesFinished = 0;
-      int downloadProjectFilesFailed = 0;
-      int downloadProjectFilesBytesTotal = 0;
-      int downloadProjectFilesBytesReceived = 0;
-      double downloadProjectFilesProgress = 0.0; // range from 0.0 to 1.0
+      QString downloadJobId;
+      DownloadJobStatus downloadJobStatus = DownloadJobUnstartedStatus;
+      QString downloadJobStatusString;
+      QMap<QString, FileTransfer> downloadFileTransfers;
+      int downloadFilesFinished = 0;
+      int downloadFilesFailed = 0;
+      int downloadBytesTotal = 0;
+      int downloadBytesReceived = 0;
+      double downloadProgress = 0.0; // range from 0.0 to 1.0
 
       QMap<QString, FileTransfer> uploadOfflineLayers;
       int uploadOfflineLayersFinished = 0;
@@ -277,6 +294,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     void projectUploadOfflineLayers( const QString &projectId );
     void projectUploadAttachments( const QString &projectId );
     void projectGetDeltaStatus( const QString &projectId );
+    void projectGetDownloadStatus( const QString &projectId );
     void projectDownloadLayers( const QString &projectId );
 
     NetworkReply *downloadFile( const QString &projectId, const QString &fileName );
