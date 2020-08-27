@@ -177,8 +177,6 @@ class QFieldCloudProjectsModel : public QAbstractListModel
 
     //
     void networkDeltaUploaded( const QString &projectId );
-    void networkOfflineLayerUploaded( const QString &projectId );
-    void networkAllOfflineLayersUploaded( const QString &projectId );
     void networkDeltaStatusChecked( const QString &projectId );
     void networkDownloadStatusChecked( const QString &projectId );
     void networkAttachmentsUploaded( const QString &projectId );
@@ -264,11 +262,6 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       int downloadBytesReceived = 0;
       double downloadProgress = 0.0; // range from 0.0 to 1.0
 
-      QMap<QString, FileTransfer> uploadOfflineLayers;
-      int uploadOfflineLayersFinished = 0;
-      int uploadOfflineLayersFailed = 0;
-      int uploadOfflineLayersBytesTotal = 0;
-
       QMap<QString, FileTransfer> uploadAttachments;
       int uploadAttachmentsFinished = 0;
       int uploadAttachmentsFailed = 0;
@@ -291,7 +284,6 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     bool mCanSyncCurrentProject = false;
 
     void projectCancelUpload( const QString &projectId, bool shouldCancelAtServer );
-    void projectUploadOfflineLayers( const QString &projectId );
     void projectUploadAttachments( const QString &projectId );
     void projectGetDeltaStatus( const QString &projectId );
     void projectGetDownloadStatus( const QString &projectId );

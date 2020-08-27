@@ -151,11 +151,6 @@ void LayerObserver::onLayersAdded( const QList<QgsMapLayer *> layers )
     {
       switch ( QFieldCloudUtils::layerAction( vl ) )
       {
-        case QFieldCloudProjectsModel::LayerAction::Offline:
-          // we just make sure that a committed `offline` layer mark the project as dirty
-          // TODO use the future "afterCommitChanges" signal
-          connect( vl, &QgsVectorLayer::editingStopped, this, &LayerObserver::onEditingStopped );
-          break;
         case QFieldCloudProjectsModel::LayerAction::Cloud:
           // for `cloud` projects, we keep track of any change that has occurred
           connect( vl, &QgsVectorLayer::beforeCommitChanges, this, &LayerObserver::onBeforeCommitChanges );
@@ -318,10 +313,6 @@ void LayerObserver::onEditingStopped( )
 
   switch ( QFieldCloudUtils::layerAction( vl ) )
   {
-    case QFieldCloudProjectsModel::LayerAction::Offline:
-      mCurrentDeltaFileWrapper->addOfflineLayerId( layerId );
-      emit layerEdited( layerId );
-      break;
     case QFieldCloudProjectsModel::LayerAction::Cloud:
       mPatchedFids.take( layerId );
       mChangedFeatures.take( layerId );
