@@ -330,23 +330,31 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
     return;
 
   int index = findProject( projectId );
-  if ( index > -1 )
-  {
-    mCloudProjects[index].downloadProjectFiles.clear();
-    mCloudProjects[index].downloadProjectFilesFinished = 0;
-    mCloudProjects[index].downloadProjectFilesFailed = 0;
-    mCloudProjects[index].downloadProjectFilesBytesTotal = 0;
-    mCloudProjects[index].downloadProjectFilesBytesReceived = 0;
-    mCloudProjects[index].downloadProjectFilesProgress = 0;
+  if ( index == -1 || index >= mCloudProjects.size() )
+    return;
 
-    mCloudProjects[index].checkout = LocalFromRemoteCheckout;
-    mCloudProjects[index].status = ProjectStatus::Downloading;
-    mCloudProjects[index].modification = NoModification;
-    QModelIndex idx = createIndex( index, 0 );
-    emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
-  }
+  if ( mCloudProjects[index].status != ProjectStatus::Idle )
+    return;
 
-  NetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/" ).arg( projectId ) );
+  mCloudProjects[index].downloadJobId = QString();
+  mCloudProjects[index].downloadJobStatus = DownloadJobUnstartedStatus;
+  mCloudProjects[index].downloadFileTransfers.clear();
+  mCloudProjects[index].downloadFilesFinished = 0;
+  mCloudProjects[index].downloadFilesFailed = 0;
+  mCloudProjects[index].downloadBytesTotal = 0;
+  mCloudProjects[index].downloadBytesReceived = 0;
+  mCloudProjects[index].downloadProgress = 0;
+
+  mCloudProjects[index].checkout = LocalFromRemoteCheckout;
+  mCloudProjects[index].status = ProjectStatus::Downloading;
+  mCloudProjects[index].modification = NoModification;
+  QModelIndex idx = createIndex( index, 0 );
+  emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
+
+  // //////////
+  // 1) request a new export the project
+  // //////////
+  NetworkReply *reply = mCloudConnection->get( QStringLiteral( "/api/v1/qfield-files/%1/" ).arg( projectId ) );
 
   connect( reply, &NetworkReply::finished, this, [ = ]()
   {
@@ -355,61 +363,163 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
 
     if ( rawReply->error() != QNetworkReply::NoError )
     {
-      if ( index > -1 )
-      {
-        mCloudProjects[index].status = ProjectStatus::Idle;
+      mCloudProjects[index].status = ProjectStatus::Idle;
 
-        QModelIndex idx = createIndex( index, 0 );
-        emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
-      }
+      QModelIndex idx = createIndex( index, 0 );
+      emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
       emit warning( QStringLiteral( "Error fetching project: %1" ).arg( rawReply->errorString() ) );
 
       return;
     }
 
-    const QJsonArray files = QJsonDocument::fromJson( rawReply->readAll() ).array();
-    for ( const QJsonValue file : files )
-    {
-      QJsonObject fileObject = file.toObject();
-      QString fileName = fileObject.value( QStringLiteral( "name" ) ).toString();
-      int fileSize = fileObject.value( QStringLiteral( "size" ) ).toInt();
+    const QJsonObject downloadJson = QJsonDocument::fromJson( rawReply->readAll() ).object();
+    mCloudProjects[index].downloadJobId = downloadJson.value( QStringLiteral( "jobid" ) ).toString();
+    // TODO probably better idea to get the status from downloadJson body
+    mCloudProjects[index].downloadJobStatus = DownloadJobPendingStatus;
 
-      mCloudProjects[index].downloadProjectFiles.insert( fileName, FileTransfer( fileName, fileSize ) );
-      mCloudProjects[index].downloadProjectFilesBytesTotal += fileSize;
+    projectGetDownloadStatus( projectId );
+  } );
+
+
+  // //////////
+  // 2) poll for download files export status until final status received
+  // //////////
+  connect( this, &QFieldCloudProjectsModel::networkDownloadStatusChecked, this, [ = ]( const QString & uploadedProjectId )
+  {
+    if ( projectId != uploadedProjectId )
+      return;
+
+    switch ( mCloudProjects[index].downloadJobStatus )
+    {
+      case DownloadJobUnstartedStatus:
+        // download export job should be already started!!!
+        Q_ASSERT( 0 );
+        break;
+      case DownloadJobPendingStatus:
+      case DownloadJobQueuedStatus:
+      case DownloadJobBusyStatus:
+        // infinite retry, there should be one day, when we can get the status!
+        QTimer::singleShot( sDelayBeforeStatusRetry, [ = ]()
+        {
+          projectGetDownloadStatus( projectId );
+        } );
+        break;
+      case DownloadJobErrorStatus:
+        emit downloadFinished( projectId, true, mCloudProjects[index].downloadJobStatusString );
+        return;
+      case DownloadJobCreatedStatus:
+        // assumed that the file downloads are already in CloudProject.dowloadProjectFiles
+        projectDownloadFiles( projectId );
+        return;
     }
+  } );
+}
 
-    if ( mCloudProjects[index].downloadProjectFiles.isEmpty() )
+
+void QFieldCloudProjectsModel::projectGetDownloadStatus( const QString &projectId )
+{
+  const int index = findProject( projectId );
+
+  if ( index == -1 || index >= mCloudProjects.size() )
+    return;
+
+  Q_ASSERT( index >= 0 && index < mCloudProjects.size() );
+  Q_ASSERT( mCloudProjects[index].downloadJobStatus != DownloadJobUnstartedStatus );
+  Q_ASSERT( ! mCloudProjects[index].downloadJobId.isEmpty() );
+
+  NetworkReply *downloadStatusReply = mCloudConnection->get( QStringLiteral( "/api/v1/qfield-files/export/%1/" ).arg( mCloudProjects[index].downloadJobId ) );
+
+  mCloudProjects[index].downloadJobStatusString = QString();
+
+  connect( downloadStatusReply, &NetworkReply::finished, this, [ = ]()
+  {
+    QNetworkReply *rawReply = downloadStatusReply->reply();
+    downloadStatusReply->deleteLater();
+
+    Q_ASSERT( downloadStatusReply->isFinished() );
+    Q_ASSERT( rawReply );
+
+    if ( rawReply->error() != QNetworkReply::NoError )
     {
-      QModelIndex idx = createIndex( index, 0 );
+      int statusCode = rawReply->attribute( QNetworkRequest::HttpStatusCodeAttribute ).toInt();
 
-      mCloudProjects[index].status = ProjectStatus::Idle;
+      mCloudProjects[index].downloadJobStatus = DownloadJobErrorStatus;
+      // TODO this is oversimplification. e.g. 404 error is when the requested export id is not existent
+      mCloudProjects[index].downloadJobStatusString = QStringLiteral( "[HTTP%1] Networking error, please retry!" ).arg( statusCode );
 
-      emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
-      emit warning( QStringLiteral( "Project empty" ) );
+      emit networkDownloadStatusChecked( projectId );
 
       return;
     }
 
-    // download the files and if all good emit projectDownloaded
-    projectDownloadFiles( projectId );
+    const QJsonObject payload = QJsonDocument::fromJson( rawReply->readAll() ).object();
+
+    Q_ASSERT( ! payload.isEmpty() );
+
+    const QString status = payload.value( QStringLiteral( "status" ) ).toString().toUpper();
+
+    if ( status == QStringLiteral( "PENDING" ) )
+      mCloudProjects[index].downloadJobStatus = DownloadJobPendingStatus;
+    else if ( status == QStringLiteral( "QUEUED" ) )
+      mCloudProjects[index].downloadJobStatus = DownloadJobQueuedStatus;
+    else if ( status == QStringLiteral( "BUSY" ) )
+      mCloudProjects[index].downloadJobStatus = DownloadJobBusyStatus;
+    else if ( status == QStringLiteral( "CREATED" ) )
+    {
+      mCloudProjects[index].downloadJobStatus = DownloadJobCreatedStatus;
+
+      const QJsonArray files = payload.value( QStringLiteral( "files" ) ).toArray();
+      for ( const QJsonValue file : files )
+      {
+        QJsonObject fileObject = file.toObject();
+        QString fileName = fileObject.value( QStringLiteral( "name" ) ).toString();
+        int fileSize = fileObject.value( QStringLiteral( "size" ) ).toInt();
+
+        mCloudProjects[index].downloadFileTransfers.insert( fileName, FileTransfer( fileName, fileSize ) );
+        mCloudProjects[index].downloadBytesTotal += fileSize;
+      }
+    }
+    else if ( status == QStringLiteral( "ERROR" ) )
+    {
+      mCloudProjects[index].downloadJobStatus = DownloadJobErrorStatus;
+      mCloudProjects[index].downloadJobStatusString = payload.value( QStringLiteral( "output" ) ).toString().split( '\n' ).last();
+    }
+    else
+    {
+      mCloudProjects[index].downloadJobStatus = DownloadJobErrorStatus;
+      mCloudProjects[index].downloadJobStatusString = QStringLiteral( "Unknown status \"%1\"" ).arg( status );
+      QgsLogger::warning( mCloudProjects[index].downloadJobStatusString );
+    }
+
+    emit networkDownloadStatusChecked( projectId );
   } );
 }
-
 
 void QFieldCloudProjectsModel::projectDownloadFiles( const QString &projectId )
 {
   if ( !mCloudConnection )
     return;
 
-  int index = findProject( projectId );
+  const int index = findProject( projectId );
 
-  if ( index == -1 )
+  if ( index == -1 || index >= mCloudProjects.size() )
     return;
 
-  const QStringList fileNames = mCloudProjects[index].downloadProjectFiles.keys();
+  const QStringList fileNames = mCloudProjects[index].downloadFileTransfers.keys();
 
   // why call download project files, if there are no project files?
-  Q_ASSERT( fileNames.size() > 0 );
+  if ( fileNames.isEmpty() )
+  {
+    QModelIndex idx = createIndex( index, 0 );
+
+    mCloudProjects[index].status = ProjectStatus::Idle;
+    mCloudProjects[index].downloadProgress = 1;
+
+    emit dataChanged( idx, idx,  QVector<int>() << StatusRole << DownloadProgressRole );
+    emit warning( QStringLiteral( "Project empty" ) );
+
+    return;
+  }
 
   for ( const QString &fileName : fileNames )
   {
@@ -422,23 +532,23 @@ void QFieldCloudProjectsModel::projectDownloadFiles( const QString &projectId )
                           .arg( fileName )
                           .arg( file->errorString() ) );
 
-      mCloudProjects[index].downloadProjectFilesFailed++;
+      mCloudProjects[index].downloadFilesFailed++;
 
       emit projectDownloaded( projectId, true, mCloudProjects[index].name );
 
       return;
     }
 
-    mCloudProjects[index].downloadProjectFiles[fileName].networkReply = reply;
+    mCloudProjects[index].downloadFileTransfers[fileName].networkReply = reply;
 
     connect( reply, &NetworkReply::downloadProgress, this, [ = ]( int bytesReceived, int bytesTotal )
     {
       Q_UNUSED( bytesTotal );
 
       // it means the NetworkReply has failed and retried
-      mCloudProjects[index].downloadProjectFilesBytesReceived -= mCloudProjects[index].downloadProjectFiles[fileName].bytesTransferred;
-      mCloudProjects[index].downloadProjectFilesBytesReceived = bytesReceived;
-      mCloudProjects[index].downloadProjectFilesProgress += static_cast<double>( mCloudProjects[index].downloadProjectFilesBytesTotal ) / mCloudProjects[index].downloadProjectFilesBytesReceived;
+      mCloudProjects[index].downloadBytesReceived -= mCloudProjects[index].downloadFileTransfers[fileName].bytesTransferred;
+      mCloudProjects[index].downloadBytesReceived = bytesReceived;
+      mCloudProjects[index].downloadProgress += static_cast<double>( mCloudProjects[index].downloadBytesTotal ) / mCloudProjects[index].downloadBytesReceived;
 
       QModelIndex idx = createIndex( index, 0 );
 
@@ -454,7 +564,7 @@ void QFieldCloudProjectsModel::projectDownloadFiles( const QString &projectId )
       Q_ASSERT( reply->isFinished() );
       Q_ASSERT( reply );
 
-      mCloudProjects[index].downloadProjectFilesFinished++;
+      mCloudProjects[index].downloadFilesFinished++;
 
       bool hasError = false;
 
@@ -500,13 +610,13 @@ void QFieldCloudProjectsModel::projectDownloadFiles( const QString &projectId )
 
       if ( hasError )
       {
-        mCloudProjects[index].downloadProjectFilesFailed++;
+        mCloudProjects[index].downloadFilesFailed++;
         mCloudProjects[index].status = ProjectStatus::Error;
 
         emit projectDownloaded( projectId, true, mCloudProjects[index].name );
       }
 
-      if ( mCloudProjects[index].downloadProjectFilesFinished == fileNames.count() )
+      if ( mCloudProjects[index].downloadFilesFinished == fileNames.count() )
       {
         emit projectDownloaded( projectId, false, mCloudProjects[index].name );
 
@@ -692,10 +802,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId, const bo
     Q_ASSERT( mCloudProjects[index].downloadLayersFailed == 0 );
 
     // download the updated files, so the files are for sure the same on the client and on the server
-    if ( shouldDownloadUpdates )
-      projectGetDeltaStatus( projectId );
-    else
-      emit syncFinished( projectId, false );
+    projectGetDeltaStatus( projectId );
   } );
 
 
@@ -717,7 +824,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId, const bo
       case DeltaFileWaitingStatus:
       case DeltaFileBusyStatus:
         // infinite retry, there should be one day, when we can get the status!
-        QTimer::singleShot( sDelayBeforeDeltaStatusRetry, this, [ = ]()
+        QTimer::singleShot( sDelayBeforeStatusRetry, [ = ]()
         {
           projectGetDeltaStatus( projectId );
         } );
@@ -732,7 +839,10 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId, const bo
         return;
       case DeltaFileAppliedStatus:
       case DeltaFileAppliedWithConflictsStatus:
-        projectDownloadLayers( projectId );
+        if ( shouldDownloadUpdates )
+          projectDownloadLayers( projectId );
+        else
+          emit syncFinished( projectId, false );
         return;
     }
   } );
@@ -1041,7 +1151,7 @@ void QFieldCloudProjectsModel::projectCancelUpload( const QString &projectId, bo
     offlineLayerReply->abort();
   }
 
-  const QStringList attachmentFileNames = mCloudProjects[index].uploadOfflineLayers.keys();
+  const QStringList attachmentFileNames = mCloudProjects[index].uploadAttachments.keys();
   for ( const QString &attachmentFileName : attachmentFileNames )
   {
     NetworkReply *attachmentReply = mCloudProjects[index].uploadAttachments[attachmentFileName].networkReply;
@@ -1229,7 +1339,7 @@ QVariant QFieldCloudProjectsModel::data( const QModelIndex &index, int role ) co
     case StatusRole:
       return static_cast<int>( mCloudProjects.at( index.row() ).status );
     case DownloadProgressRole:
-      return mCloudProjects.at( index.row() ).downloadProjectFilesProgress;
+      return mCloudProjects.at( index.row() ).downloadProgress;
     case UploadProgressRole:
       // TODO
       return 1;
