@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 
-source ${CI_BUILD_DIR}/../version_number.sh
+source ${CI_BUILD_DIR}/scripts/version_number.sh
 
-lupdate -recursive ${CI_BUILD_DIR} -ts $(ls ${CI_BUILD_DIR}/i18n/*.ts)
+lupdate -recursive ${CI_BUILD_DIR} -ts ${CI_BUILD_DIR}/i18n/qfield_en.ts
+lupdate -recursive ${CI_BUILD_DIR} -ts ${CI_BUILD_DIR}/i18n/qfield_bg.ts
 
-echo ==================
+echo ==================1
 grep Changelog ${CI_BUILD_DIR}/i18n/qfield_en.ts
-echo ==================
+echo ==================1
+
+
+echo ==================2
+grep Changelog ${CI_BUILD_DIR}/i18n/qfield_bg.ts
+echo ==================2
 
 # release only if the branch is master
 if [[ ${CI_BRANCH} = master ]]; then
