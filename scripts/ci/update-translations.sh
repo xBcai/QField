@@ -5,7 +5,7 @@ source ${CI_BUILD_DIR}/../version_number.sh
 lupdate -recursive ${CI_BUILD_DIR} -ts $(ls ${CI_BUILD_DIR}/i18n/*.ts)
 
 echo ==================
-grep Changelog ${CI_BUILD_DIR}/i18n/qfield_bg.ts
+grep Changelog ${CI_BUILD_DIR}/i18n/qfield_en.ts
 echo ==================
 
 # release only if the branch is master
