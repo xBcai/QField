@@ -4,6 +4,10 @@ source ${CI_BUILD_DIR}/../version_number.sh
 
 lupdate -recursive ${CI_BUILD_DIR} -ts $(ls ${CI_BUILD_DIR}/i18n/*.ts)
 
+echo ==================
+grep Changelog ${CI_BUILD_DIR}/i18n/qfield_bg.ts
+echo ==================
+
 # release only if the branch is master
 if [[ ${CI_BRANCH} = master ]]; then
   tx push --source
