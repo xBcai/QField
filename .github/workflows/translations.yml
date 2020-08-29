@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - revive_translations
 
 jobs:
   translations:
