@@ -462,7 +462,7 @@ void QFieldCloudProjectsModel::projectGetDownloadStatus( const QString &projectI
       mCloudProjects[index].downloadJobStatus = DownloadJobQueuedStatus;
     else if ( status == QStringLiteral( "BUSY" ) )
       mCloudProjects[index].downloadJobStatus = DownloadJobBusyStatus;
-    else if ( status == QStringLiteral( "CREATED" ) )
+    else if ( status == QStringLiteral( "FINISHED" ) )
     {
       mCloudProjects[index].downloadJobStatus = DownloadJobCreatedStatus;
 
@@ -521,7 +521,7 @@ void QFieldCloudProjectsModel::projectDownloadFiles( const QString &projectId )
 
   for ( const QString &fileName : fileNames )
   {
-    NetworkReply *reply = downloadFile( projectId, fileName );
+    NetworkReply *reply = downloadFile( mCloudProjects[index].downloadJobId, fileName );
     QTemporaryFile *file = new QTemporaryFile( reply );
 
     if ( ! file->open() )
@@ -1044,9 +1044,9 @@ void QFieldCloudProjectsModel::projectListReceived()
   reload( projects );
 }
 
-NetworkReply *QFieldCloudProjectsModel::downloadFile( const QString &projectId, const QString &fileName )
+NetworkReply *QFieldCloudProjectsModel::downloadFile( const QString &exportJobId, const QString &fileName )
 {
-  return mCloudConnection->get( QStringLiteral( "/api/v1/files/%1/%2/" ).arg( projectId, fileName ) );
+  return mCloudConnection->get( QStringLiteral( "/api/v1/qfield-files/export/%1/%2/" ).arg( exportJobId, fileName ) );
 }
 
 NetworkReply *QFieldCloudProjectsModel::uploadFile( const QString &projectId, const QString &fileName )
