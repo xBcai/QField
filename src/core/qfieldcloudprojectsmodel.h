@@ -289,7 +289,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     void projectGetDownloadStatus( const QString &projectId );
     void projectDownloadLayers( const QString &projectId );
 
-    NetworkReply *downloadFile( const QString &projectId, const QString &fileName );
+    NetworkReply *downloadFile( const QString &exportJobId, const QString &fileName );
     void projectDownloadFiles( const QString &projectId );
 
     bool canCommitCurrentProject();
