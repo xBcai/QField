@@ -45,6 +45,8 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       ModificationRole,
       CheckoutRole,
       StatusRole,
+      ErrorStatusRole,
+      ErrorStringRole,
       DownloadProgressRole,
       UploadProgressRole,
       LocalPathRole
@@ -57,10 +59,18 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       Idle,
       Downloading,
       Uploading,
-      Error
     };
 
     Q_ENUM( ProjectStatus )
+
+    enum ProjectErrorStatus
+    {
+      NoErrorStatus,
+      DownloadErrorStatus,
+      UploadErrorStatus,
+    };
+
+    Q_ENUM( ProjectErrorStatus )
 
     enum ProjectCheckout
     {
@@ -115,7 +125,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       DownloadJobUnstartedStatus,
       DownloadJobPendingStatus,
       DownloadJobQueuedStatus,
-      DownloadJobBusyStatus,
+      DownloadJobStartedStatus,
       DownloadJobCreatedStatus
     };
 
@@ -243,6 +253,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
       QString description;
       QString updatedAt;
       ProjectStatus status;
+      ProjectErrorStatus errorStatus = ProjectErrorStatus::NoErrorStatus;
       ProjectCheckouts checkout;
       ProjectModifications modification = ProjectModification::NoModification;
       QString localPath;

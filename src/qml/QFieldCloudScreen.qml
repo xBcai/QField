@@ -285,10 +285,18 @@ Page {
                                     case QFieldCloudProjectsModel.ProjectStatus.Uploading:
                                       status = qsTr( 'Uploading…' )
                                       break
-                                    case QFieldCloudProjectsModel.ProjectStatus.Error:
-                                      status = qsTr( 'Error!' )
-                                      break
                                     default:
+                                      break
+                                  }
+
+                                  switch (ErrorStatus) {
+                                    case QFieldCloudProjectsModel.NoErrorStatus:
+                                      break
+                                    case QFieldCloudProjectsModel.DownloadErrorStatus:
+                                      status = qsTr('Downloading error. ') + ErrorString
+                                      break
+                                    case QFieldCloudProjectsModel.UploadErrorStatus:
+                                      status = qsTr('Uploading error. ') + ErrorString
                                       break
                                   }
 
