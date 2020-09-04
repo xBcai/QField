@@ -101,7 +101,7 @@ Popup {
             id: syncButton
             Layout.fillWidth: true
             font: Theme.defaultFont
-            text: 'Sync!'
+            text: qsTr('Sync!')
 
             onClicked: uploadProject(true)
           }
@@ -121,7 +121,7 @@ Popup {
             id: pushButton
             Layout.fillWidth: true
             font: Theme.defaultFont
-            text: 'Push changes'
+            text: qsTr('Push changes')
 
             onClicked: uploadProject(false)
           }
@@ -141,7 +141,7 @@ Popup {
             id: discardButton
             Layout.fillWidth: true
             font: Theme.defaultFont
-            text: 'Discard local changes'
+            text: qsTr('Discard local changes')
 
             onClicked: discardLocalChangesFromCurrentProject()
           }
