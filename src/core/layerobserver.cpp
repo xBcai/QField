@@ -134,38 +134,13 @@ void LayerObserver::onHomePathChanged()
 
   emit currentDeltaFileWrapperChanged();
   emit committedDeltaFileWrapperChanged();
+  addLayerListeners();
 }
 
 
 void LayerObserver::onLayersAdded( const QList<QgsMapLayer *> layers )
 {
-  // we should keep track only of the layers on cloud projects
-  if ( QFieldCloudUtils::getProjectId( mProject ).isEmpty() )
-    return;
-
-  for ( QgsMapLayer *layer : layers )
-  {
-    QgsVectorLayer *vl = dynamic_cast<QgsVectorLayer *>( layer );
-
-    if ( vl && vl->dataProvider() )
-    {
-      switch ( QFieldCloudUtils::layerAction( vl ) )
-      {
-        case QFieldCloudProjectsModel::LayerAction::Cloud:
-          // for `cloud` projects, we keep track of any change that has occurred
-          connect( vl, &QgsVectorLayer::beforeCommitChanges, this, &LayerObserver::onBeforeCommitChanges );
-          connect( vl, &QgsVectorLayer::committedFeaturesAdded, this, &LayerObserver::onCommittedFeaturesAdded );
-          connect( vl, &QgsVectorLayer::committedFeaturesRemoved, this, &LayerObserver::onCommittedFeaturesRemoved );
-          connect( vl, &QgsVectorLayer::committedAttributeValuesChanges, this, &LayerObserver::onCommittedAttributeValuesChanges );
-          connect( vl, &QgsVectorLayer::committedGeometriesChanges, this, &LayerObserver::onCommittedGeometriesChanges );
-          // TODO use the future "afterCommitChanges" signal
-          connect( vl, &QgsVectorLayer::editingStopped, this, &LayerObserver::onEditingStopped );
-          break;
-        default:
-          continue;
-      }
-    }
-  }
+  addLayerListeners();
 }
 
 
@@ -326,5 +301,39 @@ void LayerObserver::onEditingStopped( )
       break;
     default:
       Q_ASSERT( 0 );
+  }
+}
+
+
+void LayerObserver::addLayerListeners()
+{
+  const QList<QgsMapLayer *> layers = mProject->mapLayers().values();
+
+  // we should keep track only of the layers on cloud projects
+  if ( QFieldCloudUtils::getProjectId( mProject ).isEmpty() )
+    return;
+
+  for ( QgsMapLayer *layer : layers )
+  {
+    QgsVectorLayer *vl = dynamic_cast<QgsVectorLayer *>( layer );
+
+    if ( vl && vl->dataProvider() )
+    {
+      switch ( QFieldCloudUtils::layerAction( vl ) )
+      {
+        case QFieldCloudProjectsModel::LayerAction::Cloud:
+          // for `cloud` projects, we keep track of any change that has occurred
+          connect( vl, &QgsVectorLayer::beforeCommitChanges, this, &LayerObserver::onBeforeCommitChanges );
+          connect( vl, &QgsVectorLayer::committedFeaturesAdded, this, &LayerObserver::onCommittedFeaturesAdded );
+          connect( vl, &QgsVectorLayer::committedFeaturesRemoved, this, &LayerObserver::onCommittedFeaturesRemoved );
+          connect( vl, &QgsVectorLayer::committedAttributeValuesChanges, this, &LayerObserver::onCommittedAttributeValuesChanges );
+          connect( vl, &QgsVectorLayer::committedGeometriesChanges, this, &LayerObserver::onCommittedGeometriesChanges );
+          // TODO use the future "afterCommitChanges" signal
+          connect( vl, &QgsVectorLayer::editingStopped, this, &LayerObserver::onEditingStopped );
+          break;
+        default:
+          continue;
+      }
+    }
   }
 }
