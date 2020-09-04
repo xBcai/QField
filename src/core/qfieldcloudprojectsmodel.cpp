@@ -769,7 +769,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId, const bo
     // ? what if an attachment fail to be uploaded?
     projectUploadAttachments( projectId );
 
-    if ( mCloudProjects[index].downloadLayersFailed == 0 )
+    if ( mCloudProjects[index].uploadAttachmentsFailed != 0 )
     {
       emit syncFinished( projectId, true, QStringLiteral( "Some layers failed to downlaod" ) );
       return;
