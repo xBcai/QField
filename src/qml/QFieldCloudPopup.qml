@@ -17,7 +17,7 @@ Popup {
       title: qsTr('QFieldCloud Sync')
 
       showApplyButton: false
-      showCancelButton: [QFieldCloudProjectsModel.Idle, QFieldCloudProjectsModel.Error].indexOf(cloudProjectsModel.currentProjectStatus) >= 0
+      showCancelButton: cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Idle
 
       onCancel: {
         popup.close()
@@ -69,10 +69,21 @@ Popup {
         }
 
         Text {
-          id: busyText
-          visible: [QFieldCloudProjectsModel.Idle, QFieldCloudProjectsModel.Error].indexOf(cloudProjectsModel.currentProjectStatus) == -1
+          id: downloadingText
+          visible: cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Downloading
           font: Theme.defaultFont
-          text: qsTr('Shhh, stay calm, busy...')
+          text: qsTr('Downloading…')
+          wrapMode: Text.WordWrap
+          horizontalAlignment: Text.AlignHCenter
+          Layout.bottomMargin: 20
+          Layout.fillWidth: true
+        }
+
+        Text {
+          id: uploadingText
+          visible: cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Uploading
+          font: Theme.defaultFont
+          text: qsTr('Uploading…')
           wrapMode: Text.WordWrap
           horizontalAlignment: Text.AlignHCenter
           Layout.bottomMargin: 20
@@ -82,7 +93,7 @@ Popup {
         GridLayout {
           id: cloudInnerGrid
           width: parent.width
-          visible: [QFieldCloudProjectsModel.Idle, QFieldCloudProjectsModel.Error].indexOf(cloudProjectsModel.currentProjectStatus) >= 0
+          visible: cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Idle
           columns: 1
           columnSpacing: parent.columnSpacing
           rowSpacing: parent.rowSpacing
