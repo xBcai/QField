@@ -744,10 +744,9 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId, const bo
       if ( ! deltaFile->toFile() )
         QgsLogger::warning( QStringLiteral( "Failed update committed delta file." ) );
 
-      projectCancelUpload( projectId, false );
+      mCloudProjects[index].deltaFileUploadStatusString = deltasReply->errorString();
 
-      emit syncFinished( projectId, true, deltasReply->errorString() );
-
+      projectCancelUpload( projectId );
       return;
     }
 
@@ -771,7 +770,8 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId, const bo
 
     if ( mCloudProjects[index].uploadAttachmentsFailed != 0 )
     {
-      emit syncFinished( projectId, true, QStringLiteral( "Some layers failed to downlaod" ) );
+      mCloudProjects[index].deltaFileUploadStatusString = QStringLiteral( "Some layers failed to download" );
+      projectCancelUpload( projectId );
       return;
     }
 
@@ -808,7 +808,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId, const bo
         if ( ! deltaFile->toFile() )
           QgsLogger::warning( QStringLiteral( "Failed update committed delta file." ) );
 
-        emit syncFinished( projectId, true, mCloudProjects[index].deltaFileUploadStatusString );
+        projectCancelUpload( projectId );
         return;
       case DeltaFileAppliedStatus:
       case DeltaFileAppliedWithConflictsStatus:
@@ -827,46 +827,41 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId, const bo
         if ( shouldDownloadUpdates )
           downloadProject( projectId );
         else
-        {
-          mCloudProjects[index].status = ProjectStatus::Idle;
-
           emit syncFinished( projectId, false );
-        }
-        return;
     }
   } );
 
 
-  // //////////
-  // 4) project downloaded, if all done, then reload the project and sync done!
-  // //////////
-  connect( this, &QFieldCloudProjectsModel::networkAllLayersDownloaded, this, [ = ]( const QString & callerProjectId )
-  {
-    if ( projectId != callerProjectId )
-      return;
+// this code is no longer needed, as we do not upload or download files selectively
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//  // //////////
+//  // 4) project downloaded, if all done, then reload the project and sync done!
+//  // //////////
+//  connect( this, &QFieldCloudProjectsModel::networkAllLayersDownloaded, this, [ = ]( const QString & callerProjectId )
+//  {
+//    if ( projectId != callerProjectId )
+//      return;
 
-    // wait until all layers are downloaded
-    if ( mCloudProjects[index].downloadLayersFinished < mCloudProjects[index].deltaLayersToDownload.size() )
-      return;
+//    // wait until all layers are downloaded
+//    if ( mCloudProjects[index].downloadLayersFinished < mCloudProjects[index].deltaLayersToDownload.size() )
+//      return;
 
-    // there are some files that failed to download
-    if ( mCloudProjects[index].downloadLayersFailed > 0 )
-    {
-      mCloudProjects[index].status = ProjectStatus::Idle;
-      mCloudProjects[index].errorStatus = DownloadErrorStatus;
-      // TODO translate this message
-      const QString reason( "Failed to retrieve some of the updated layers, but changes are committed on the server. "
-                            "Try to reload the project from the cloud." );
-      emit syncFinished( projectId, true, reason );
-      emit dataChanged( idx, idx, QVector<int>() << StatusRole );
-      return;
-    }
+//    // there are some files that failed to download
+//    if ( mCloudProjects[index].downloadLayersFailed > 0 )
+//    {
+//      // TODO translate this message
+//      mCloudProjects[index].deltaFileUploadStatusString = QStringLiteral( "Failed to retrieve some of the updated layers, but changes are committed on the server. "
+//                            "Try to reload the project from the cloud." );
+//      projectCancelUpload( projectId );
 
-    QgsProject::instance()->reloadAllLayers();
+//      return;
+//    }
 
-    emit dataChanged( idx, idx, QVector<int>() << StatusRole );
-    emit syncFinished( projectId, false );
-  } );
+//    QgsProject::instance()->reloadAllLayers();
+
+//    emit dataChanged( idx, idx, QVector<int>() << StatusRole );
+//    emit syncFinished( projectId, false );
+//  } );
 }
 
 
@@ -978,7 +973,7 @@ void QFieldCloudProjectsModel::projectUploadAttachments( const QString &projectI
   }
 }
 
-void QFieldCloudProjectsModel::projectCancelUpload( const QString &projectId, bool shouldCancelAtServer )
+void QFieldCloudProjectsModel::projectCancelUpload( const QString &projectId )
 {
   if ( ! mCloudConnection )
     return;
@@ -987,9 +982,6 @@ void QFieldCloudProjectsModel::projectCancelUpload( const QString &projectId, bo
 
   if ( index == -1 )
     return;
-
-  mCloudProjects[index].status = ProjectStatus::Idle;
-
 
   const QStringList attachmentFileNames = mCloudProjects[index].uploadAttachments.keys();
   for ( const QString &attachmentFileName : attachmentFileNames )
@@ -1007,10 +999,13 @@ void QFieldCloudProjectsModel::projectCancelUpload( const QString &projectId, bo
     attachmentReply->abort();
   }
 
-  if ( shouldCancelAtServer )
-  {
-    // NetworkReply &reply = CloudReply::deleteResource( QStringLiteral( "/api/v1/deltas/%1" ) );
-  }
+  mCloudProjects[index].status = ProjectStatus::Idle;
+  mCloudProjects[index].errorStatus = UploadErrorStatus;
+
+  QModelIndex idx = createIndex( index, 0 );
+
+  emit dataChanged( idx, idx, QVector<int>() << StatusRole << ErrorStatusRole );
+  emit syncFinished( projectId, true, mCloudProjects[index].deltaFileUploadStatusString );
 
   return;
 }

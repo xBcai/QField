@@ -165,7 +165,6 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     Q_INVOKABLE ProjectStatus projectStatus( const QString &projectId );
     Q_INVOKABLE ProjectModifications projectModification( const QString &projectId ) const;
     Q_INVOKABLE void refreshProjectModification( const QString &projectId );
-    void projectCancelProjectUpload( const QString &projectId, bool shouldCancelAtServer );
 
     QHash<int, QByteArray> roleNames() const;
 
@@ -294,7 +293,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     bool mCanCommitCurrentProject = false;
     bool mCanSyncCurrentProject = false;
 
-    void projectCancelUpload( const QString &projectId, bool shouldCancelAtServer );
+    void projectCancelUpload( const QString &projectId );
     void projectUploadAttachments( const QString &projectId );
     void projectGetDeltaStatus( const QString &projectId );
     void projectGetDownloadStatus( const QString &projectId );
