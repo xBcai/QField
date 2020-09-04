@@ -90,6 +90,33 @@ Popup {
           Layout.fillWidth: true
         }
 
+        Text {
+          id: transferErrorText
+          visible: false
+          font: Theme.defaultFont
+          text: ''
+          color: Theme.darkRed
+          wrapMode: Text.WordWrap
+          horizontalAlignment: Text.AlignHCenter
+          Layout.bottomMargin: 20
+          Layout.fillWidth: true
+
+          Connections {
+            target: cloudProjectsModel
+
+            function onSyncFinished(projectId, hasError, errorString) {
+              transferErrorText.visible = hasError && cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Idle;
+
+              if (transferErrorText.visible)
+                transferErrorText.text = errorString
+            }
+
+            function onDataChanged() {
+              transferErrorText.visible = cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Idle;
+            }
+          }
+        }
+
         GridLayout {
           id: cloudInnerGrid
           width: parent.width
