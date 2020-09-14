@@ -286,22 +286,15 @@ void LayerObserver::onEditingStopped( )
   const QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( sender() );
   const QString layerId = vl->id();
 
-  switch ( QFieldCloudUtils::layerAction( vl ) )
-  {
-    case QFieldCloudProjectsModel::LayerAction::Cloud:
-      mPatchedFids.take( layerId );
-      mChangedFeatures.take( layerId );
+  mPatchedFids.take( layerId );
+  mChangedFeatures.take( layerId );
 
-      if ( ! mCurrentDeltaFileWrapper->toFile() )
-      {
-        // TODO somehow indicate the user that writing failed
-        QgsLogger::warning( QStringLiteral( "Failed writing JSON file" ) );
-      }
-      emit layerEdited( layerId );
-      break;
-    default:
-      Q_ASSERT( 0 );
+  if ( ! mCurrentDeltaFileWrapper->toFile() )
+  {
+    // TODO somehow indicate the user that writing failed
+    QgsLogger::warning( QStringLiteral( "Failed writing JSON file" ) );
   }
+  emit layerEdited( layerId );
 }
 
 
@@ -319,20 +312,16 @@ void LayerObserver::addLayerListeners()
 
     if ( vl && vl->dataProvider() )
     {
-      switch ( QFieldCloudUtils::layerAction( vl ) )
+      if ( !vl->readOnly() )
       {
-        case QFieldCloudProjectsModel::LayerAction::Cloud:
-          // for `cloud` projects, we keep track of any change that has occurred
-          connect( vl, &QgsVectorLayer::beforeCommitChanges, this, &LayerObserver::onBeforeCommitChanges );
-          connect( vl, &QgsVectorLayer::committedFeaturesAdded, this, &LayerObserver::onCommittedFeaturesAdded );
-          connect( vl, &QgsVectorLayer::committedFeaturesRemoved, this, &LayerObserver::onCommittedFeaturesRemoved );
-          connect( vl, &QgsVectorLayer::committedAttributeValuesChanges, this, &LayerObserver::onCommittedAttributeValuesChanges );
-          connect( vl, &QgsVectorLayer::committedGeometriesChanges, this, &LayerObserver::onCommittedGeometriesChanges );
-          // TODO use the future "afterCommitChanges" signal
-          connect( vl, &QgsVectorLayer::editingStopped, this, &LayerObserver::onEditingStopped );
-          break;
-        default:
-          continue;
+        // for `cloud` projects, we keep track of any change that has occurred
+        connect( vl, &QgsVectorLayer::beforeCommitChanges, this, &LayerObserver::onBeforeCommitChanges );
+        connect( vl, &QgsVectorLayer::committedFeaturesAdded, this, &LayerObserver::onCommittedFeaturesAdded );
+        connect( vl, &QgsVectorLayer::committedFeaturesRemoved, this, &LayerObserver::onCommittedFeaturesRemoved );
+        connect( vl, &QgsVectorLayer::committedAttributeValuesChanges, this, &LayerObserver::onCommittedAttributeValuesChanges );
+        connect( vl, &QgsVectorLayer::committedGeometriesChanges, this, &LayerObserver::onCommittedGeometriesChanges );
+        // TODO use the future "afterCommitChanges" signal
+        connect( vl, &QgsVectorLayer::editingStopped, this, &LayerObserver::onEditingStopped );
       }
     }
   }
