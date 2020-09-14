@@ -284,6 +284,56 @@ bool DeltaFileWrapper::toFile()
 }
 
 
+QString DeltaFileWrapper::toFileForUpload( const QString &outFileName ) const
+{
+    QString fileName = outFileName;
+
+    if ( fileName.isEmpty() )
+    {
+        QTemporaryFile tempFile;
+
+        if ( !tempFile.open() )
+            return QString();
+
+        fileName = tempFile.fileName();
+    }
+
+    const QJsonArray constDeltas = deltas();
+    QJsonArray resultDeltas;
+    QJsonObject jsonRoot( mJsonRoot );
+
+    for ( QJsonValue deltaValue : constDeltas )
+    {
+        QJsonObject delta = deltaValue.toObject();
+        QgsMapLayer *layer = mProject->mapLayer( delta["layerId"].toString() );
+
+        if ( layer )
+        {
+            // the same as QgsOfflineEdditing CUSTOM_PROPERTY_ORIGINAL_LAYERID
+            const QString remoteLayerId = layer->customProperty( QStringLiteral( "remoteLayerId" ) ).toString();
+
+            if ( !remoteLayerId.isEmpty() )
+              delta["layerId"] = remoteLayerId;
+        }
+
+        resultDeltas.append( delta );
+    }
+
+    jsonRoot.insert( QStringLiteral( "deltas" ), resultDeltas );
+    jsonRoot.insert( QStringLiteral( "files" ), QJsonArray() );
+
+    QFile deltaFile( fileName );
+
+    if ( ! deltaFile.open( QIODevice::WriteOnly | QIODevice::Unbuffered ) )
+      return QString();
+
+    if ( deltaFile.write( QJsonDocument( jsonRoot ).toJson( QJsonDocument::Indented ) )  == -1 )
+      return QString();
+
+    return fileName;
+}
+
+
 bool DeltaFileWrapper::append( const DeltaFileWrapper *deltaFileWrapper )
 {
   if ( ! deltaFileWrapper )
