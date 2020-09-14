@@ -2,9 +2,11 @@ import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
 
+import org.qfield 1.0
 import Theme 1.0
 
 Page {
+  property QFieldCloudConnection connection
   property alias model: table.model
   signal showOpenProjectDialog
   signal showQFieldCloudScreen
@@ -130,6 +132,7 @@ Page {
           delegate: Rectangle {
             id: rectangle
             property string path: ProjectPath
+            property var type: ProjectType
             width: parent.width
             height: line.height
             color: "transparent"
@@ -192,8 +195,12 @@ Page {
             anchors.fill: parent
             onClicked: {
               var item = table.itemAt(mouse.x, mouse.y)
-              if (item)
+              if (item) {
+                if ( item.type == 1 ) {
+                  connection.login()
+                }
                 iface.loadProject(item.path)
+              }
             }
             onPressed: {
               var item = table.itemAt(mouse.x, mouse.y)

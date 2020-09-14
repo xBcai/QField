@@ -90,6 +90,15 @@ Popup {
           Layout.fillWidth: true
         }
 
+        BusyIndicator {
+          id: busyIndicator
+          width: 20
+          height: 20
+          running: visible
+          visible: cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Uploading || cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Downloading
+          Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
+        }
+
         Text {
           id: transferErrorText
           visible: false
