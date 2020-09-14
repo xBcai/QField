@@ -33,12 +33,12 @@ class QFieldCloudUtils : public QObject
     static const QString localProjectFilePath( const QString &projectId );
 
     /**
-     * Get the \layer action at QFieldCloud.
+     * Get if the \layer action has do be handled with QFieldCloud.
      *
      * @param layer to be checked
-     * @return const QFieldCloudProjectsModel::LayerAction action of the layer
+     * @return const bool true if the layer has the action not selected 'no_action' (on online databases) or 'remove'
      */
-    static QFieldCloudProjectsModel::LayerAction layerAction( const QgsMapLayer *layer );
+    static bool isCloudAction( const QgsMapLayer *layer );
 
     /**
      * Get the cloud project id.
