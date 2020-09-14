@@ -200,7 +200,15 @@ class DeltaFileWrapper : public QObject
 
 
     /**
-     * Appends the provided deltas JSON array at the end of the current file
+     * Writes deltas file to the permanent storage with replaced layerIds, ready for upload.
+     *
+     * @return QString an empty string
+     */
+    Q_INVOKABLE QString toFileForUpload( const QString &fileName = QString() ) const;
+
+
+    /**
+     * Appends the provided deltas JSON array at the end of the current file.
      */
     bool append( const DeltaFileWrapper *deltaFileWrapper );
 

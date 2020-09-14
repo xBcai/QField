@@ -715,6 +715,10 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId, const bo
     mCloudProjects[index].uploadAttachmentsBytesTotal += fileSize;
   }
 
+  QString deltaFileToUpload = deltaFile->toFileForUpload();
+
+  if ( deltaFileToUpload.isEmpty() )
+      return;
 
   // //////////
   // 1) send delta file
@@ -722,7 +726,7 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId, const bo
   NetworkReply *deltasCloudReply = mCloudConnection->post(
                                      QStringLiteral( "/api/v1/deltas/%1/" ).arg( projectId ),
                                      QVariantMap(),
-                                     QStringList( {deltaFile->fileName()} ) );
+                                     QStringList( {deltaFileToUpload} ) );
 
   Q_ASSERT( deltasCloudReply );
 
