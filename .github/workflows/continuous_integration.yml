@@ -56,5 +56,5 @@ jobs:
       - name: 🍺 Deploy
         uses: actions/upload-artifact@master
         with:
-          name: sdk-${{ matrix.arch }}
+          name: QField-${{ matrix.arch }}
           path: /home/runner/work/qfield-private/qfield-private/build-${{ matrix.arch }}/android-build/build/outputs/apk/debug/android-build-debug.apk
