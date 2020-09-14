@@ -308,7 +308,7 @@ Page {
                                       case QFieldCloudProjectsModel.RemoteCheckout:
                                         status = qsTr( 'Available on the cloud, missing locally' )
                                         break
-                                      case QFieldCloudProjectsModel.LocalFromRemoteCheckout:
+                                      case QFieldCloudProjectsModel.LocalAndRemoteCheckout:
                                         status = qsTr( 'Available locally' )
                                         break
                                       default:

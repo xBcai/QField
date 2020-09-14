@@ -76,7 +76,7 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     {
       RemoteCheckout = 2 << 0,
       LocalCheckout = 2 << 1,
-      LocalFromRemoteCheckout = RemoteCheckout | LocalCheckout
+      LocalAndRemoteCheckout = RemoteCheckout | LocalCheckout
     };
 
     Q_ENUM( ProjectCheckout )

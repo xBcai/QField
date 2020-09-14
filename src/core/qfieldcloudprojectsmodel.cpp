@@ -203,11 +203,13 @@ void QFieldCloudProjectsModel::removeLocalProject( const QString &projectId )
     int index = findProject( projectId );
     if ( index > -1 )
     {
-      if ( mCloudProjects.at( index ).status == ProjectStatus::Idle && mCloudProjects.at( index ).checkout & LocalCheckout )
+      if ( mCloudProjects.at( index ).status == ProjectStatus::Idle && mCloudProjects.at( index ).checkout & RemoteCheckout )
       {
         mCloudProjects[index].localPath = QString();
+        mCloudProjects[index].checkout = RemoteCheckout;
+        mCloudProjects[index].modification = NoModification;
         QModelIndex idx = createIndex( index, 0 );
-        emit dataChanged( idx, idx,  QVector<int>() << StatusRole << LocalPathRole );
+        emit dataChanged( idx, idx,  QVector<int>() << StatusRole << LocalPathRole << CheckoutRole );
       }
       else
       {
@@ -349,7 +351,6 @@ void QFieldCloudProjectsModel::downloadProject( const QString &projectId )
   mCloudProjects[index].downloadBytesReceived = 0;
   mCloudProjects[index].downloadProgress = 0;
 
-  mCloudProjects[index].checkout = LocalFromRemoteCheckout;
   mCloudProjects[index].status = ProjectStatus::Downloading;
   mCloudProjects[index].errorStatus = NoErrorStatus;
   mCloudProjects[index].modification = NoModification;
@@ -637,9 +638,10 @@ void QFieldCloudProjectsModel::projectDownloadFiles( const QString &projectId )
         emit projectDownloaded( projectId, false, mCloudProjects[index].name );
 
         mCloudProjects[index].status = ProjectStatus::Idle;
+        mCloudProjects[index].checkout = ProjectCheckout::LocalAndRemoteCheckout;
         mCloudProjects[index].localPath = QFieldCloudUtils::localProjectFilePath( projectId );
 
-        rolesChanged << StatusRole << LocalPathRole;
+        rolesChanged << StatusRole << LocalPathRole << CheckoutRole;
       }
 
       QModelIndex idx = createIndex( index, 0 );
@@ -1110,7 +1112,7 @@ void QFieldCloudProjectsModel::reload( const QJsonArray &remoteProjects )
     QDir localPath( QStringLiteral( "%1/%2" ).arg( QFieldCloudUtils::localCloudDirectory(), cloudProject.id ) );
     if ( localPath.exists() )
     {
-      cloudProject.checkout = LocalFromRemoteCheckout;
+      cloudProject.checkout = LocalAndRemoteCheckout;
       cloudProject.localPath = QFieldCloudUtils::localProjectFilePath( cloudProject.id );
     }
 
