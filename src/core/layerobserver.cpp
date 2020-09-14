@@ -312,7 +312,7 @@ void LayerObserver::addLayerListeners()
 
     if ( vl && vl->dataProvider() )
     {
-      if ( !vl->readOnly() )
+      if ( !vl->readOnly() && QFieldCloudUtils::isCloudAction( vl ) )
       {
         // for `cloud` projects, we keep track of any change that has occurred
         connect( vl, &QgsVectorLayer::beforeCommitChanges, this, &LayerObserver::onBeforeCommitChanges );
