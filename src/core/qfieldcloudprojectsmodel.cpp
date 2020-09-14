@@ -873,7 +873,7 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
 
   Q_ASSERT( index >= 0 && index < mCloudProjects.size() );
 
-  NetworkReply *deltaStatusReply = mCloudConnection->get( QStringLiteral( "/api/v1/delta-status/%1/" ).arg( mCloudProjects[index].deltaFileId ) );
+  NetworkReply *deltaStatusReply = mCloudConnection->get( QStringLiteral( "/api/v1/deltas/%1/%2/" ).arg( mCloudProjects[index].id, mCloudProjects[index].deltaFileId ) );
 
   mCloudProjects[index].deltaFileUploadStatusString = QString();
 
@@ -908,13 +908,13 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
       mCloudProjects[index].deltaFileUploadStatus = DeltaFileAppliedStatus;
     else if ( status == QStringLiteral( "APPLIED_WITH_CONFLICTS" ) )
       mCloudProjects[index].deltaFileUploadStatus = DeltaFileAppliedWithConflictsStatus;
-    else if ( status == QStringLiteral( "PENDING" ) )
+    else if ( status == QStringLiteral( "STATUS_PENDING" ) )
       mCloudProjects[index].deltaFileUploadStatus = DeltaFilePendingStatus;
-    else if ( status == QStringLiteral( "WAITING" ) )
+    else if ( status == QStringLiteral( "STATUS_WAITING" ) )
       mCloudProjects[index].deltaFileUploadStatus = DeltaFileWaitingStatus;
-    else if ( status == QStringLiteral( "BUSY" ) )
+    else if ( status == QStringLiteral( "STATUS_BUSY" ) )
       mCloudProjects[index].deltaFileUploadStatus = DeltaFileBusyStatus;
-    else if ( status == QStringLiteral( "ERROR" ) )
+    else if ( status == QStringLiteral( "STATUS_ERROR" ) )
     {
       mCloudProjects[index].deltaFileUploadStatus = DeltaFileErrorStatus;
       mCloudProjects[index].deltaFileUploadStatusString = doc.object().value( QStringLiteral( "output" ) ).toString().split( '\n' ).last();
