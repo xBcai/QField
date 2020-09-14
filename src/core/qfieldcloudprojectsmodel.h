@@ -95,17 +95,6 @@ class QFieldCloudProjectsModel : public QAbstractListModel
     Q_DECLARE_FLAGS( ProjectModifications, ProjectModification )
     Q_FLAG( ProjectModifications )
 
-    enum class LayerAction
-    {
-      Offline,
-      NoAction,
-      Remove,
-      Cloud,
-      Unknown
-    };
-
-    Q_ENUM( LayerAction )
-
     enum DeltaFileStatus
     {
       DeltaFileErrorStatus,
@@ -315,6 +304,5 @@ Q_DECLARE_OPERATORS_FOR_FLAGS( QFieldCloudProjectsModel::ProjectCheckouts )
 Q_DECLARE_METATYPE( QFieldCloudProjectsModel::ProjectModification )
 Q_DECLARE_METATYPE( QFieldCloudProjectsModel::ProjectModifications )
 Q_DECLARE_OPERATORS_FOR_FLAGS( QFieldCloudProjectsModel::ProjectModifications )
-Q_DECLARE_METATYPE( QFieldCloudProjectsModel::LayerAction )
 
 #endif // QFIELDCLOUDPROJECTSMODEL_H
