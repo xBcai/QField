@@ -563,8 +563,9 @@ void QFieldCloudProjectsModel::projectDownloadFiles( const QString &projectId )
 
       // it means the NetworkReply has failed and retried
       mCloudProjects[index].downloadBytesReceived -= mCloudProjects[index].downloadFileTransfers[fileName].bytesTransferred;
-      mCloudProjects[index].downloadBytesReceived = bytesReceived;
-      mCloudProjects[index].downloadProgress += static_cast<double>( mCloudProjects[index].downloadBytesTotal ) / mCloudProjects[index].downloadBytesReceived;
+      mCloudProjects[index].downloadBytesReceived += bytesReceived;
+      mCloudProjects[index].downloadFileTransfers[fileName].bytesTransferred = bytesReceived;
+      mCloudProjects[index].downloadProgress = static_cast<double>( mCloudProjects[index].downloadBytesReceived ) / mCloudProjects[index].downloadBytesTotal;
 
       QModelIndex idx = createIndex( index, 0 );
 
