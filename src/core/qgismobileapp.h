@@ -53,6 +53,7 @@ class LayerTreeModel;
 class LegendImageProvider;
 class TrackingModel;
 class QgsProject;
+class LayerObserver;
 
 
 #define REGISTER_SINGLETON(uri, _class, name) qmlRegisterSingletonType<_class>( uri, 1, 0, name, [] ( QQmlEngine *engine, QJSEngine *scriptEngine ) -> QObject * { Q_UNUSED(engine); Q_UNUSED(scriptEngine); return new _class(); } )
@@ -143,6 +144,7 @@ class QgisMobileapp : public QQmlApplicationEngine
 
     QgsProject *mProject = nullptr;
     std::unique_ptr<QgsGpkgFlusher> mGpkgFlusher;
+    std::unique_ptr<LayerObserver> mLayerObserver;
 #if VERSION_INT >= 30600
     QFieldAppAuthRequestHandler *mAuthRequestHandler = nullptr;
 #endif

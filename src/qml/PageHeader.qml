@@ -8,6 +8,7 @@ ToolBar {
   property alias title: titleLabel.text
   property alias showApplyButton: applyButton.visible
   property alias showCancelButton: cancelButton.visible
+  property alias showBusyIndicator: busyIndicator.visible
 
   height: 48
 
@@ -22,7 +23,19 @@ ToolBar {
   }
 
   background: Rectangle {
+    id: backgroundRect
     color: Theme.mainColor
+
+    ProgressBar {
+      id: busyIndicator
+      anchors.top: parent.bottom
+      anchors.left: parent.left
+      width: parent.width
+      height: 6
+      value: 50
+      indeterminate: true
+      visible: false
+    }
   }
 
   RowLayout {

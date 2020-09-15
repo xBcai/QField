@@ -1,6 +1,13 @@
 name: Continuous integration
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+      - release-**
+  pull_request:
+    branches:
+      - '**'
 
 jobs:
   # Run unit tests
@@ -37,6 +44,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Setup siging key
+        env:
+          SIGNINGKEY: ${{ secrets.PLAYSTORE_SIGNINGKEY }}
+        run: |
+          echo "$SIGNINGKEY" | base64 --decode > ./keystore.p12
       - name: Setup build environment
         run: |
           sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
@@ -48,6 +60,9 @@ jobs:
       - name: Build
         env:
           ARCH: ${{ matrix.arch }}
+          KEYNAME: qfield
+          KEYPASS: ${{ secrets.KEYPASS }}
+          STOREPASS: ${{ secrets.STOREPASS }}
         run: |
           export QFIELD_SDK_VERSION=$(awk -F "=" '/osgeo4a_version/{print $2}' sdk.conf)
           ./scripts/ci/docker_pull.sh
@@ -57,4 +72,4 @@ jobs:
         uses: actions/upload-artifact@master
         with:
           name: QField-${{ matrix.arch }}
-          path: /home/runner/work/qfield-private/qfield-private/build-${{ matrix.arch }}/android-build/build/outputs/apk/debug/android-build-debug.apk
+          path: /home/runner/work/qfield-private/qfield-private/build-${{ matrix.arch }}/android-build/build/outputs/apk/release/android-build-release-signed.apk

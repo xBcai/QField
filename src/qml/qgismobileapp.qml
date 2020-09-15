@@ -75,6 +75,7 @@ ApplicationWindow {
 
   //currentRubberband provides the rubberband depending on the current state (digitize or measure)
   property Rubberband currentRubberband
+  property LayerObserver layerObserverAlias: layerObserver
 
   signal closeMeasureTool()
   signal changeMode( string mode )
@@ -1025,7 +1026,7 @@ ApplicationWindow {
     Connections {
         target: printMenu
 
-        onEnablePrintItem: {
+        function onEnablePrintItem(rows) {
           printItem.enabled = rows
         }
     }
@@ -1083,7 +1084,7 @@ ApplicationWindow {
     Connections {
       target: iface
 
-      onLoadProjectEnded: {
+      function onLoadProjectEnded() {
         layoutListInstantiator.model.project = qgisProject
         layoutListInstantiator.model.reloadModel()
         printMenu.enablePrintItem(layoutListInstantiator.model.rowCount())
@@ -1307,15 +1308,17 @@ ApplicationWindow {
     Connections {
       target: iface
 
-      onLoadProjectStarted: {
+      function onLoadProjectStarted(path) {
         busyMessageText.text = qsTr( "Loading Project: %1" ).arg( path )
         busyMessage.visible = true
       }
 
-      onLoadProjectEnded: {
+      function onLoadProjectEnded() {
         busyMessage.visible = false
         mapCanvasBackground.color = mapCanvas.mapSettings.backgroundColor
-      }
+        cloudProjectsModel.currentProjectId = QFieldCloudUtils.getProjectId(qgisProject)
+        cloudProjectsModel.refreshProjectModification( cloudProjectsModel.currentProjectId )
+      }  
     }
   }
 
@@ -1377,7 +1380,8 @@ ApplicationWindow {
 
     Connections {
       target: iface
-      onLoadProjectEnded: {
+
+      function onLoadProjectEnded() {
         if( !qfieldAuthRequestHandler.handleLayerLogins() )
         {
           //project loaded without more layer handling needed
@@ -1388,7 +1392,7 @@ ApplicationWindow {
     Connections {
         target: iface
 
-        onLoadProjectStarted: {
+        function onLoadProjectStarted(path) {
           messageLogModel.suppressTags(["WFS","WMS"])
         }
     }
@@ -1396,13 +1400,13 @@ ApplicationWindow {
     Connections {
       target: qfieldAuthRequestHandler
 
-      onShowLoginDialog: {
+      function onShowLoginDialog(realm) {
         loginDialogPopup.realm = realm || ""
         badLayersView.visible = false
         loginDialogPopup.open()
       }
 
-      onReloadEverything: {
+      function onReloadEverything() {
         iface.reloadProject( qgisProject.fileName )
       }
     }
@@ -1498,6 +1502,35 @@ ApplicationWindow {
     Component.onCompleted: focusstack.addFocusTaker( this )
   }
 
+  QFieldCloudConnection {
+    id: cloudConnection
+    url: "https://dev.qfield.cloud"
+    onLoginFailed: function(reason) { displayToast( reason ) }
+  }
+
+  QFieldCloudProjectsModel {
+    id: cloudProjectsModel
+    cloudConnection: cloudConnection
+    layerObserver: layerObserverAlias
+
+    onProjectDownloaded: function ( projectId, hasError, projectName ) {
+      return hasError
+          ? displayToast( qsTr( "Project %1 failed to download" ).arg( projectName ) )
+          : displayToast( qsTr( "Project %1 successfully downloaded, it's now available to open" ).arg( projectName ) );
+    }
+
+    onSyncFinished: function ( projectId, hasError, errorString ) {
+      if ( hasError ) {
+        displayToast( qsTr( "Project failed to synchronize with QFieldCloud: %1" ).arg( errorString ) )
+        return;
+      }
+
+      displayToast( qsTr( "Project successfully synchronized with QFieldCloud" ) )
+    }
+
+    onWarning: displayToast( message )
+  }
+
   QFieldCloudScreen {
     id: qfieldCloudScreen
 
@@ -1511,6 +1544,15 @@ ApplicationWindow {
     }
 
     Component.onCompleted: focusstack.addFocusTaker( this )
+  }
+
+  QFieldCloudPopup {
+    id: cloudPopup
+    visible: false
+    parent: ApplicationWindow.overlay
+
+    width: parent.width
+    height: parent.height
   }
 
   WelcomeScreen {
@@ -1555,8 +1597,8 @@ ApplicationWindow {
     id: changelogPopup
     parent: ApplicationWindow.overlay
 
-    property var expireDate: new Date(2019,9,16)
-    visible: settings.value( "/QField/CurrentVersion", "" ) !== versionCode
+    property var expireDate: new Date(2038,1,19)
+    visible: settings.value( "/QField/ChangelogVersion", "" ) !== versionCode
                && expireDate > new Date()
 
     x: 24
@@ -1565,7 +1607,8 @@ ApplicationWindow {
     height: parent.height - 48
     padding: 0
     modal: true
-    closePolicy: Popup.CloseOnEscape
+    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+    focus: visible
 
     Flickable {
       id: changelogFlickable
@@ -1582,6 +1625,22 @@ ApplicationWindow {
         onClose: {
           changelogPopup.close()
         }
+      }
+    }
+
+    onClosed: {
+      settings.setValue( "/QField/ChangelogVersion", versionCode )
+      changelogFlickable.contentY = 0
+    }
+
+    onOpened: {
+      changelog.refreshChangelog()
+    }
+
+    Keys.onReleased: {
+      if (event.key === Qt.Key_Back || event.key === Qt.Key_Escape) {
+        event.accepted = true
+        visible = false
       }
     }
   }
@@ -1714,7 +1773,7 @@ ApplicationWindow {
   Connections {
     target: welcomeScreen.__projectSource
 
-    onProjectOpened: {
+    function onProjectOpened(path) {
       iface.loadProject( path )
     }
   }

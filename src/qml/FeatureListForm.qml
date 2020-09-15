@@ -194,7 +194,12 @@ Rectangle {
 
       Text {
         id: featureText
-        anchors { leftMargin: featureForm.selection.model.selectedCount > 0 ? 50 : 10; left: parent.left; right: addButtonRow.left; verticalCenter: parent.verticalCenter }
+        anchors {
+          leftMargin: featureForm.selection.model.selectedCount > 0 ? 50 : 10;
+          left: parent.left;
+          right: parent.left;
+          verticalCenter: parent.verticalCenter
+        }
         font.bold: true
         font.pointSize: Theme.resultFont.pointSize
         text: display
@@ -432,7 +437,7 @@ Rectangle {
   Connections {
     target: globalFeaturesList.model
 
-    onRowsInserted: {
+    function onRowsInserted(parent, first, VectorLayerStatic) {
       if ( model.rowCount() > 0 ) {
         state = "FeatureList"
       } else {
@@ -441,13 +446,13 @@ Rectangle {
       }
     }
 
-    onCountChanged: {
+    function onCountChanged() {
       if ( model.rowCount() === 0 ) {
         state = "Hidden"
       }
     }
 
-    onModelReset: {
+    function onModelReset() {
       if ( model.rowCount() > 0 ) {
         state = "FeatureList"
       } else {
@@ -579,7 +584,7 @@ Rectangle {
   Connections {
     target: qgisProject
 
-    onLayersWillBeRemoved: {
+    function onLayersWillBeRemoved(layerIds) {
         if( state != "FeatureList" ) {
           if( featureListToolBar.state === "Edit"){
               featureForm.state = "FeatureForm"

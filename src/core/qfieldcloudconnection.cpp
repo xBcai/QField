@@ -13,6 +13,7 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "qfield.h"
 #include "qfieldcloudconnection.h"
 #include <qgsnetworkaccessmanager.h>
 #include <qgsapplication.h>
@@ -20,7 +21,12 @@
 #include <QJsonDocument>
 #include <QNetworkCookieJar>
 #include <QNetworkCookie>
+#include <QHttpMultiPart>
 #include <QSettings>
+#include <QTimer>
+#include <QUrlQuery>
+#include <QFile>
+
 
 QFieldCloudConnection::QFieldCloudConnection()
   : mToken( QSettings().value( "/QFieldCloud/token" ).toByteArray() )
@@ -99,6 +105,15 @@ void QFieldCloudConnection::login()
 
   setStatus( ConnectionStatus::Connecting );
 
+  // TODO remove this!!! temporary SSL workaround
+  connect( reply, &QNetworkReply::sslErrors, this, [ = ]( const QList<QSslError> &errors )
+  {
+    for ( const QSslError &error : errors )
+      qDebug() << "SSL: " << error;
+
+    reply->ignoreSslErrors( errors );
+  } );
+
   connect( reply, &QNetworkReply::finished, this, [this, reply]()
   {
     if ( reply->error() == QNetworkReply::NoError )
@@ -124,7 +139,13 @@ void QFieldCloudConnection::login()
 
 void QFieldCloudConnection::logout()
 {
-  QNetworkReply *reply = post( "/api/v1/auth/logout/" );
+  QgsNetworkAccessManager *nam = QgsNetworkAccessManager::instance();
+  QNetworkRequest request( mUrl + QStringLiteral( "/api/v1/auth/logout/" ) );
+  request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
+  setAuthenticationToken( request );
+
+  QNetworkReply *reply = nam->post( request, QByteArray() );
+
   connect( reply, &QNetworkReply::finished, this, [reply]()
   {
     reply->deleteLater();
@@ -142,43 +163,86 @@ QFieldCloudConnection::ConnectionStatus QFieldCloudConnection::status() const
   return mStatus;
 }
 
-QNetworkReply *QFieldCloudConnection::post( const QString &endpoint, const QVariantMap &parameters )
+QFieldCloudConnection::ConnectionState QFieldCloudConnection::state() const
+{
+  return mState;
+}
+
+NetworkReply *QFieldCloudConnection::post( const QString &endpoint, const QVariantMap &params, const QStringList &fileNames )
 {
   if ( mToken.isNull() )
     return nullptr;
 
-  QgsNetworkAccessManager *nam = QgsNetworkAccessManager::instance();
-  QNetworkRequest request;
-  request.setUrl( mUrl + endpoint );
-  request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
+  QNetworkRequest request( mUrl + endpoint );
+  QByteArray requestBody = QJsonDocument( QJsonObject::fromVariantMap( params ) ).toJson();
   setAuthenticationToken( request );
+  request.setAttribute( QNetworkRequest::FollowRedirectsAttribute, true );
 
-  QJsonDocument doc( QJsonObject::fromVariantMap( parameters ) );
-
-  QByteArray requestBody = doc.toJson();
-
-  QNetworkReply *reply = nam->post( request, requestBody );
-
-#if 0
-  // TODO generic error handling
-  connect( reply, &QNetworkReply::error, this, [ this ]( QNetworkReply::NetworkError err )
+  if ( fileNames.isEmpty() )
   {
-    emit error( err );
-  } );
-#endif
+    request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
+
+    return NetworkManager::post( request, requestBody );
+  }
+
+  QHttpMultiPart *multiPart = new QHttpMultiPart( QHttpMultiPart::FormDataType );
+  QHttpPart textPart;
+
+  QJsonDocument doc( QJsonObject::fromVariantMap( params ) );
+  textPart.setHeader( QNetworkRequest::ContentTypeHeader, QVariant( "application/json" ) );
+  textPart.setHeader( QNetworkRequest::ContentDispositionHeader, QVariant( "form-data; name=\"text\"" ) );
+  textPart.setBody( doc.toJson() );
+
+  multiPart->append( textPart );
+
+  for ( const QString &fileName : fileNames )
+  {
+    QHttpPart filePart;
+    QFile *file = new QFile( fileName, multiPart );
+
+    if ( ! file->open( QIODevice::ReadOnly ) )
+      return nullptr;
+
+    const QString header = QStringLiteral( "form-data; name=\"file\"; filename=\"%1\"" ).arg( fileName );
+    filePart.setHeader( QNetworkRequest::ContentTypeHeader, QVariant( "application/json" ) );
+    filePart.setHeader( QNetworkRequest::ContentDispositionHeader, header );
+    filePart.setBodyDevice( file );
+
+    multiPart->append( filePart );
+  }
+
+  NetworkReply *reply = NetworkManager::post( request, multiPart );
+
+  multiPart->setParent( reply );
+
+  mPendingRequests++;
+  setState( ConnectionState::Busy );
+  connect( reply, &NetworkReply::finished, this, [=]() { if ( --mPendingRequests == 0 ) setState( ConnectionState::Idle ); } );
 
   return reply;
 }
 
-QNetworkReply *QFieldCloudConnection::get( const QString &endpoint )
+NetworkReply *QFieldCloudConnection::get( const QString &endpoint, const QVariantMap &params )
 {
-  QgsNetworkAccessManager *nam = QgsNetworkAccessManager::instance();
   QNetworkRequest request;
-  request.setUrl( mUrl + endpoint );
+  QUrl url( mUrl + endpoint );
+  QUrlQuery urlQuery;
+
+  for ( auto [ key, value ] : qfield::asKeyValueRange( params ) )
+    urlQuery.addQueryItem( key, value.toString() );
+
+  url.setQuery( urlQuery );
+
+  request.setUrl( url );
   request.setHeader( QNetworkRequest::ContentTypeHeader, "application/json" );
+  request.setAttribute( QNetworkRequest::FollowRedirectsAttribute, true );
   setAuthenticationToken( request );
 
-  QNetworkReply *reply = nam->get( request );
+  NetworkReply *reply = NetworkManager::get( request );
+
+  mPendingRequests++;
+  setState( ConnectionState::Busy );
+  connect( reply, &NetworkReply::finished, this, [=]() { if ( --mPendingRequests == 0 ) setState( ConnectionState::Idle ); } );
 
   return reply;
 }
@@ -210,6 +274,15 @@ void QFieldCloudConnection::setStatus( ConnectionStatus status )
 
   mStatus = status;
   emit statusChanged();
+}
+
+void QFieldCloudConnection::setState( ConnectionState state )
+{
+  if ( mState == state )
+    return;
+
+  mState = state;
+  emit stateChanged();
 }
 
 void QFieldCloudConnection::setAuthenticationToken( QNetworkRequest &request )

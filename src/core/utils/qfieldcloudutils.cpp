@@ -17,7 +17,6 @@
 #include <qgsapplication.h>
 #include <QDir>
 #include <QString>
-#include <QDebug>
 
 const QString QFieldCloudUtils::localCloudDirectory()
 {
@@ -34,4 +33,31 @@ const QString QFieldCloudUtils::localProjectFilePath( const QString &projectId )
     return QStringLiteral( "%1/%2" ).arg( project, projectFiles.at( 0 ) );
   }
   return QString();
+}
+
+bool QFieldCloudUtils::isCloudAction( const QgsMapLayer *layer )
+{
+  Q_ASSERT( layer );
+
+  const QString layerAction( layer->customProperty( QStringLiteral( "QFieldSync/action" ) ).toString().toUpper() );
+
+  if ( layerAction == QStringLiteral( "NO_ACTION" ) ||
+       layerAction == QStringLiteral( "REMOVE" )
+       )
+    return false;
+  return true;
+}
+
+const QString QFieldCloudUtils::getProjectId( const QgsProject *project )
+{
+  Q_ASSERT( project );
+
+  return project->readEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ) );
+}
+
+const QString QFieldCloudUtils::getProjectId( QgsProject *project )
+{
+  Q_ASSERT( project );
+
+  return project->readEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ) );
 }

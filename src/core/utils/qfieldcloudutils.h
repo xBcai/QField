@@ -16,14 +16,45 @@
 #ifndef QFIELDCLOUDUTILS_H
 #define QFIELDCLOUDUTILS_H
 
-class QString;
+#include <qgsproject.h>
+#include <qgsmaplayer.h>
+#include <qfieldcloudprojectsmodel.h>
 
-class QFieldCloudUtils
+class QString;
+class QFieldCloudProjectsModel;
+
+class QFieldCloudUtils : public QObject
 {
+    Q_OBJECT
+
   public:
 
     static const QString localCloudDirectory();
     static const QString localProjectFilePath( const QString &projectId );
+
+    /**
+     * Get if the \layer action has do be handled with QFieldCloud.
+     *
+     * @param layer to be checked
+     * @return const bool true if the layer has the action not selected 'no_action' (on online databases) or 'remove'
+     */
+    static bool isCloudAction( const QgsMapLayer *layer );
+
+    /**
+     * Get the cloud project id.
+     *
+     * @param project project to be checked, const
+     * @return const QString either UUID-like string or a null string in case of failure
+     */
+    Q_INVOKABLE static const QString getProjectId( const QgsProject *project );
+
+    /**
+     * Get the cloud project id.
+     *
+     * @param project project to be checked
+     * @return const QString either UUID-like string or a null string in case of failure
+     */
+    Q_INVOKABLE static const QString getProjectId( QgsProject *project );
 };
 
 #endif // QFIELDCLOUDUTILS_H

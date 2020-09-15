@@ -16,11 +16,14 @@
 #ifndef QFIELDCLOUDCONNECTION_H
 #define QFIELDCLOUDCONNECTION_H
 
+#include "networkmanager.h"
+#include "networkreply.h"
+
 #include <QObject>
 #include <QVariantMap>
-#include <QNetworkRequest>
 
-class QNetworkReply;
+
+class QNetworkRequest;
 
 class QFieldCloudConnection : public QObject
 {
@@ -33,8 +36,14 @@ class QFieldCloudConnection : public QObject
       Connecting,
       LoggedIn
     };
-
     Q_ENUM( ConnectionStatus )
+
+    enum class ConnectionState
+    {
+      Idle,
+      Busy
+    };
+    Q_ENUM( ConnectionState )
 
     QFieldCloudConnection();
 
@@ -42,6 +51,7 @@ class QFieldCloudConnection : public QObject
     Q_PROPERTY( QString password READ password WRITE setPassword NOTIFY passwordChanged )
     Q_PROPERTY( QString url READ url WRITE setUrl NOTIFY urlChanged )
     Q_PROPERTY( ConnectionStatus status READ status NOTIFY statusChanged )
+    Q_PROPERTY( ConnectionState state READ state NOTIFY stateChanged )
     Q_PROPERTY( bool hasToken READ hasToken  NOTIFY tokenChanged )
 
     QString url() const;
@@ -57,6 +67,7 @@ class QFieldCloudConnection : public QObject
     Q_INVOKABLE void logout();
 
     ConnectionStatus status() const;
+    ConnectionState state() const;
 
     bool hasToken() { return !mToken.isEmpty(); }
 
@@ -66,7 +77,8 @@ class QFieldCloudConnection : public QObject
      * If this connection is not logged in, will return nullptr.
      * The returned reply needs to be deleted by the caller.
      */
-    QNetworkReply *post( const QString &endpoint, const QVariantMap &parameters = QVariantMap() );
+    NetworkReply *post( const QString &endpoint, const QVariantMap &params = QVariantMap(), const QStringList &fileNames = QStringList() );
+
 
     /**
      * Sends a get request to the given \a endpoint.
@@ -74,13 +86,14 @@ class QFieldCloudConnection : public QObject
      * If this connection is not logged in, will return nullptr.
      * The returned reply needs to be deleted by the caller.
      */
-    QNetworkReply *get( const QString &endpoint );
+    NetworkReply *get( const QString &endpoint, const QVariantMap &params = QVariantMap() );
 
   signals:
     void usernameChanged();
     void passwordChanged();
     void urlChanged();
     void statusChanged();
+    void stateChanged();
     void tokenChanged();
     void error();
 
@@ -88,6 +101,7 @@ class QFieldCloudConnection : public QObject
 
   private:
     void setStatus( ConnectionStatus status );
+    void setState( ConnectionState state );
     void setToken( const QByteArray &token );
     void invalidateToken();
     void setAuthenticationToken( QNetworkRequest &request );
@@ -96,7 +110,11 @@ class QFieldCloudConnection : public QObject
     QString mUsername;
     QString mUrl;
     ConnectionStatus mStatus = ConnectionStatus::Disconnected;
+    ConnectionState mState = ConnectionState::Idle;
     QByteArray mToken;
+
+    int mPendingRequests = 0;
+
 };
 
 #endif // QFIELDCLOUDCONNECTION_H

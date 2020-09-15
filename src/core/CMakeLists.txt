@@ -55,10 +55,14 @@ SET(QFIELD_CORE_SRCS
   utils/featureutils.cpp
   utils/stringutils.cpp
   utils/urlutils.cpp
+  utils/qfieldcloudutils.cpp
   expressionevaluator.cpp
   qfieldcloudconnection.cpp
   qfieldcloudprojectsmodel.cpp
-  qfieldcloudutils.cpp
+  deltafilewrapper.cpp
+  layerobserver.cpp
+  networkreply.cpp
+  networkmanager.cpp
 )
 
 SET(QFIELD_CORE_HDRS
@@ -119,10 +123,14 @@ SET(QFIELD_CORE_HDRS
   utils/featureutils.h
   utils/stringutils.h
   utils/urlutils.h
+  utils/qfieldcloudutils.h
   expressionevaluator.h
   qfieldcloudconnection.h
   qfieldcloudprojectsmodel.h
-  qfieldcloudutils.h
+  deltafilewrapper.h
+  layerobserver.h
+  networkreply.h
+  networkmanager.h
 )
 
 IF (ANDROID)

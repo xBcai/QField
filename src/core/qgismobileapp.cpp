@@ -108,11 +108,9 @@
 #include "qfieldcloudconnection.h"
 #include "qfieldcloudprojectsmodel.h"
 #include "qfieldcloudutils.h"
+#include "layerobserver.h"
+#include "deltafilewrapper.h"
 
-// Check QGIS Version
-#if VERSION_INT >= 30600
-#include "qgsnetworkaccessmanager.h"
-#endif
 
 #define QUOTE(string) _QUOTE(string)
 #define _QUOTE(string) #string
@@ -154,6 +152,7 @@ QgisMobileapp::QgisMobileapp( QgsApplication *app, QObject *parent )
 
   mProject = QgsProject::instance();
   mGpkgFlusher = qgis::make_unique<QgsGpkgFlusher>( mProject );
+  mLayerObserver.reset( new LayerObserver( mProject ) );
   mFlatLayerTree = new FlatLayerTreeModel( mProject->layerTreeRoot(), mProject, this );
   mLegendImageProvider = new LegendImageProvider( mFlatLayerTree->layerTreeModel() );
   mTrackingModel = new TrackingModel;
@@ -201,7 +200,7 @@ void QgisMobileapp::initDeclarative()
 {
 
 #if defined(Q_OS_ANDROID) && QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-  QResource::registerResource(QStringLiteral("assets:/android_rcc_bundle.rcc"));
+  QResource::registerResource( QStringLiteral( "assets:/android_rcc_bundle.rcc" ) );
 #endif
   addImportPath( QStringLiteral( "qrc:/qml/imports" ) );
 
@@ -291,21 +290,24 @@ void QgisMobileapp::initDeclarative()
   qmlRegisterType<FeatureCheckListModel>( "org.qgis", 1, 0, "FeatureCheckListModel" );
   qmlRegisterType<GeometryEditorsModel>( "org.qfield", 1, 0, "GeometryEditorsModel" );
   qmlRegisterType<ExpressionEvaluator>( "org.qfield", 1, 0, "ExpressionEvaluator" );
+  qmlRegisterType<QFieldCloudConnection>( "org.qfield", 1, 0, "QFieldCloudConnection" );
+  qmlRegisterType<QFieldCloudProjectsModel>( "org.qfield", 1, 0, "QFieldCloudProjectsModel" );
   REGISTER_SINGLETON( "org.qfield", GeometryEditorsModel, "GeometryEditorsModelSingleton" );
   REGISTER_SINGLETON( "org.qfield", GeometryUtils, "GeometryUtils" );
   REGISTER_SINGLETON( "org.qfield", FeatureUtils, "FeatureUtils" );
   REGISTER_SINGLETON( "org.qfield", FileUtils, "FileUtils" );
   REGISTER_SINGLETON( "org.qfield", StringUtils, "StringUtils" );
   REGISTER_SINGLETON( "org.qfield", UrlUtils, "UrlUtils" );
+  REGISTER_SINGLETON( "org.qfield", QFieldCloudUtils, "QFieldCloudUtils" );
 
-  qmlRegisterType<QFieldCloudConnection>( "org.qfield", 1, 0, "QFieldCloudConnection" );
-  qmlRegisterType<QFieldCloudProjectsModel>( "org.qfield", 1, 0, "QFieldCloudProjectsModel" );
 
   qmlRegisterUncreatableType<AppInterface>( "org.qgis", 1, 0, "QgisInterface", "QgisInterface is only provided by the environment and cannot be created ad-hoc" );
   qmlRegisterUncreatableType<Settings>( "org.qgis", 1, 0, "Settings", "" );
   qmlRegisterUncreatableType<PlatformUtilities>( "org.qgis", 1, 0, "PlatformUtilities", "" );
   qmlRegisterUncreatableType<FlatLayerTreeModel>( "org.qfield", 1, 0, "FlatLayerTreeModel", "The FlatLayerTreeModel is available as context property `flatLayerTree`." );
   qmlRegisterUncreatableType<TrackingModel>( "org.qfield", 1, 0, "TrackingModel", "The TrackingModel is available as context property `trackingModel`." );
+  qmlRegisterUncreatableType<LayerObserver>( "org.qfield", 1, 0, "LayerObserver", "" );
+  qmlRegisterUncreatableType<DeltaFileWrapper>( "org.qfield", 1, 0, "DeltaFileWrapper", "" );
 
   qRegisterMetaType<SnappingResult>( "SnappingResult" );
 
@@ -327,6 +329,7 @@ void QgisMobileapp::initDeclarative()
   rootContext()->setContextProperty( "UnitTypes", QVariant::fromValue<QgsUnitTypes>( mUnitTypes ) );
   rootContext()->setContextProperty( "ExifTools", QVariant::fromValue<QgsExifTools>( mExifTools ) );
   rootContext()->setContextProperty( "LocatorModelNoGroup", QgsLocatorModel::NoGroup );
+  rootContext()->setContextProperty( "layerObserver", mLayerObserver.get() );
 // Check QGIS Version
 #if VERSION_INT >= 30600
   rootContext()->setContextProperty( "qfieldAuthRequestHandler", mAuthRequestHandler );
@@ -415,14 +418,19 @@ void QgisMobileapp::onReadProject( const QDomDocument &doc )
   {
     // Overwrite the title to match what is used in QField Cloud
     const QString projectId = fi.dir().dirName();
-    title = QSettings().value( QStringLiteral( "QFieldCloud/projects/%1/name").arg( projectId ), fi.fileName() ).toString();
+    title = QSettings().value( QStringLiteral( "QFieldCloud/projects/%1/name" ).arg( projectId ), fi.fileName() ).toString();
+
+    if ( mProject->readEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ) ).isEmpty()
+         && ! mProject->writeEntry( QStringLiteral( "qfieldcloud" ), QStringLiteral( "projectId" ), projectId )
+         && ! mProject->write() )
+      QgsLogger::warning( "Unable to set cloudProjectId to the project" );
   }
   else
   {
     title = mProject->title().isEmpty() ? fi.completeBaseName() : mProject->title();
   }
 
-  QPair<QString, QString> project = qMakePair( title , mProject->fileName() );
+  QPair<QString, QString> project = qMakePair( title, mProject->fileName() );
   if ( projects.contains( project ) )
     projects.removeAt( projects.indexOf( project ) );
   projects.insert( 0, project );
@@ -518,7 +526,7 @@ void QgisMobileapp::print( int layoutIndex )
   if ( layoutToPrint->pageCollection()->pageCount() == 0 )
     return;
 
-  layoutToPrint->referenceMap()->zoomToExtent( mMapCanvas->mapSettings()->visibleExtent() );
+  layoutToPrint->referenceMap()->setExtent( mMapCanvas->mapSettings()->visibleExtent() );
 
   QPrinter printer;
   QString documentsLocation = QStringLiteral( "%1/QField" ).arg( QStandardPaths::writableLocation( QStandardPaths::DocumentsLocation ) );
