@@ -908,9 +908,9 @@ void QFieldCloudProjectsModel::projectGetDeltaStatus( const QString &projectId )
 
     const QString status = doc.object().value( QStringLiteral( "status" ) ).toString().toUpper();
 
-    if ( status == QStringLiteral( "APPLIED" ) || status == QStringLiteral( "STATUS_ERROR: FINISHED" ) )
+    if ( status == QStringLiteral( "STATUS_APPLIED" ) )
       mCloudProjects[index].deltaFileUploadStatus = DeltaFileAppliedStatus;
-    else if ( status == QStringLiteral( "APPLIED_WITH_CONFLICTS" ) )
+    else if ( status == QStringLiteral( "STATUS_APPLIED_WITH_CONFLICTS" ) )
       mCloudProjects[index].deltaFileUploadStatus = DeltaFileAppliedWithConflictsStatus;
     else if ( status == QStringLiteral( "STATUS_PENDING" ) )
       mCloudProjects[index].deltaFileUploadStatus = DeltaFilePendingStatus;
