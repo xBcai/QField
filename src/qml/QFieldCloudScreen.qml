@@ -7,15 +7,18 @@ import Theme 1.0
 
 Page {
   id: qfieldcloudScreen
+
   signal finished
+
   property LayerObserver layerObserver
+  property bool isBusy: false
 
   header: PageHeader {
       title: qsTr("QFieldCloud Projects")
 
       showApplyButton: false
       showCancelButton: true
-      showBusyIndicator: cloudConnection.status === QFieldCloudConnection.Connecting
+      showBusyIndicator: qfieldCloudScreen.isBusy
 
       onFinished: parent.finished()
     }
@@ -100,10 +103,24 @@ Page {
 
           ListView {
               id: table
+              property bool overshootRefresh: false
+
               anchors.fill: parent
 
               model: cloudProjectsModel
               clip: true
+
+              onMovingChanged: {
+                if ( !moving && overshootRefresh ) {
+                  refreshProjectsList();
+                }
+                overshootRefresh = false;
+              }
+
+              onVerticalOvershootChanged: {
+                if ( verticalOvershoot < -100 )
+                  overshootRefresh = true;
+              }
 
               delegate: Rectangle {
                   id: rectangle
@@ -373,7 +390,7 @@ Page {
           text: qsTr( "Refresh projects list" )
           enabled: cloudConnection.status === QFieldCloudConnection.LoggedIn
 
-          onClicked: cloudProjectsModel.refreshProjectsList()
+          onClicked: refreshProjectsList()
       }
     }
   }
@@ -382,9 +399,24 @@ Page {
     target: cloudConnection
 
     onStatusChanged: {
+      qfieldCloudScreen.isBusy = cloudConnection.status === QFieldCloudConnection.Connecting
       if ( cloudConnection.status === QFieldCloudConnection.LoggedIn )
         prepareCloudLogin();
     }
+  }
+
+  Connections {
+    target: cloudProjectsModel
+
+    onProjectsListRefreshed: {
+      qfieldCloudScreen.isBusy = false;
+    }
+  }
+
+  function refreshProjectsList() {
+    qfieldCloudScreen.isBusy = true;
+    cloudProjectsModel.refreshProjectsList();
+    displayToast( qsTr( "Refreshing projects list" ) );
   }
 
   function prepareCloudLogin() {
