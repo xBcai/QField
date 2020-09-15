@@ -18,15 +18,15 @@ Item {
       fillMode: Image.PreserveAspectFit
       smooth: true
       source: "qrc:/images/qfieldcloud_logo.svg"
-      sourceSize.width: 120
-      sourceSize.height: 120
+      sourceSize.width: 124
+      sourceSize.height: 124
     }
 
     Text {
       id: cloudIntroLabel
       width: parent.width
       text: '<style>a, a:hover, a:visited { color:' + Theme.mainColor + '; }></style>' + qsTr( 'The easiest way to transfer you project from QGIS to your devices!' ) +
-            ' <a href="https://qfield.cloud/">' + qsTr( 'Learn more here' ) + '</a>'
+            ' <a href="https://qfield.cloud/">' + qsTr( 'Learn more about QFieldCloud' ) + '</a>.'
       horizontalAlignment: Text.AlignHCenter
       font: Theme.defaultFont
       textFormat: Text.RichText

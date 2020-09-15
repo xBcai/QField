@@ -57,8 +57,8 @@ Popup {
         font: Theme.defaultFont
         text: '<style>a, a:hover, a:visited { color:' + Theme.mainColor + '; }></style>' +
               qsTr('The current project is not stored on QFieldCloud.<br><br>') +
-              qsTr('Storing projects on QFieldCloud offers seamless synchornization, offline editing, and team management.') +
-              ' <a href="https://qfield.cloud/">' + qsTr( 'Learn more here' ) + '</a>'
+              qsTr('Storing projects on QFieldCloud offers seamless synchornization, offline editing, and team management.<br><br>') +
+              ' <a href="https://qfield.cloud/">' + qsTr( 'Learn more about QFieldCloud' ) + '</a>'
         textFormat: Text.RichText
         wrapMode: Text.WordWrap
         horizontalAlignment: Text.AlignHCenter
