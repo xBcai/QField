@@ -163,6 +163,11 @@ QFieldCloudConnection::ConnectionStatus QFieldCloudConnection::status() const
   return mStatus;
 }
 
+QFieldCloudConnection::ConnectionState QFieldCloudConnection::state() const
+{
+  return mState;
+}
+
 NetworkReply *QFieldCloudConnection::post( const QString &endpoint, const QVariantMap &params, const QStringList &fileNames )
 {
   if ( mToken.isNull() )
@@ -210,6 +215,10 @@ NetworkReply *QFieldCloudConnection::post( const QString &endpoint, const QVaria
 
   multiPart->setParent( reply );
 
+  mPendingRequests++;
+  setState( ConnectionState::Busy );
+  connect( reply, &NetworkReply::finished, this, [=]() { if ( --mPendingRequests == 0 ) setState( ConnectionState::Idle ); } );
+
   return reply;
 }
 
@@ -229,7 +238,13 @@ NetworkReply *QFieldCloudConnection::get( const QString &endpoint, const QVarian
   request.setAttribute( QNetworkRequest::FollowRedirectsAttribute, true );
   setAuthenticationToken( request );
 
-  return NetworkManager::get( request );
+  NetworkReply *reply = NetworkManager::get( request );
+
+  mPendingRequests++;
+  setState( ConnectionState::Busy );
+  connect( reply, &NetworkReply::finished, this, [=]() { if ( --mPendingRequests == 0 ) setState( ConnectionState::Idle ); } );
+
+  return reply;
 }
 
 void QFieldCloudConnection::setToken( const QByteArray &token )
@@ -259,6 +274,15 @@ void QFieldCloudConnection::setStatus( ConnectionStatus status )
 
   mStatus = status;
   emit statusChanged();
+}
+
+void QFieldCloudConnection::setState( ConnectionState state )
+{
+  if ( mState == state )
+    return;
+
+  mState = state;
+  emit stateChanged();
 }
 
 void QFieldCloudConnection::setAuthenticationToken( QNetworkRequest &request )

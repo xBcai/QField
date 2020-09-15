@@ -1062,8 +1062,6 @@ void QFieldCloudProjectsModel::projectListReceived()
   QJsonDocument doc = QJsonDocument::fromJson( response );
   QJsonArray projects = doc.array();
   reload( projects );
-
-  emit projectsListRefreshed();
 }
 
 NetworkReply *QFieldCloudProjectsModel::downloadFile( const QString &exportJobId, const QString &fileName )

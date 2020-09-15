@@ -36,8 +36,14 @@ class QFieldCloudConnection : public QObject
       Connecting,
       LoggedIn
     };
-
     Q_ENUM( ConnectionStatus )
+
+    enum class ConnectionState
+    {
+      Idle,
+      Busy
+    };
+    Q_ENUM( ConnectionState )
 
     QFieldCloudConnection();
 
@@ -45,6 +51,7 @@ class QFieldCloudConnection : public QObject
     Q_PROPERTY( QString password READ password WRITE setPassword NOTIFY passwordChanged )
     Q_PROPERTY( QString url READ url WRITE setUrl NOTIFY urlChanged )
     Q_PROPERTY( ConnectionStatus status READ status NOTIFY statusChanged )
+    Q_PROPERTY( ConnectionState state READ state NOTIFY stateChanged )
     Q_PROPERTY( bool hasToken READ hasToken  NOTIFY tokenChanged )
 
     QString url() const;
@@ -60,6 +67,7 @@ class QFieldCloudConnection : public QObject
     Q_INVOKABLE void logout();
 
     ConnectionStatus status() const;
+    ConnectionState state() const;
 
     bool hasToken() { return !mToken.isEmpty(); }
 
@@ -85,6 +93,7 @@ class QFieldCloudConnection : public QObject
     void passwordChanged();
     void urlChanged();
     void statusChanged();
+    void stateChanged();
     void tokenChanged();
     void error();
 
@@ -92,6 +101,7 @@ class QFieldCloudConnection : public QObject
 
   private:
     void setStatus( ConnectionStatus status );
+    void setState( ConnectionState state );
     void setToken( const QByteArray &token );
     void invalidateToken();
     void setAuthenticationToken( QNetworkRequest &request );
@@ -100,7 +110,10 @@ class QFieldCloudConnection : public QObject
     QString mUsername;
     QString mUrl;
     ConnectionStatus mStatus = ConnectionStatus::Disconnected;
+    ConnectionState mState = ConnectionState::Idle;
     QByteArray mToken;
+
+    int mPendingRequests = 0;
 
 };
 
