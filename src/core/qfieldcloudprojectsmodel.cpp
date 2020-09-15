@@ -832,9 +832,17 @@ void QFieldCloudProjectsModel::uploadProject( const QString &projectId, const bo
 
         // download the updated files, so the files are for sure the same on the client and on the server
         if ( shouldDownloadUpdates )
+        {
           downloadProject( projectId );
+        }
         else
+        {
+          mCloudProjects[index].status = ProjectStatus::Idle;
+          QModelIndex idx = createIndex( index, 0 );
+          emit dataChanged( idx, idx, QVector<int>() << StatusRole );
+
           emit syncFinished( projectId, false );
+        }
     }
   } );
 
