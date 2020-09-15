@@ -47,7 +47,8 @@ Item {
 
     TextField {
       id: usernameField
-      width: Math.max( parent.width / 2, usernamelabel.width )
+      width: parent.width / 1.3
+      anchors.horizontalCenter: parent.horizontalCenter
       visible: cloudConnection.status === QFieldCloudConnection.Disconnected
       enabled: visible
       height: fontMetrics.height + 20
@@ -77,7 +78,8 @@ Item {
     TextField {
       id: passwordField
       echoMode: TextInput.Password
-      width: Math.max( parent.width / 2, usernamelabel.width )
+      width: parent.width / 1.3
+      anchors.horizontalCenter: parent.horizontalCenter
       visible: cloudConnection.status === QFieldCloudConnection.Disconnected
       enabled: visible
       height: fontMetrics.height + 20
@@ -96,7 +98,7 @@ Item {
 
     FontMetrics {
       id: fontMetrics
-      font: usernameField.font
+      font: Theme.defaultFont
     }
 
     QfButton {
