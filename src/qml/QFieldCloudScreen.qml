@@ -11,14 +11,14 @@ Page {
   signal finished
 
   property LayerObserver layerObserver
-  property bool isBusy: false
 
   header: PageHeader {
       title: qsTr("QFieldCloud Projects")
 
       showApplyButton: false
       showCancelButton: true
-      showBusyIndicator: qfieldCloudScreen.isBusy
+      showBusyIndicator: cloudConnection.status === QFieldCloudConnection.Connecting ||
+                         cloudConnection.state === QFieldCloudConnection.Busy
 
       onFinished: parent.finished()
     }
@@ -399,22 +399,12 @@ Page {
     target: cloudConnection
 
     onStatusChanged: {
-      qfieldCloudScreen.isBusy = cloudConnection.status === QFieldCloudConnection.Connecting
       if ( cloudConnection.status === QFieldCloudConnection.LoggedIn )
         prepareCloudLogin();
     }
   }
 
-  Connections {
-    target: cloudProjectsModel
-
-    onProjectsListRefreshed: {
-      qfieldCloudScreen.isBusy = false;
-    }
-  }
-
   function refreshProjectsList() {
-    qfieldCloudScreen.isBusy = true;
     cloudProjectsModel.refreshProjectsList();
     displayToast( qsTr( "Refreshing projects list" ) );
   }
