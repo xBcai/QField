@@ -20,11 +20,11 @@ import QtQuick 2.12
 
 import org.qgis 1.0
 import Theme 1.0
+import org.qfield 1.0
 
 Rectangle {
   id: toolBar
 
-  property string currentName: ''
   property bool allowDelete
   property MultiFeatureListModel model
   property FeatureListModelSelection selection
@@ -68,7 +68,6 @@ Rectangle {
     color: ( featureFormList.model.constraintsHardValid && featureFormList.model.constraintsSoftValid ) || parent.state !== "Edit" ? Theme.mainColor : !featureFormList.model.constraintsHardValid ? Theme.errorColor : Theme.warningColor
 
     clip: true
-
     focus: true
 
     Text {
@@ -77,11 +76,15 @@ Rectangle {
       anchors.centerIn: parent
 
       text: {
-        if ( model && selection.selection > -1 ) {
-          ( selection.selection + 1 ) + '/' + model.count + ': ' + currentName
+        if ( model && selection && selection.focusedItem > -1 && toolBar.state === 'Navigation' ) {
+          var featurePosition = model.count > 1
+              ? ( ( selection.focusedItem + 1 ) + '/' + model.count + ': ' )
+              : '';
+
+          return featurePosition + FeatureUtils.displayName(selection.focusedLayer, selection.focusedFeature)
         }
         else {
-          qsTr('Features')
+          return qsTr('Features')
         }
       }
     }
@@ -197,8 +200,7 @@ Rectangle {
     Connections {
       target: selection
 
-      onFocusedItemChanged:
-      {
+      function onFocusedItemChanged() {
         editGeomButton.readOnly = selection.focusedLayer && selection.focusedLayer.readOnly
       }
     }
@@ -230,8 +232,7 @@ Rectangle {
     Connections {
       target: selection
 
-      onFocusedItemChanged:
-      {
+      function onFocusedItemChanged() {
         editButton.readOnly = selection.focusedLayer && selection.focusedLayer.readOnly
       }
     }
