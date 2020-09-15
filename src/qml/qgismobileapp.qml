@@ -1557,7 +1557,6 @@ ApplicationWindow {
 
   WelcomeScreen {
     id: welcomeScreen
-    connection: cloudConnection
     model: RecentProjectListModel {
       id: recentProjectListModel
     }

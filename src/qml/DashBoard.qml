@@ -70,28 +70,8 @@ Drawer {
         QfToolButton {
           id: cloudButton
           anchors.verticalCenter: parent.verticalCenter
-          iconSource: Theme.getThemeVectorIcon( 'ic_cloud_24dp' )
+          iconSource: cloudProjectsModel.currentProjectId ? Theme.getThemeVectorIcon( 'ic_cloud_active_24dp' ) : Theme.getThemeVectorIcon( 'ic_cloud_24dp' )
           bgcolor: "transparent"
-//          bgcolor: {
-//            if (cloudProjectsModel.currentProjectId) {
-//
-//              // TODO check why QFieldCloudProjectsModel is not available in this file...
-//              switch (cloudProjectsModel.projectStatus(cloudProjectsModel.currentProjectId)) {
-//                case QFieldCloudProjectsModel.ProjectStatus.Idle:
-//                  return 'white'
-//                case QFieldCloudProjectsModel.ProjectStatus.Downloading:
-//                  return 'green'
-//                case QFieldCloudProjectsModel.ProjectStatus.Uploading:
-//                  return 'blue'
-//                case QFieldCloudProjectsModel.ProjectStatus.Error:
-//                  return 'red'
-//                default:
-//                  return 'red'
-//              }
-//            }
-//          }
-          enabled: !!cloudProjectsModel.currentProjectId
-          opacity: cloudProjectsModel.currentProjectId ? 0.3 : 1
 
           onClicked: showCloudMenu()
         }

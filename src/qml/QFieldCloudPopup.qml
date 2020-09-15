@@ -13,7 +13,7 @@ Popup {
     anchors.fill: parent
 
     header: PageHeader {
-      title: qsTr('QFieldCloud Sync')
+      title: qsTr('QFieldCloud')
 
       showApplyButton: false
       showCancelButton: cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Idle
@@ -45,8 +45,29 @@ Popup {
       }
     }
 
+    ColumnLayout {
+      visible: cloudConnection.status === QFieldCloudConnection.LoggedIn && !cloudProjectsModel.currentProjectId
+      anchors.fill: parent
+      anchors.margins: 20
+      anchors.topMargin: 50
+      spacing: 2
+
+      Text {
+        Layout.fillWidth: true
+        font: Theme.defaultFont
+        text: qsTr('The current project is not stored on QFieldCloud.')
+        wrapMode: Text.WordWrap
+        horizontalAlignment: Text.AlignHCenter
+      }
+
+      Item {
+          Layout.fillHeight: true
+          height: 15
+      }
+    }
+
     ScrollView {
-      visible: cloudConnection.status === QFieldCloudConnection.LoggedIn
+      visible: cloudConnection.status === QFieldCloudConnection.LoggedIn && cloudProjectsModel.currentProjectId
       padding: 0
       ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
       ScrollBar.vertical.policy: ScrollBar.AsNeeded
@@ -102,7 +123,6 @@ Popup {
           wrapMode: Text.WordWrap
           horizontalAlignment: Text.AlignHCenter
           Layout.fillWidth: true
-          height: undefined
         }
 
         Text {
