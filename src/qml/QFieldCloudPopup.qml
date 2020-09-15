@@ -55,9 +55,15 @@ Popup {
       Text {
         Layout.fillWidth: true
         font: Theme.defaultFont
-        text: qsTr('The current project is not stored on QFieldCloud.')
+        text: '<style>a, a:hover, a:visited { color:' + Theme.mainColor + '; }></style>' +
+              qsTr('The current project is not stored on QFieldCloud.<br><br>') +
+              qsTr('Storing projects on QFieldCloud offers seamless synchornization, offline editing, and team management.') +
+              ' <a href="https://qfield.cloud/">' + qsTr( 'Learn more here' ) + '</a>'
+        textFormat: Text.RichText
         wrapMode: Text.WordWrap
         horizontalAlignment: Text.AlignHCenter
+
+        onLinkActivated: Qt.openUrlExternally(link)
       }
 
       Item {
@@ -264,7 +270,7 @@ Popup {
   function show() {
     visible = !visible
 
-    if ( cloudConnection.status === QFieldCloudConnection.Disconnected )
+    if ( cloudConnection.hasToken && cloudConnection.status === QFieldCloudConnection.Disconnected )
       cloudConnection.login();
 
     if ( cloudConnection.status === QFieldCloudConnection.Connectiong )
