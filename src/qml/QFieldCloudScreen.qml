@@ -17,6 +17,7 @@ Page {
 
       showApplyButton: false
       showCancelButton: true
+      showBusyIndicator: connection.status === QFieldCloudConnection.Connecting
 
       onFinished: parent.finished()
     }
