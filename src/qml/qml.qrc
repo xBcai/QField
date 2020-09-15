@@ -57,8 +57,8 @@
         <file>EmbeddedFeatureForm.qml</file>
         <file>PositioningSettings.qml</file>
         <file>QuestionDialog.qml</file>
+        <file>QFieldCloudLogin.qml</file>
         <file>QFieldCloudScreen.qml</file>
-        <file>imports/Theme/QfButton.qml</file>
         <file>QFieldCloudPopup.qml</file>
     </qresource>
 </RCC>

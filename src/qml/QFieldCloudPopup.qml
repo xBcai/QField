@@ -7,7 +7,6 @@ import Theme 1.0
 
 Popup {
   id: popup
-
   padding: 0
 
   Page {
@@ -18,85 +17,92 @@ Popup {
 
       showApplyButton: false
       showCancelButton: cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Idle
+      showBusyIndicator: cloudConnection.status === QFieldCloudConnection.Connecting ||
+                         cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Uploading ||
+                         cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Downloading
 
       onCancel: {
         popup.close()
       }
     }
 
+    ColumnLayout {
+      visible: cloudConnection.status !== QFieldCloudConnection.LoggedIn
+      id: connectionSettings
+      anchors.fill: parent
+      spacing: 2
+
+      QFieldCloudLogin {
+        id: qfieldCloudLogin
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        Layout.margins: 10
+      }
+
+      Item {
+          Layout.fillHeight: true
+          height: 15
+      }
+    }
+
     ScrollView {
-      padding: 20
+      visible: cloudConnection.status === QFieldCloudConnection.LoggedIn
+      padding: 0
       ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
       ScrollBar.vertical.policy: ScrollBar.AsNeeded
-      contentWidth: cloudGrid.width
-      contentHeight: cloudGrid.height
+      contentWidth: mainGrid.width
+      contentHeight: mainGrid.height
       anchors.fill: parent
       clip: true
 
       GridLayout {
-        id: cloudGrid
+        id: mainGrid
         width: parent.parent.width
-
         columns: 1
         columnSpacing: 2
-        rowSpacing: 10
+        rowSpacing: 2
 
-        Text {
-            id: welcomeText
-            text: qsTr('Welcome, ') + '<strong>' + cloudConnection.username + '</strong>'
-            font: Theme.secondaryTitleFont
-            fontSizeMode: Text.VerticalFit
-            wrapMode: Text.WordWrap
+        RowLayout {
+          Text {
+              Layout.fillWidth: true
+              Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+              id: welcomeText
+              padding: 10
+              text: switch(cloudConnection.status) {
+                    case 0: qsTr( 'Disconnected from the cloud.' ); break;
+                    case 1: qsTr( 'Connecting to the cloud.' ); break;
+                    case 2: qsTr( 'Greetings %1.' ).arg( cloudConnection.username ); break;
+                  }
+              wrapMode: Text.WordWrap
+              font: Theme.tipFont
+          }
+
+          Image {
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+            Layout.margins: 10
+            id: qfieldcloudLogo
+            source: 'qrc:/images/qfieldcloud-logo.png'
+            fillMode: Image.PreserveAspectFit
+            width: 28
+            height: 28
+            sourceSize.width: 48 * screen.devicePixelRatio
+            sourceSize.height: 48 * screen.devicePixelRatio
+          }
         }
 
-        Image {
-          id: qfieldcloudLogo
-          source: 'qrc:/images/qfieldcloud-logo.png'
-          Layout.bottomMargin: 20
-          Layout.alignment: Qt.AlignHCenter
-          fillMode: Image.PreserveAspectFit
-          sourceSize.width: parent.width * 0.4 * screen.devicePixelRatio
-        }
-
         Text {
-          id: descriptionText
+          id: statusText
+          visible: cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Downloading ||
+                   cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Uploading
           font: Theme.defaultFont
-          text: qsTr('The easiest way to transfer you project from QGIS to your device!')
+          text: switch(cloudProjectsModel.currentProjectStatus ) {
+                  case QFieldCloudProjectsModel.Downloading: qsTr('Downloading…'); break;
+                  case QFieldCloudProjectsModel.Uploading: qsTr('Uploading…'); break;
+                }
           wrapMode: Text.WordWrap
           horizontalAlignment: Text.AlignHCenter
-          Layout.bottomMargin: 20
           Layout.fillWidth: true
-        }
-
-        Text {
-          id: downloadingText
-          visible: cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Downloading
-          font: Theme.defaultFont
-          text: qsTr('Downloading…')
-          wrapMode: Text.WordWrap
-          horizontalAlignment: Text.AlignHCenter
-          Layout.bottomMargin: 20
-          Layout.fillWidth: true
-        }
-
-        Text {
-          id: uploadingText
-          visible: cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Uploading
-          font: Theme.defaultFont
-          text: qsTr('Uploading…')
-          wrapMode: Text.WordWrap
-          horizontalAlignment: Text.AlignHCenter
-          Layout.bottomMargin: 20
-          Layout.fillWidth: true
-        }
-
-        BusyIndicator {
-          id: busyIndicator
-          width: 20
-          height: 20
-          running: visible
-          visible: cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Uploading || cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Downloading
-          Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
+          height: undefined
         }
 
         Text {
@@ -107,7 +113,6 @@ Popup {
           color: Theme.darkRed
           wrapMode: Text.WordWrap
           horizontalAlignment: Text.AlignHCenter
-          Layout.bottomMargin: 20
           Layout.fillWidth: true
 
           Connections {
@@ -127,9 +132,11 @@ Popup {
         }
 
         GridLayout {
-          id: cloudInnerGrid
+          Layout.margins: 10
+          id: mainInnerGrid
           width: parent.width
-          visible: cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Idle
+          visible: cloudConnection.status === QFieldCloudConnection.LoggedIn &&
+                   cloudProjectsModel.currentProjectStatus === QFieldCloudProjectsModel.Idle
           columns: 1
           columnSpacing: parent.columnSpacing
           rowSpacing: parent.rowSpacing
@@ -235,12 +242,13 @@ Popup {
   }
 
   function show() {
-    visible = cloudConnection.status === QFieldCloudConnection.LoggedIn
+    visible = !visible
 
-    if (!visible)
-      displayToast(qsTr('Not logged in'))
+    if ( cloudConnection.status === QFieldCloudConnection.Disconnected )
+      cloudConnection.login();
 
-    welcomeText.text = qsTr('Welcome, ') + '<strong>' + cloudConnection.username + '</strong>'
+    if ( cloudConnection.status === QFieldCloudConnection.Connectiong )
+      displayToast(qsTr('Connecting cloud'))
   }
 
   function uploadProject(shouldDownloadUpdates) {
