@@ -27,7 +27,7 @@ Popup {
     }
 
     ColumnLayout {
-      visible: cloudConnection.status !== QFieldCloudConnection.LoggedIn
+      visible: cloudProjectsModel.currentProjectId && cloudConnection.status !== QFieldCloudConnection.LoggedIn
       id: connectionSettings
       anchors.fill: parent
       spacing: 2
@@ -46,7 +46,7 @@ Popup {
     }
 
     ColumnLayout {
-      visible: cloudConnection.status === QFieldCloudConnection.LoggedIn && !cloudProjectsModel.currentProjectId
+      visible: !cloudProjectsModel.currentProjectId
       anchors.fill: parent
       anchors.margins: 20
       anchors.topMargin: 50
@@ -73,7 +73,7 @@ Popup {
     }
 
     ScrollView {
-      visible: cloudConnection.status === QFieldCloudConnection.LoggedIn && cloudProjectsModel.currentProjectId
+      visible: cloudProjectsModel.currentProjectId && cloudConnection.status === QFieldCloudConnection.LoggedIn
       padding: 0
       ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
       ScrollBar.vertical.policy: ScrollBar.AsNeeded
@@ -270,7 +270,7 @@ Popup {
   function show() {
     visible = !visible
 
-    if ( cloudConnection.hasToken && cloudConnection.status === QFieldCloudConnection.Disconnected )
+    if ( cloudProjectsModel.currentProjectId && cloudConnection.hasToken && cloudConnection.status === QFieldCloudConnection.Disconnected )
       cloudConnection.login();
 
     if ( cloudConnection.status === QFieldCloudConnection.Connectiong )
