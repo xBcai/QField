@@ -51,7 +51,7 @@ Item {
       anchors.horizontalCenter: parent.horizontalCenter
       visible: cloudConnection.status === QFieldCloudConnection.Disconnected
       enabled: visible
-      height: Math.max(fontMetrics.height, fontMetrics.boundingRect(text).height) + 20
+      height: Math.max(fontMetrics.height, fontMetrics.boundingRect(text).height) + 34
       topPadding: 10
       bottomPadding: 10
       font: Theme.defaultFont
@@ -59,7 +59,7 @@ Item {
 
       background: Rectangle {
         y: usernameField.height - height * 2 - usernameField.bottomPadding / 2
-        implicitWidth: parent.width
+        implicitWidth: 120
         height: usernameField.activeFocus ? 2 : 1
         color: usernameField.activeFocus ? "#4CAF50" : "#C8E6C9"
       }
@@ -84,7 +84,7 @@ Item {
       anchors.horizontalCenter: parent.horizontalCenter
       visible: cloudConnection.status === QFieldCloudConnection.Disconnected
       enabled: visible
-      height: Math.max(fontMetrics.height, fontMetrics.boundingRect(text).height) + 20
+      height: Math.max(fontMetrics.height, fontMetrics.boundingRect(text).height) + 34
       topPadding: 10
       bottomPadding: 10
       font: Theme.defaultFont
@@ -92,7 +92,7 @@ Item {
 
       background: Rectangle {
         y: passwordField.height - height * 2 - passwordField.bottomPadding / 2
-        implicitWidth: parent.width
+        implicitWidth: 120
         height: passwordField.activeFocus ? 2 : 1
         color: passwordField.activeFocus ? "#4CAF50" : "#C8E6C9"
       }
