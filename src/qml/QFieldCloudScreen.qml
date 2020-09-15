@@ -8,8 +8,6 @@ import Theme 1.0
 Page {
   id: qfieldcloudScreen
   signal finished
-  property QFieldCloudConnection connection
-  property QFieldCloudProjectsModel projectsModel
   property LayerObserver layerObserver
 
   header: PageHeader {
@@ -17,7 +15,7 @@ Page {
 
       showApplyButton: false
       showCancelButton: true
-      showBusyIndicator: connection.status === QFieldCloudConnection.Connecting
+      showBusyIndicator: cloudConnection.status === QFieldCloudConnection.Connecting
 
       onFinished: parent.finished()
     }
@@ -32,16 +30,16 @@ Page {
         id: connectionInformation
         spacing: 2
         Layout.fillWidth: true
-        visible: connection.hasToken || projectsModel.rowCount() > 0
+        visible: cloudConnection.hasToken || cloudProjectsModel.rowCount() > 0
 
         Label {
             Layout.fillWidth: true
             padding: 10
             opacity: projects.visible ? 1 : 0
-            text: switch(connection.status) {
+            text: switch(cloudConnection.status) {
                     case 0: qsTr( 'Disconnected from the cloud.' ); break;
                     case 1: qsTr( 'Connecting to the cloud.' ); break;
-                    case 2: qsTr( 'Greetings %1.' ).arg( connection.username ); break;
+                    case 2: qsTr( 'Greetings %1.' ).arg( cloudConnection.username ); break;
                   }
             wrapMode: Text.WordWrap
             font: Theme.tipFont
@@ -56,7 +54,6 @@ Page {
             if (!connectionSettings.visible) {
               connectionSettings.visible = true
               projects.visible = false
-              usernameField.forceActiveFocus()
             } else {
               connectionSettings.visible = false
               projects.visible = true
@@ -74,96 +71,15 @@ Page {
       Layout.topMargin: !connectionInformation.visible ? connectionInformation.height + parent.spacing : 0
       spacing: 2
 
-      Text {
-          id: cloudDescriptionLabel
-          Layout.alignment: Qt.AlignLeft
-          Layout.fillWidth: true
-          text: qsTr( "Please file required details to connect to your account." )
-          font: Theme.defaultFont
-          wrapMode: Text.WordWrap
-      }
-
-      Text {
-          id: usernamelabel
-          Layout.alignment: Qt.AlignHCenter
-          Layout.topMargin: 20
-          text: qsTr( "Username" )
-          font: Theme.defaultFont
-          color: 'gray'
-      }
-
-      TextField {
-          id: usernameField
-          Layout.alignment: Qt.AlignHCenter
-          Layout.preferredWidth: Math.max( parent.width / 2, usernamelabel.width )
-          enabled: connection.status === QFieldCloudConnection.Disconnected
-          height: fontMetrics.height + 20
-          font: Theme.defaultFont
-
-          background: Rectangle {
-              y: usernameField.height - height * 2 - usernameField.bottomPadding / 2
-              implicitWidth: parent.width
-              height: usernameField.activeFocus ? 2 : 1
-              color: usernameField.activeFocus ? "#4CAF50" : "#C8E6C9"
-          }
-
-          Keys.onReturnPressed: loginFormSumbitHandler()
-      }
-
-      Text {
-          id: passwordlabel
-          Layout.alignment: Qt.AlignHCenter
-          text: qsTr( "Password" )
-          font: Theme.defaultFont
-          color: 'gray'
-      }
-
-      TextField {
-          id: passwordField
-          echoMode: TextInput.Password
-          Layout.alignment: Qt.AlignHCenter
-          Layout.preferredWidth: Math.max( parent.width / 2, usernamelabel.width )
-          enabled: connection.status === QFieldCloudConnection.Disconnected
-          height: fontMetrics.height + 20
-          font: Theme.defaultFont
-
-          background: Rectangle {
-              y: passwordField.height - height * 2 - passwordField.bottomPadding / 2
-              implicitWidth: parent.width
-              height: passwordField.activeFocus ? 2 : 1
-              color: passwordField.activeFocus ? "#4CAF50" : "#C8E6C9"
-          }
-
-          Keys.onReturnPressed: loginFormSumbitHandler()
-      }
-
-      FontMetrics {
-        id: fontMetrics
-        font: usernameField.font
-      }
-
-      QfButton {
-          Layout.fillWidth: true
-          Layout.topMargin: 5
-          text: connection.status == QFieldCloudConnection.LoggedIn ? qsTr( "Logout" ) : connection.status == QFieldCloudConnection.Connecting ? qsTr( "Logging in, please wait" ) : qsTr( "Login" )
-          enabled: connection.status != QFieldCloudConnection.Connecting
-
-          onClicked: loginFormSumbitHandler()
+      QFieldCloudLogin {
+        id: qfieldCloudLogin
+        Layout.fillWidth: true
+        Layout.fillHeight: true
       }
 
       Item {
           Layout.fillHeight: true
           height: 15
-      }
-
-
-      Connections {
-        target: connection
-
-        onStatusChanged: {
-          if ( connection.status === QFieldCloudConnection.LoggedIn )
-            prepareCloudLogin()
-        }
       }
     }
 
@@ -186,7 +102,7 @@ Page {
               id: table
               anchors.fill: parent
 
-              model: projectsModel
+              model: cloudProjectsModel
               clip: true
 
               delegate: Rectangle {
@@ -223,7 +139,7 @@ Page {
                           id: type
                           anchors.verticalCenter: inner.verticalCenter
                           source: {
-                            if ( connection.status !== QFieldCloudConnection.LoggedIn ) {
+                            if ( cloudConnection.status !== QFieldCloudConnection.LoggedIn ) {
                               return Theme.getThemeIcon('ic_cloud_project_offline_48dp')
                             } else {
                               var status = ''
@@ -271,7 +187,7 @@ Page {
                               id: projectNote
                               leftPadding: 3
                               text: {
-                                if ( connection.status !== QFieldCloudConnection.LoggedIn ) {
+                                if ( cloudConnection.status !== QFieldCloudConnection.LoggedIn ) {
                                   return qsTr( '(Available locally)' )
                                 } else {
                                   var status = ''
@@ -342,7 +258,7 @@ Page {
                     } else {
                       // fetch remote project
                       displayToast( qsTr( "Downloading project %1" ).arg( item.projectName ) )
-                      projectsModel.downloadProject( item.projectId )
+                      cloudProjectsModel.downloadProject( item.projectId )
                     }
                   }
                 }
@@ -404,7 +320,7 @@ Page {
 
           text: qsTr( "Download Project" )
           onTriggered: {
-            projectsModel.downloadProject(projectActions.projectId)
+            cloudProjectsModel.downloadProject(projectActions.projectId)
           }
         }
 
@@ -435,7 +351,7 @@ Page {
 
           text: qsTr( "Remove Stored Project" )
           onTriggered: {
-            projectsModel.removeLocalProject(projectActions.projectId)
+            cloudProjectsModel.removeLocalProject(projectActions.projectId)
           }
         }
       }
@@ -455,19 +371,27 @@ Page {
           id: refreshProjectsListBtn
           Layout.fillWidth: true
           text: qsTr( "Refresh projects list" )
-          enabled: connection.status == QFieldCloudConnection.LoggedIn
+          enabled: cloudConnection.status === QFieldCloudConnection.LoggedIn
 
-          onClicked: projectsModel.refreshProjectsList()
+          onClicked: cloudProjectsModel.refreshProjectsList()
       }
+    }
+  }
+
+  Connections {
+    target: cloudConnection
+
+    onStatusChanged: {
+      if ( cloudConnection.status === QFieldCloudConnection.LoggedIn )
+        prepareCloudLogin();
     }
   }
 
   function prepareCloudLogin() {
     if ( visible ) {
-      usernameField.text = connection.username
-      if ( connection.status == QFieldCloudConnection.Disconnected ) {
-        if ( connection.hasToken ) {
-          connection.login();
+      if ( cloudConnection.status == QFieldCloudConnection.Disconnected ) {
+        if ( cloudConnection.hasToken ) {
+          cloudConnection.login();
 
           projects.visible = true
           connectionSettings.visible = false
@@ -479,16 +403,6 @@ Page {
         projects.visible = true
         connectionSettings.visible = false
       }
-    }
-  }
-
-  function loginFormSumbitHandler() {
-    if (connection.status == QFieldCloudConnection.LoggedIn) {
-      connection.logout()
-    } else {
-      connection.username = usernameField.text
-      connection.password = passwordField.text
-      connection.login()
     }
   }
 

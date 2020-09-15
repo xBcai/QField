@@ -34,6 +34,7 @@ ToolBar {
       height: 6
       value: 50
       indeterminate: true
+      visible: false
     }
   }
 

@@ -1533,8 +1533,6 @@ ApplicationWindow {
 
   QFieldCloudScreen {
     id: qfieldCloudScreen
-    connection: cloudConnection
-    projectsModel: cloudProjectsModel
 
     anchors.fill: parent
     visible: false
