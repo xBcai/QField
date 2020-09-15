@@ -214,7 +214,7 @@ Page {
                                     case QFieldCloudProjectsModel.ProjectStatus.Idle:
                                       break
                                     case QFieldCloudProjectsModel.ProjectStatus.Downloading:
-                                      status = qsTr( 'Downloading…' )
+                                      status = qsTr( 'Downloading, %1% fetched…' ).arg( Math.round(DownloadProgress * 100) )
                                       break
                                     case QFieldCloudProjectsModel.ProjectStatus.Uploading:
                                       status = qsTr( 'Uploading…' )
