@@ -12,7 +12,7 @@
    viewBox="0 0 16.933 16.933"
    height="64"
    width="64"
-   sodipodi:docname="ic_cloud_24dp.svg"
+   sodipodi:docname="ic_cloud_active_24dp.svg"
    inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)">
   <sodipodi:namedview
      pagecolor="#ffffff"
@@ -27,13 +27,14 @@
      inkscape:window-height="1015"
      id="namedview7"
      showgrid="false"
-     inkscape:zoom="6.765625"
-     inkscape:cx="42.564298"
-     inkscape:cy="41.91761"
+     inkscape:zoom="3.3828125"
+     inkscape:cx="22.834535"
+     inkscape:cy="54.492188"
      inkscape:window-x="50"
      inkscape:window-y="28"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg8" />
+     inkscape:current-layer="svg8"
+     inkscape:document-rotation="0" />
   <metadata
      id="metadata901">
     <rdf:RDF>
@@ -51,8 +52,11 @@
   <path
      d="M 13.758709,8.4664999 A 5.3070462,5.3070462 0 0 0 8.4671454,3.1749358 5.2902722,5.2902722 0 0 0 3.3407425,7.1761888 C 1.7536609,7.4407025 0.52915642,8.7968193 0.52915642,10.450998 a 3.3160974,3.3160974 0 0 0 3.30835568,3.307066 h 9.9211969 c 1.455469,0 2.645135,-1.190956 2.645135,-2.645136 0,-1.4554709 -1.189666,-2.6464279 -2.645135,-2.6464281 z"
      id="path912"
-     style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.275958;stroke-miterlimit:4;stroke-dasharray:none" />
+     style="fill:#4c6dac;fill-opacity:1;stroke:none;stroke-width:0.275958;stroke-miterlimit:4;stroke-dasharray:none" />
   <style
      type="text/css"
      id="style902" />
+  <style
+     id="style902-7"
+     type="text/css" />
 </svg>

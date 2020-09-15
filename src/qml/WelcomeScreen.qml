@@ -6,7 +6,6 @@ import org.qfield 1.0
 import Theme 1.0
 
 Page {
-  property QFieldCloudConnection connection
   property alias model: table.model
   signal showOpenProjectDialog
   signal showQFieldCloudScreen
@@ -196,8 +195,8 @@ Page {
             onClicked: {
               var item = table.itemAt(mouse.x, mouse.y)
               if (item) {
-                if ( item.type == 1 ) {
-                  connection.login()
+                if ( item.type == 1 && cloudConnection.status !== QFieldCloudConnection.LoggedIn ) {
+                  cloudConnection.login()
                 }
                 iface.loadProject(item.path)
               }

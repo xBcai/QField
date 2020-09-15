@@ -11,7 +11,7 @@ Page {
   property LayerObserver layerObserver
 
   header: PageHeader {
-      title: qsTr("QField Cloud")
+      title: qsTr("QFieldCloud Projects")
 
       showApplyButton: false
       showCancelButton: true
