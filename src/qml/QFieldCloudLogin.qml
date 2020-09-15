@@ -18,8 +18,8 @@ Item {
       fillMode: Image.PreserveAspectFit
       smooth: true
       source: "qrc:/images/qfieldcloud_logo.svg"
-      sourceSize.width: 100
-      sourceSize.height: 100
+      sourceSize.width: 120
+      sourceSize.height: 120
     }
 
     Text {
