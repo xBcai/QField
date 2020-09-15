@@ -51,7 +51,9 @@ Item {
       anchors.horizontalCenter: parent.horizontalCenter
       visible: cloudConnection.status === QFieldCloudConnection.Disconnected
       enabled: visible
-      height: fontMetrics.height + 20
+      height: Math.max(fontMetrics.height, fontMetrics.boundingRect(text).height) + 20
+      topPadding: 10
+      bottomPadding: 10
       font: Theme.defaultFont
       horizontalAlignment: Text.AlignHCenter
 
@@ -82,7 +84,9 @@ Item {
       anchors.horizontalCenter: parent.horizontalCenter
       visible: cloudConnection.status === QFieldCloudConnection.Disconnected
       enabled: visible
-      height: fontMetrics.height + 20
+      height: Math.max(fontMetrics.height, fontMetrics.boundingRect(text).height) + 20
+      topPadding: 10
+      bottomPadding: 10
       font: Theme.defaultFont
       horizontalAlignment: Text.AlignHCenter
 
