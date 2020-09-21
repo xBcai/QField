@@ -3,7 +3,7 @@
     <name>About</name>
     <message>
         <source>QField Version: %1</source>
-        <translation type="unfinished"/>
+        <translation>QField版本: %1</translation>
     </message>
     <message>
         <source>QField Settings folder: %1</source>
@@ -38,7 +38,7 @@
     </message>
     <message>
         <source>Image %1 could not be copied to project folder %2.</source>
-        <translation>无法将图像%1复制到项目文件夹%2。</translation>
+        <translation>无法将图像%1复制到工程文件夹%2。</translation>
     </message>
 </context>
 <context>
@@ -83,11 +83,11 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     <name>Changelog</name>
     <message>
         <source>What&apos;s new in the latest QField</source>
-        <translation type="unfinished"/>
+        <translation>最新版QField更新内容</translation>
     </message>
     <message>
         <source>Changelog %1</source>
-        <translation>更新日志%1</translation>
+        <translation>更新日志 %1</translation>
     </message>
     <message>
         <source>Value relation widget with multiple selection support</source>
@@ -103,19 +103,19 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>Fix checkbox widget</source>
-        <translation type="unfinished"/>
+        <translation>修复复选框小部件</translation>
     </message>
     <message>
         <source>Other fixes (printing, locator)</source>
-        <translation type="unfinished"/>
+        <translation>其他修复（打印、定位）</translation>
     </message>
     <message>
         <source>Improved log</source>
-        <translation type="unfinished"/>
+        <translation>更新日志</translation>
     </message>
     <message>
         <source>Do you enjoy QField? Show some love and support the crowdfunding campaign. Before October 16.</source>
-        <translation type="unfinished"/>
+        <translation>您喜欢QField吗？请10月16日之前表达一些爱意并支持众筹活动。 </translation>
     </message>
     <message>
         <source>www.opengis.ch/projects/qfield-love/</source>
@@ -127,29 +127,29 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>Maybe later</source>
-        <translation type="unfinished"/>
+        <translation>也许以后</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished"/>
+        <translation>否</translation>
     </message>
 </context>
 <context>
     <name>DashBoard</name>
     <message>
         <source>Map Theme</source>
-        <translation type="unfinished"/>
+        <translation>地图主题</translation>
     </message>
     <message>
         <source>The layer %1 is read only.</source>
-        <translation>%1图层为只读状态</translation>
+         <translation>图层 %1 为只读状态</translation>
     </message>
 </context>
 <context>
     <name>DateTime</name>
     <message>
         <source>Ok</source>
-        <translation type="unfinished"/>
+        <translation>确定</translation>
     </message>
     <message>
         <source>(no date)</source>
@@ -157,29 +157,29 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished"/>
+        <translation>确定</translation>
     </message>
 </context>
 <context>
     <name>FeatureCheckListModel</name>
     <message>
         <source>Storing of value relation widget checklists not available for Android 5</source>
-        <translation type="unfinished"/>
+        <translation>安卓5不支持存储数值关系部件复选列表</translation>
     </message>
 </context>
 <context>
     <name>FeatureForm</name>
     <message>
         <source>Add feature on &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="unfinished"/>
+        <translation>在 &lt;i&gt;%1&lt;/i&gt; 上添加要素</translation>
     </message>
     <message>
         <source>Edit feature on &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="unfinished"/>
+        <translation>在&lt;i&gt;%1&lt;/i&gt; 上编辑要素</translation>
     </message>
     <message>
         <source>View feature on &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="unfinished"/>
+        <translation>在&lt;i&gt;%1&lt;/i&gt; 上查看要素</translation>
     </message>
     <message>
         <source>Constraints not valid - cancel editing</source>
@@ -195,15 +195,15 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>Add feature on %1</source>
-        <translation type="unfinished"/>
+        <translation>在 %1 中添加要素</translation>
     </message>
     <message>
         <source>Edit feature on %1</source>
-        <translation type="unfinished"/>
+        <translation>在 %1 中编辑要素</translation>
     </message>
     <message>
         <source>View feature on %1</source>
-        <translation type="unfinished"/>
+        <translation>在 %1 中查看要素</translation>
     </message>
 </context>
 <context>
@@ -257,7 +257,7 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>Could not save changes. Rolling back.</source>
-        <translation>未能保存更改。已回滚。</translation>
+        <translation>未能保存更改，已回滚。</translation>
     </message>
     <message>
         <source>Cannot start editing</source>
@@ -268,7 +268,7 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     <name>FeaturesLocatorFilter</name>
     <message>
         <source>Open form</source>
-        <translation>打开窗体</translation>
+        <translation>打开表单</translation>
     </message>
     <message>
         <source>Feature has no geometry</source>
@@ -283,25 +283,25 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     <name>LayerLoginDialog</name>
     <message>
         <source>Username</source>
-        <translation type="unfinished"/>
+        <translation>用户名</translation>
     </message>
     <message>
         <source>Password</source>
-        <translation type="unfinished"/>
+        <translation>密码</translation>
     </message>
 </context>
 <context>
     <name>LayerTreeItemProperties</name>
     <message>
         <source>%1 : Properties</source>
-        <translation>%1: 性能</translation>
+       <translation>%1: 特性</translation>
     </message>
 </context>
 <context>
     <name>LayerTreeItemProperties</name>
     <message>
         <source>Show on map canvas</source>
-        <translation type="unfinished"/>
+        <translation>在地图画布上显示</translation>
     </message>
 </context>
 <context>
@@ -319,7 +319,7 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>Changes discarded</source>
-        <translation>更改被放弃</translation>
+        <translation>放弃更改</translation>
     </message>
     <message>
         <source>Constraints not valid</source>
@@ -338,11 +338,11 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>Accuracy</source>
-        <translation type="unfinished"/>
+        <translation>精度</translation>
     </message>
     <message>
         <source>Coordinates</source>
-        <translation type="unfinished"/>
+        <translation>坐标</translation>
     </message>
     <message>
         <source>Speed</source>
@@ -385,23 +385,23 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>Show scalebar</source>
-        <translation type="unfinished"/>
+        <translation>显示比例尺</translation>
     </message>
     <message>
         <source>Show attribute form in full screen</source>
-        <translation type="unfinished"/>
+        <translation>全屏显示属性窗口</translation>
     </message>
     <message>
         <source>Redraw map every 250 ms while rendering</source>
-        <translation type="unfinished"/>
+        <translation>渲染时每隔250毫秒重新绘制地图</translation>
     </message>
     <message>
         <source>Show numerical information while digitizing</source>
-        <translation type="unfinished"/>
+        <translation>数字化时显示相关信息</translation>
     </message>
     <message>
         <source>Use native camera function (unstable on recent Android versions)</source>
-        <translation type="unfinished"/>
+        <translation>使用本机摄像头功能（可能在最新安卓版本上不稳定）</translation>
     </message>
     <message>
         <source>QField Settings</source>
@@ -409,43 +409,43 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>Show scale bar</source>
-        <translation type="unfinished"/>
+        <translation>显示比例尺</translation>
     </message>
     <message>
         <source>Maximized attribute form</source>
-        <translation type="unfinished"/>
+        <translation>属性窗口最大化</translation>
     </message>
     <message>
         <source>Fixed scale navigation</source>
-        <translation type="unfinished"/>
+        <translation>固定比例尺导航</translation>
     </message>
     <message>
         <source>When fixed scale navigation is active, focusing on a search result will pan to the feature. With fixed scale navigation disabled it will pan and zoom to the feature.</source>
-        <translation type="unfinished"/>
+        <translation>当固定比例尺导航处于激活状态，对查询结果的聚焦会将地图平移到该要素。当固定比例尺导航处于禁用状态，将先平移后缩放到该要素。</translation>
     </message>
     <message>
         <source>Progressive rendering</source>
-        <translation type="unfinished"/>
+        <translation>渐进渲染</translation>
     </message>
     <message>
         <source>When progressive rendering is enabled, the map will be drawn every 250 milliseconds while rendering.</source>
-        <translation type="unfinished"/>
+        <translation>渐进式渲染启动后，地图渲染时将每250毫秒绘制一次。</translation>
     </message>
     <message>
         <source>Show digitizing information</source>
-        <translation type="unfinished"/>
+        <translation>显示坐标信息</translation>
     </message>
     <message>
         <source>When switched on, coordinate information, such as latitude and longitude, is overlayed onto the canvas while digitizing new features or using the measure tool.</source>
-        <translation type="unfinished"/>
+        <translation>开启后，在数字化新要素或使用测量工具的时候，将在地图上显示坐标等信息，如纬度和经度。</translation>
     </message>
     <message>
         <source>Use native camera</source>
-        <translation type="unfinished"/>
+        <translation>使用本机摄像头</translation>
     </message>
     <message>
         <source>Warning: native camera function is unstable on recent Android versions.</source>
-        <translation type="unfinished"/>
+        <translation>警告：本机相机功能在最新Android版本上不稳定。</translation>
     </message>
 </context>
 <context>
@@ -456,19 +456,19 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>Map Tool Capture</source>
-        <translation type="unfinished"/>
+       <translation>地图工具捕捉</translation>
     </message>
     <message>
         <source>Authentication required</source>
-        <translation type="unfinished"/>
+        <translation>需要身份验证</translation>
     </message>
     <message>
         <source>There was an error opening the database &lt;b&gt;%1&lt;/b&gt;: %2</source>
-        <translation type="unfinished"/>
+        <translation>打开数据库出错 &lt;b&gt;%1&lt;/b&gt;: %2</translation>
     </message>
     <message>
         <source>Could not flush database %1 (%3) </source>
-        <translation type="unfinished"/>
+        <translation>无法刷新数据库 %1 (%3)</translation>
     </message>
 </context>
 <context>
@@ -514,7 +514,7 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     <name>RelationCombobox</name>
     <message>
         <source>Invalid relation</source>
-        <translation type="unfinished"/>
+        <translation>关联错误</translation>
     </message>
 </context>
 <context>
@@ -529,19 +529,19 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>Unlink feature %1 (%2) of %3</source>
-        <translation type="unfinished"/>
+        <translation>取消链接 %3 的要素%1（%2） </translation>
     </message>
     <message>
         <source>Delete feature %1 (%2) on %3</source>
-        <translation type="unfinished"/>
+        <translation>在 %3 删除要素 %1 (%2) </translation>
     </message>
     <message>
         <source>Should the feature &lt;b&gt;%1 (%2)&lt;/b&gt; of layer &lt;b&gt;%3&lt;/b&gt; be unlinked?&lt;br&gt;&lt;i&gt;(The connection will be deleted on layer &lt;b&gt;%4&lt;/b&gt;)&lt;/i&gt;</source>
-        <translation type="unfinished"/>
+        <translation>是否取消链接图层&lt;b&gt;%3&lt;/b&gt;中的要素 &lt;b&gt;%1 (%2)&lt;/b&gt;？&lt;br&gt;&lt;i&gt;（图层&lt;b&gt;%4&lt;/b&gt;中的链接将被删除）&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Should the feature &lt;b&gt;%1 (%2)&lt;/b&gt; on layer &lt;b&gt;%3&lt;/b&gt; be deleted?</source>
-        <translation type="unfinished"/>
+        <translation>确定删除图层&lt;b&gt;%3&lt;/b&gt;中的要素feature &lt;b&gt;%1 (%2)&lt;/b&gt;吗？</translation>
     </message>
 </context>
 <context>
@@ -559,7 +559,7 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     <name>WelcomeScreen</name>
     <message>
         <source>QField for QGIS</source>
-        <translation>QField for QGIS</translation>
+        <translation>QGIS的QField</translation>
     </message>
     <message>
         <source>To get started you can use a demo project or your own QGIS project. It is very easy to create one on your desktop PC and then transfer it to this device.</source>
@@ -574,7 +574,7 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     <name>qgismobileapp</name>
     <message>
         <source>The layer %1 is read only.</source>
-        <translation type="unfinished"/>
+        <translation>图层 %1 为只读状态</translation>
     </message>
     <message>
         <source>Activating positioning service...</source>
@@ -598,19 +598,19 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>Mode</source>
-        <translation type="unfinished"/>
+        <translation>模式</translation>
     </message>
     <message>
         <source>Browse</source>
-        <translation type="unfinished"/>
+        <translation>浏览</translation>
     </message>
     <message>
         <source>Digitize</source>
-        <translation type="unfinished"/>
+        <translation>数字化</translation>
     </message>
     <message>
         <source>Open Project</source>
-        <translation>打开项目</translation>
+        <translation>打开工程</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -630,11 +630,11 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>GPS Options</source>
-        <translation type="unfinished"/>
+        <translation>GPS选项</translation>
     </message>
     <message>
         <source>Enable GPS</source>
-        <translation type="unfinished"/>
+        <translation>启用GPS</translation>
     </message>
     <message>
         <source>Center current location</source>
@@ -646,27 +646,27 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>Changes saved</source>
-        <translation type="unfinished"/>
+        <translation>更改已保存</translation>
     </message>
     <message>
         <source>Changes discarded</source>
-        <translation type="unfinished"/>
+        <translation>放弃更改</translation>
     </message>
     <message>
         <source>Loading Project</source>
-        <translation>正在加载项目</translation>
+        <translation>正在加载工程</translation>
     </message>
     <message>
         <source>Loading Project: %1</source>
-        <translation>正在加载项目：%1</translation>
+        <translation>正在加载工程：%1</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation>打开项目</translation>
+        <translation>打开工程</translation>
     </message>
     <message>
         <source>QGIS projects (*.qgs)</source>
-        <translation type="unfinished"/>
+        <translation>QGIS工程(*.qgs)</translation>
     </message>
     <message>
         <source>All files (*)</source>
@@ -674,7 +674,7 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>Press back again to close project and app</source>
-        <translation>再次点击“上一步”关闭项目和应用程序</translation>
+        <translation>再次点击返回键将关闭工程和应用</translation>
     </message>
     <message>
         <source>You are now in %1 mode </source>
@@ -682,23 +682,23 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>Lon</source>
-        <translation type="unfinished"/>
+        <translation>经度</translation>
     </message>
     <message>
         <source>Lat</source>
-        <translation type="unfinished"/>
+        <translation>纬度</translation>
     </message>
     <message>
         <source>Segment</source>
-        <translation type="unfinished"/>
+        <translation>分段</translation>
     </message>
     <message>
         <source>Length</source>
-        <translation type="unfinished"/>
+        <translation>长度</translation>
     </message>
     <message>
         <source>Area</source>
-        <translation type="unfinished"/>
+        <translation>面积</translation>
     </message>
     <message>
         <source>Close measure tool</source>
@@ -710,11 +710,11 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>Positioning Options</source>
-        <translation>定位功能设置</translation>
+        <translation>定位设置</translation>
     </message>
     <message>
         <source>Enable Positioning</source>
-        <translation>启用定位功能</translation>
+        <translation>启用定位</translation>
     </message>
     <message>
         <source>QField has no permissions to use positioning.</source>
@@ -726,7 +726,7 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>QGIS projects (*.qgs *.qgz)</source>
-        <translation type="unfinished"/>
+        <translation>QGIS工程 (*.qgs *.qgz)</translation>
     </message>
 </context>
 </TS>
