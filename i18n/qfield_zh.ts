@@ -23,7 +23,7 @@
     </message>
     <message>
         <source>Buy the Karma edition</source>
-        <translation type="unfinished"/>
+        <translation>购买Karma版</translation>
     </message>
     <message>
         <source>QField Version: %1 (%2)</source>
@@ -62,19 +62,21 @@
         <source>The following layers could not be loaded.
 Please review them and reconfigure the QGIS project.
 You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField documentation.</source>
-        <translation type="unfinished"/>
+        <translation>无法加载以下层。
+请检查并重新配置QGIS工程。
+您可以查看QField文档中的 &lt;i&gt;可移植工程&lt;/i&gt;部分。</translation>
     </message>
     <message>
         <source>Unable to load some layers</source>
-        <translation>有部分图层未能加载</translation>
+        <translation>部分图层未加载</translation>
     </message>
     <message>
         <source>The following layers could not be loaded, please review those and reconfigure the QGIS project.</source>
-        <translation type="unfinished"/>
+        <translation>以下图层未加载，请检查这些图层并重新配置QGIS工程。</translation>
     </message>
     <message>
         <source>You may check the Portable Project section in the QField documentation for more help.</source>
-        <translation type="unfinished"/>
+        <translation>您可以查看QField文档中的“便携式项目”章节以获得更多帮助。</translation>
     </message>
 </context>
 <context>
@@ -85,7 +87,7 @@ You may check the &lt;i&gt;Portable Project&lt;/i&gt; section in the QField docu
     </message>
     <message>
         <source>Changelog %1</source>
-        <translation type="unfinished"/>
+        <translation>更新日志%1</translation>
     </message>
     <message>
         <source>Value relation widget with multiple selection support</source>
