@@ -1504,7 +1504,6 @@ ApplicationWindow {
 
   QFieldCloudConnection {
     id: cloudConnection
-    url: "https://dev.qfield.cloud"
     onLoginFailed: function(reason) { displayToast( reason ) }
   }
 

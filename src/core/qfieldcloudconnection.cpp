@@ -29,7 +29,8 @@
 
 
 QFieldCloudConnection::QFieldCloudConnection()
-  : mToken( QSettings().value( "/QFieldCloud/token" ).toByteArray() )
+  : mUrl( QSettings().value( QStringLiteral( "/QFieldCloud/url" ), defaultUrl() ).toString() )
+  , mToken( QSettings().value( QStringLiteral( "/QFieldCloud/token" ) ).toByteArray() )
 {
 }
 
@@ -44,7 +45,15 @@ void QFieldCloudConnection::setUrl( const QString &url )
     return;
 
   mUrl = url;
+
+  QSettings().setValue( QStringLiteral( "/QFieldCloud/url" ), url );
+
   emit urlChanged();
+}
+
+QString QFieldCloudConnection::defaultUrl() const
+{
+  return QStringLiteral( "https://app.qfield.cloud" );
 }
 
 QString QFieldCloudConnection::username() const
